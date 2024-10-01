@@ -1,0 +1,101 @@
+﻿<Window x:Class="wsl_usb_manager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:local="clr-namespace:wsl_usb_manager"
+        mc:Ignorable="d"
+        Title="WSL USB Manager" Height="700" Width="500">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Button.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Shadows.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.ToggleButton.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="62"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <md:Card Grid.Row="0" Height="50" >
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="32" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Padding="0,16" Grid.Column="0"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Style="{StaticResource MaterialDesignTitleLargeTextBlock}"
+                           Text="WSL USB Devices Manager" />
+                <Grid Width="90" Grid.Column="1">
+                    <Button Margin="2,0"
+                            md:ButtonProgressAssist.IsIndeterminate="True" md:ButtonProgressAssist.IsIndicatorVisible="False" md:ButtonProgressAssist.Value="-1" Content="Refresh" IsEnabled="{Binding DataContext.ControlsEnabled, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                            Style="{StaticResource MaterialDesignFlatButton}" />
+                    
+                    
+                </Grid>
+                <StackPanel Orientation="Horizontal" Grid.Column="2" >
+                    <md:PopupBox
+                            IsEnabled="{Binding DataContext.ControlsEnabled, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                                             StaysOpen="True">
+                    </md:PopupBox>
+                </StackPanel>
+            </Grid>
+        </md:Card>
+        
+        <GroupBox Margin="6" Grid.Row="1"
+                  Header="Windows USB Devices"
+                  FontWeight="Bold"
+                  FontSize="14"
+                  md:ColorZoneAssist.Background="White"
+                  md:ColorZoneAssist.Foreground="Black"
+                  md:ColorZoneAssist.Mode="Custom"
+                  Style="{StaticResource MaterialDesignCardGroupBox}">
+            <DataGrid md:DataGridAssist.CellPadding="4 2 2 2"
+                      md:DataGridAssist.ColumnHeaderPadding="4 2 2 2"
+                      CanUserAddRows="False"
+                      CanUserSortColumns="False" />
+        </GroupBox>
+        
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Width="120"
+                    Content="Attach"
+                    Style="{StaticResource MaterialDesignRaisedSecondaryDarkButton}"
+                    ToolTip="Attach one selected devic to WSL" />
+            <Button Grid.Column="1"
+                    Width="120"
+                    Content="Detach"
+                    Style="{StaticResource MaterialDesignRaisedDarkButton}"
+                    ToolTip="Detach one selected devic from WSL" />
+            <Button Grid.Column="2"
+                    Width="120"
+                    Content="Auto-Attach"
+                    Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                    ToolTip="Auto-attach one selected devic to WSL" />
+        </Grid>
+        
+        <GroupBox Margin="6"
+                  Grid.Row="3"
+                  Header="Forwarded Devices"
+                  FontWeight="Bold"
+                  FontSize="14"
+                  md:ColorZoneAssist.Background="White"
+                  md:ColorZoneAssist.Foreground="Black"
+                  md:ColorZoneAssist.Mode="Custom"
+                  Style="{StaticResource MaterialDesignCardGroupBox}"></GroupBox>
+    </Grid>
+</Window>
