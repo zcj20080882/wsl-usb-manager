@@ -6,7 +6,10 @@
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:wsl_usb_manager"
         mc:Ignorable="d"
-        Title="WSL USB Manager" Height="700" Width="500">
+        Title="WSL USB Manager"
+        Height="700"
+        Width="500"
+        WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -14,15 +17,16 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Shadows.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.ToggleButton.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            
         </ResourceDictionary>
     </Window.Resources>
     <Grid>
+        
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="62"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <md:Card Grid.Row="0" Height="50" >
             <Grid>
@@ -97,5 +101,8 @@
                   md:ColorZoneAssist.Foreground="Black"
                   md:ColorZoneAssist.Mode="Custom"
                   Style="{StaticResource MaterialDesignCardGroupBox}"></GroupBox>
+        <md:Snackbar Grid.Row="4" x:Name="NotificationView"
+                                 IsActive="False"
+                     MessageQueue="{md:MessageQueue}" />
     </Grid>
 </Window>

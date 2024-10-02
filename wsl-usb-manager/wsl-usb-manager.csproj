@@ -11,7 +11,7 @@
     <Authors>Chuckie</Authors>
     <Copyright>Copyright (c) Chuckie, 2024</Copyright>
     <PackageIcon>032-usb.png</PackageIcon>
-    <UseWindowsForms>False</UseWindowsForms>
+    <UseWindowsForms>True</UseWindowsForms>
     <ApplicationIcon>images\appicon.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -21,7 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
     <PackageReference Include="MaterialDesignThemes" Version="5.1.0" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
