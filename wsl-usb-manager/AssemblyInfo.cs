@@ -1,3 +1,13 @@
+/******************************************************************************
+* SPDX-License-Identifier: MIT
+* Project: wsl-usb-manager
+* Class: AssemblyInfo.cs
+* NameSpace: %Namespace%
+* Author: Chuckie
+* copyright: Copyright (c) Chuckie, 2024
+* Description:
+* Create Date: 2024/10/1 19:08
+******************************************************************************/
 using System.Windows;
 
 [assembly: ThemeInfo(

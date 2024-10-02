@@ -1,0 +1,22 @@
+﻿extensions: designer.cs generated.cs
+extensions: .cs .cpp .h
+/******************************************************************************
+* SPDX-License-Identifier: MIT
+* Project: %Project%
+* Class: %FileName%
+* NameSpace: %Namespace%
+* Author: Chuckie
+* copyright: Copyright (c) Chuckie, %CurrentYear%
+* Description:
+* Create Date: %CreationYear%/%CreationMonth%/%CreationDay% %CreationTime%
+******************************************************************************/
+extensions: .aspx .ascx
+<%-- 
+Copyright (c) 2011 Chuckie
+--%>
+extensions: .vb
+'Sample license text.
+extensions:  .xml .config .xsd
+<!--
+Sample license text.
+-->

@@ -16,15 +16,27 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="appicon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Remove="MainWindow - 副本.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="images\032-usb.ico" />
     <Content Include="images\appicon.ico" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
+    <PackageReference Include="MaterialDesignColors" Version="3.1.0" />
     <PackageReference Include="MaterialDesignThemes" Version="5.1.0" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
     <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="appicon.png" />
   </ItemGroup>
 
   <ItemGroup>

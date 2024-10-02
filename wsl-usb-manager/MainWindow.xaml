@@ -5,10 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:wsl_usb_manager"
+        xmlns:domain="clr-namespace:wsl_usb_manager.Domain"
+        d:DataContext="{d:DesignInstance Type=local:MainWindowViewModel}"
+        AutomationProperties.Name="{Binding Title, RelativeSource={RelativeSource Self}}"
         mc:Ignorable="d"
         Title="WSL USB Manager"
-        Height="700"
-        Width="500"
+        Height="600"
+        Width="800"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <ResourceDictionary>
@@ -19,90 +22,103 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
-    <Grid>
+    <md:DialogHost DialogTheme="Inherit"
+                   Identifier="RootDialog">
         
-        <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="62"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="auto" />
-        </Grid.RowDefinitions>
-        <md:Card Grid.Row="0" Height="50" >
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="100"/>
-                    <ColumnDefinition Width="32" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Padding="0,16" Grid.Column="0"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Style="{StaticResource MaterialDesignTitleLargeTextBlock}"
-                           Text="WSL USB Devices Manager" />
-                <Grid Width="90" Grid.Column="1">
-                    <Button Margin="2,0"
-                            md:ButtonProgressAssist.IsIndeterminate="True" md:ButtonProgressAssist.IsIndicatorVisible="False" md:ButtonProgressAssist.Value="-1" Content="Refresh" IsEnabled="{Binding DataContext.ControlsEnabled, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                            Style="{StaticResource MaterialDesignFlatButton}" />
-                    
-                    
-                </Grid>
-                <StackPanel Orientation="Horizontal" Grid.Column="2" >
-                    <md:PopupBox
-                            IsEnabled="{Binding DataContext.ControlsEnabled, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                                             StaysOpen="True">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <!-- Navigator Bar -->
+            <md:ColorZone Grid.Row="0"
+                          md:ElevationAssist.Elevation="Dp1"
+                          Height="70">
+                <Grid HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ListBox Grid.Column="0"
+                             Height="80"
+                             Width="200"
+                             ItemsSource="{Binding BodyItems}"
+                             SelectedIndex="0"
+                             Style="{StaticResource MaterialDesign3.NavigationBarPrimaryListBox}"
+                             HorizontalAlignment="Left">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem"
+                                   BasedOn="{StaticResource MaterialDesign3.NavigationBarPrimaryListBoxItem}">
+                                <Setter Property="md:NavigationBarAssist.IsTextVisible"
+                                        Value="True" />
+                                <Setter Property="md:NavigationBarAssist.SelectedIcon"
+                                        Value="{Binding SelectedIcon}" />
+                                <Setter Property="md:NavigationBarAssist.UnselectedIcon"
+                                        Value="{Binding UnselectedIcon}" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.Resources>
+                            <DataTemplate DataType="{x:Type domain:BodyItem}">
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </ListBox.Resources>
+                    </ListBox>
+                    <md:PopupBox Grid.Column="1"
+                                 PlacementMode="BottomAndAlignRightEdges"
+                                 StaysOpen="False"
+                                 VerticalAlignment="Center"
+                                 HorizontalAlignment="Right"
+                                 Margin="0,0,10,0">
+                        <StackPanel>
+                            <Grid Margin="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Light"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Left" />
+                                <ToggleButton x:Name="DarkModeToggleButton"
+                                              Grid.Column="1"
+                                              Click="MenuDarkModeButton_Click" />
+                                <TextBlock Grid.Column="2"
+                                           Text="Dark"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                            <CheckBox Margin="10"
+                                      md:RippleAssist.IsDisabled="True"
+                                      Content="Close to tray(Run in background)"
+                                      IsChecked="True" />
+                            <Separator />
+                            <Button x:Name="btnSetting"
+                                    Content="Settings" />
+                            <Separator />
+                            <Button x:Name="btnExit"
+                                    Click="MenuExitButton_OnClick"
+                                    Content="Goodbye" />
+                        </StackPanel>
                     </md:PopupBox>
-                </StackPanel>
-            </Grid>
-        </md:Card>
-        
-        <GroupBox Margin="6" Grid.Row="1"
-                  Header="Windows USB Devices"
-                  FontWeight="Bold"
-                  FontSize="14"
-                  md:ColorZoneAssist.Background="White"
-                  md:ColorZoneAssist.Foreground="Black"
-                  md:ColorZoneAssist.Mode="Custom"
-                  Style="{StaticResource MaterialDesignCardGroupBox}">
-            <DataGrid md:DataGridAssist.CellPadding="4 2 2 2"
-                      md:DataGridAssist.ColumnHeaderPadding="4 2 2 2"
-                      CanUserAddRows="False"
-                      CanUserSortColumns="False" />
-        </GroupBox>
-        
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Width="120"
-                    Content="Attach"
-                    Style="{StaticResource MaterialDesignRaisedSecondaryDarkButton}"
-                    ToolTip="Attach one selected devic to WSL" />
-            <Button Grid.Column="1"
-                    Width="120"
-                    Content="Detach"
-                    Style="{StaticResource MaterialDesignRaisedDarkButton}"
-                    ToolTip="Detach one selected devic from WSL" />
-            <Button Grid.Column="2"
-                    Width="120"
-                    Content="Auto-Attach"
-                    Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
-                    ToolTip="Auto-attach one selected devic to WSL" />
+                </Grid>
+            </md:ColorZone>
+            <ScrollViewer Grid.Row="1"
+                          x:Name="MainScrollViewer"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Background="{DynamicResource MaterialDesignPaper}"
+                          Style="{StaticResource MaterialDesignScrollViewer}"
+                          md:ScrollViewerAssist.IsAutoHideEnabled="True">
+                <ContentControl Margin="{Binding MarginRequirement, FallbackValue=16}"
+                                Content="{Binding Content, UpdateSourceTrigger=PropertyChanged, FallbackValue={x:Null}}"
+                                DataContext="{Binding SelectedItem}"
+                                DataContextChanged="OnSelectedItemChanged"
+                                HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Stretch" />
+            </ScrollViewer>
         </Grid>
         
-        <GroupBox Margin="6"
-                  Grid.Row="3"
-                  Header="Forwarded Devices"
-                  FontWeight="Bold"
-                  FontSize="14"
-                  md:ColorZoneAssist.Background="White"
-                  md:ColorZoneAssist.Foreground="Black"
-                  md:ColorZoneAssist.Mode="Custom"
-                  Style="{StaticResource MaterialDesignCardGroupBox}"></GroupBox>
-        <md:Snackbar Grid.Row="4" x:Name="NotificationView"
-                                 IsActive="False"
-                     MessageQueue="{md:MessageQueue}" />
-    </Grid>
+        
+    </md:DialogHost>
 </Window>

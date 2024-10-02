@@ -1,4 +1,14 @@
-﻿using System;
+﻿/******************************************************************************
+* SPDX-License-Identifier: MIT
+* Project: wsl-usb-manager
+* Class: ViewModelBase.cs
+* NameSpace: wsl_usb_manager.Domain
+* Author: Chuckie
+* copyright: Copyright (c) Chuckie, 2024
+* Description:
+* Create Date: 2024/10/1 19:08
+******************************************************************************/
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -6,7 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace wsl_usb_manager.ViewModel;
+namespace wsl_usb_manager.Domain;
 
 public abstract class ViewModelBase : INotifyPropertyChanged
 {

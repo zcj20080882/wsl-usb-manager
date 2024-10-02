@@ -1,4 +1,14 @@
-﻿using System;
+﻿/******************************************************************************
+* SPDX-License-Identifier: MIT
+* Project: wsl-usb-manager
+* Class: USBMonitor.cs
+* NameSpace: wsl_usb_manager.Controller
+* Author: Chuckie
+* copyright: Copyright (c) Chuckie, 2024
+* Description:
+* Create Date: 2024/10/1 19:08
+******************************************************************************/
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,14 +23,14 @@ namespace wsl_usb_manager.Controller;
 
 public class USBEventArgs : EventArgs
 {
-    public string Name { get; set; } = string.Empty;
-    public string VID { get; set; } = string.Empty;
-    public string PID { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty; 
-    public string ClassGuid { get; set; } = string.Empty;
-    public string PNPDeviceID { get; set; } = string.Empty;
-    public string Service { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
+    public string? Name { get; set; }
+    public string? VID { get; set; }
+    public string? PID { get; set; }
+    public string? Description { get; set; }
+    public string? ClassGuid { get; set; } 
+    public string? PNPDeviceID { get; set; }
+    public string? Service { get; set; }
+    public string? Status { get; set; } 
     public bool IsConnected { get; set; }
 }
 
@@ -28,9 +38,10 @@ public delegate void USBEventHandler(object sender, USBEventArgs e);
 
 public class USBMonitor
 {
-    private ManagementEventWatcher usbInsertWatcher;
-    private ManagementEventWatcher usbRemoveWatcher;
-    private USBEventHandler? usbChangeEvent { set; get; }
+    private readonly ManagementEventWatcher usbInsertWatcher;
+    private readonly ManagementEventWatcher usbRemoveWatcher;
+
+    private USBEventHandler? UsbChangeEvent { set; get; }
     public USBMonitor(USBEventHandler eventHandler)
     {
         // Bind to local machine
@@ -57,18 +68,18 @@ public class USBMonitor
 
         this.usbInsertWatcher.EventArrived += (sender, e) => {
             this.usbInsertWatcher.Stop();
-            this.usbChangeEvent?.Invoke(this, convertToUSBEventArgs(e));
+            this.UsbChangeEvent?.Invoke(this, ConvertToUSBEventArgs(e));
             this.usbInsertWatcher.Start();
         };
         this.usbRemoveWatcher.EventArrived += (sender, e) => {
             this.usbRemoveWatcher.Stop();
-            this.usbChangeEvent?.Invoke(this, convertToUSBEventArgs(e));
+            this.UsbChangeEvent?.Invoke(this, ConvertToUSBEventArgs(e));
             this.usbRemoveWatcher.Start();
         };
-        this.usbChangeEvent += eventHandler;
+        this.UsbChangeEvent += eventHandler;
     }
 
-    private USBEventArgs convertToUSBEventArgs(EventArrivedEventArgs e)
+    private static USBEventArgs ConvertToUSBEventArgs(EventArrivedEventArgs e)
     {
         USBEventArgs usbEventArgs = new();
         if(e.NewEvent.ClassPath.ClassName == "__InstanceCreationEvent")
@@ -81,7 +92,7 @@ public class USBMonitor
         }
         if (e.NewEvent["TargetInstance"] is ManagementBaseObject mbo && mbo.ClassPath.ClassName == "Win32_USBControllerDevice")
         {
-            string Dependent = (mbo["Dependent"] as string).Split(new char[] { '=' })[1];
+            string Dependent = ((string)mbo["Dependent"]).Split(['='])[1];
             Match match = Regex.Match(Dependent, @"VID_([0-9a-fA-F]{4})(.*?)PID_([0-9a-fA-F]{4})");
             if (match.Success)
             {
@@ -91,15 +102,15 @@ public class USBMonitor
                 ManagementObjectCollection PnPEntityCollection = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE DeviceID=" + Dependent).Get();
                 if (PnPEntityCollection != null)
                 {
-                    foreach (ManagementObject Entity in PnPEntityCollection)
+                    foreach (ManagementObject Entity in PnPEntityCollection.Cast<ManagementObject>())
                     {
-                        usbEventArgs.ClassGuid = Entity["ClassGuid"] as string;
-                        usbEventArgs.Description = Entity["Description"] as string;
-                        usbEventArgs.Name = Entity["Name"] as string;
+                        usbEventArgs.ClassGuid = (string)Entity["ClassGuid"];
+                        usbEventArgs.Description = (string)Entity["Description"];
+                        usbEventArgs.Name = (string)Entity["Name"];
 
-                        usbEventArgs.PNPDeviceID = Entity["PNPDeviceID"] as string;  // 设备ID
-                        usbEventArgs.Service = Entity["Service"] as string;          // 服务
-                        usbEventArgs.Status = Entity["Status"] as string;            // 设备状态
+                        usbEventArgs.PNPDeviceID = (string)Entity["PNPDeviceID"];
+                        usbEventArgs.Service = (string)Entity["Service"];
+                        usbEventArgs.Status = (string)Entity["Status"];
                     }
                 }
             }
