@@ -32,7 +32,7 @@
             </Grid.RowDefinitions>
             <!-- Navigator Bar -->
             <md:ColorZone Grid.Row="0"
-                          md:ElevationAssist.Elevation="Dp1"
+                          md:ElevationAssist.Elevation="Dp3"
                           Height="70">
                 <Grid HorizontalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
@@ -43,7 +43,7 @@
                              Height="80"
                              Width="200"
                              ItemsSource="{Binding BodyItems}"
-                             SelectedIndex="0"
+                             SelectedValue="{Binding SelectedItem}"
                              Style="{StaticResource MaterialDesign3.NavigationBarPrimaryListBox}"
                              HorizontalAlignment="Left">
                         <ListBox.ItemContainerStyle>

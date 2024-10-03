@@ -11,6 +11,8 @@
 using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using wsl_usb_manager.Domain;
+using wsl_usb_manager.PersistedDevice;
+using wsl_usb_manager.USBDevices;
 
 namespace wsl_usb_manager;
 
@@ -24,7 +26,8 @@ public class MainWindowViewModel : ViewModelBase
     {
         this.BodyItems =
         [
-            new BodyItem("Devices", typeof(USBDevices.USBDevicesView), PackIconKind.UsbFlashDrive, PackIconKind.UsbFlashDriveOutline, new USBDevices.USBDevicesViewModel()),
+            new BodyItem("Devices", typeof(USBDevices.USBDevicesView), PackIconKind.UsbFlashDrive, PackIconKind.UsbFlashDriveOutline, new USBDevicesViewModel()),
+            new BodyItem("Persisted", typeof(PersistedDeviceView), PackIconKind.StoreCheck, PackIconKind.StoreCheckOutline, new PersistedDeviceViewModel()),
         ];
         _windowTitle = windowTitle;
         SelectedItem = BodyItems.First();
