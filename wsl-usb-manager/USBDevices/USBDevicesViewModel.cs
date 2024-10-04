@@ -34,7 +34,7 @@ public class USBDevicesViewModel : ViewModelBase
     {
         RefreshCommand = new CommandImplementations(RefeshDevicesCommand);
         ShowRefreshProgress = false;
-        _usbDevicesItems = CreateData();
+        _usbDevicesItems = CreateData(0);
 // SelectedDevice = _usbDevicesItems?.FirstOrDefault();
         PageEnabled = true;
         MenuBindEnabled = true;
@@ -69,30 +69,11 @@ public class USBDevicesViewModel : ViewModelBase
         }
     }
 
-    private static ObservableCollection<USBDeviceInfoModel> CreateData()
-    {
-        ObservableCollection<USBDeviceInfoModel> DeviceList = [];
-        (int ret, string errormsg, List<USBDevicesInfo> infolist) = USBIPD.GetAllUSBDevices();
-        if (ret != 0 || infolist == null)
-        {
-            MessageBox.Show(errormsg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            return DeviceList;
-        }
-
-        foreach (var device in infolist)
-        {
-            USBDeviceInfoModel item = new(device);
-            if (item.IsConnected)
-                DeviceList.Add(item);
-        }
-        return DeviceList;
-    }
-
     private static ObservableCollection<USBDeviceInfoModel> CreateData(int retryCount)
     {
         ObservableCollection<USBDeviceInfoModel> DeviceList = [];
         (int ret, string errormsg, List<USBDevicesInfo> infolist) = USBIPD.GetAllUSBDevices();
-        while (retryCount > 0)
+        while (retryCount > 0 && ret == 0)
         {
             (ret, errormsg, infolist) = USBIPD.GetAllUSBDevices();
             Task.Delay(100);
@@ -123,7 +104,7 @@ public class USBDevicesViewModel : ViewModelBase
         BeforeRefresh();
         await Task.Run(() =>
         {
-            USBDevicesItems = CreateData();
+            USBDevicesItems = CreateData(2);
         });
         AfterRefresh();
     }

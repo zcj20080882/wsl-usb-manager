@@ -15,6 +15,7 @@ using System.Reflection;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System;
+using System.Text.RegularExpressions;
 
 namespace wsl_usb_manager.Controller;
 
@@ -77,6 +78,7 @@ public class USBIPD
 
     public static CommandResult RunPowerShellCommand(string command, bool privilege)
     {
+        string error_string = "";
         CommandResult result = new()
         {
             ExitCode = -1,
@@ -108,13 +110,19 @@ public class USBIPD
             process.Start();
 
             result.StandardOutput = process.StandardOutput.ReadToEnd();
-            result.StandardError = process.StandardError.ReadToEnd();
+            error_string = process.StandardError.ReadToEnd();
             process.WaitForExit();
             result.ExitCode = process.ExitCode;
+            error_string = error_string.Split(new string[] { Environment.NewLine }, StringSplitOptions.None)[0];
+            int index = error_string.IndexOf(":");
+            if (index != -1)
+                error_string = error_string[(index + 1)..];
+            
+            result.StandardError = error_string.Trim();
         }
         catch (Exception e)
         {
-            
+            result.StandardError = e.Message;
         }
         
         return result;

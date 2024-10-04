@@ -22,6 +22,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using wsl_usb_manager.USBDevices;
+using MessageBox = System.Windows.MessageBox;
 
 namespace wsl_usb_manager.PersistedDevice;
 
@@ -33,5 +35,39 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
     public PersistedDeviceView()
     {
         InitializeComponent();
+    }
+
+    private void MenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        List<USBDeviceInfoModel> devicelist = [];
+        if (sender is System.Windows.Controls.MenuItem item && DataContext is PersistedDeviceViewModel dm)
+        {
+            switch (item.Name)
+            {
+                case "MenuItemDeleteOne":
+                    if (dm.SelectedDevice is USBDeviceInfoModel device)
+                    {
+                        devicelist.Add(device);
+                    }
+                    else
+                        MessageBox.Show("No device is selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    break;
+                case "MenuItemDeleteAll":
+                    if (dm.DevicesItems != null && dm.DevicesItems.Count > 0)
+                    {
+                        foreach (var d in dm.DevicesItems)
+                        {
+                            devicelist.Add(d);
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+            if (devicelist.Count > 0)
+            {
+                dm?.DeletePersistedDevices(devicelist);
+            }
+        }
     }
 }

@@ -7,15 +7,28 @@
              xmlns:local="clr-namespace:wsl_usb_manager.PersistedDevice"
              xmlns:usbdevice="clr-namespace:wsl_usb_manager.USBDevices"
              d:DataContext="{d:DesignInstance local:PersistedDeviceViewModel}"
+             IsEnabled="{Binding PageEnabled}"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <ContextMenu x:Key="ListViewContextMenu">
+            <MenuItem Header="Delete Selected Device"
+                      x:Name="MenuItemDeleteOne"
+                      Icon="{md:PackIcon Kind=Delete}"
+                      Click="MenuItem_Click" />
+            <MenuItem Header="Delete All Devices"
+                      x:Name="MenuItemDeleteAll"
+                      Icon="{md:PackIcon Kind=DeleteAlert}"
+                      Click="MenuItem_Click" />
+        </ContextMenu>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <!--#region Header and refresh button-->
+        <!--Header and refresh button-->
         <Grid Grid.Row="0"
               Margin="0,5,0,5">
             <Grid.ColumnDefinitions>
@@ -35,10 +48,10 @@
                     md:ButtonProgressAssist.IsIndicatorVisible="{Binding ShowRefreshProgress}"
                     md:ButtonProgressAssist.Value="-1"
                     Content="Refresh"
-                    Command="{Binding RefeshCommand}"
+                    Command="{Binding RefreshCommand}"
                     Style="{StaticResource MaterialDesignOutlinedButton}" />
         </Grid>
-        <!--#endreegion-->
+
         <Separator Grid.Row="1"/>
         <!--Device list and info-->
         <Grid Grid.Row="2"
@@ -51,7 +64,8 @@
                       SelectedItem="{Binding SelectedDevice}"
                       SelectionMode="Single"
                       ItemsSource="{Binding DevicesItems}"
-                      md:DataGridAssist.ColumnHeaderPadding="5">
+                      md:DataGridAssist.ColumnHeaderPadding="5"
+                      ContextMenu="{StaticResource ListViewContextMenu}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn DisplayMemberBinding="{Binding HardwareId}"
