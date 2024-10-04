@@ -11,7 +11,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Windows.Data;
+using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 
 namespace wsl_usb_manager.USBDevices;
@@ -51,32 +53,30 @@ public class USBDeviceInfoModel : ViewModelBase
     private string? _stubInstanceId;
     private bool _isAttached;
 
-    public USBDeviceInfoModel(Dictionary<string, string> usbDeviceInfo)
+    public USBDeviceInfoModel(USBDevicesInfo? usbDeviceInfo)
     {
-        if (usbDeviceInfo != null && usbDeviceInfo.Count > 0)
+        InstanceId = usbDeviceInfo?.InstanceId;
+        HardwareId = usbDeviceInfo?.HardwareId;
+        Description = usbDeviceInfo?.Description;
+
+        BusID = usbDeviceInfo?.BusId;
+        PersistedGuid = usbDeviceInfo?.PersistedGuid;
+        StubInstanceId = usbDeviceInfo?.StubInstanceId;
+        ClientIPAddress = usbDeviceInfo?.ClientIPAddress;
+
+        IsForced = StringToBool(usbDeviceInfo?.IsForced);
+        IsBound = StringToBool(usbDeviceInfo?.IsBound);
+        IsConnected = StringToBool(usbDeviceInfo?.IsConnected);
+        IsAttached = StringToBool(usbDeviceInfo?.IsAttached);
+    }
+
+    private bool StringToBool(string? value)
+    {
+        if (bool.TryParse(value, out bool result))
         {
-            InstanceId = usbDeviceInfo.TryGetValue("InstanceId", out string? instance_id) ? instance_id : "";
-            HardwareId = usbDeviceInfo.TryGetValue("HardwareId", out string? hwid) ? hwid : "";
-            Description = usbDeviceInfo.TryGetValue("Description", out string? desc) ? desc : "";
-
-            BusID = usbDeviceInfo.TryGetValue("BusId", out string? busid) ? busid : "";
-            PersistedGuid = usbDeviceInfo.TryGetValue("PersistedGuid", out string? persist) ? persist : "";
-            StubInstanceId = usbDeviceInfo.TryGetValue("StubInstanceId", out string? stub) ? stub : "";
-            ClientIPAddress = usbDeviceInfo.TryGetValue("ClientIPAddress", out string? ip) ? ip : "";
-
-            _ = bool.TryParse(usbDeviceInfo.TryGetValue("IsForced", out string? forced) ? forced : "", out bool isforced);
-            IsForced = isforced;
-
-            _ = bool.TryParse(usbDeviceInfo.TryGetValue("IsBound", out string ? bound) ? bound : "", out bool isbound);
-            IsBound = isbound;
-
-            _ = bool.TryParse(usbDeviceInfo.TryGetValue("IsConnected", out string? connected) ? connected : "", out bool isconnected);
-            IsConnected = isconnected;
-
-            _ = bool.TryParse(usbDeviceInfo.TryGetValue("IsAttached", out string ? attached) ? attached : "", out bool isattached);
-            IsAttached = isattached;
+            return result;
         }
-
+        return false;
     }
 
     public string? BusID
@@ -91,4 +91,6 @@ public class USBDeviceInfoModel : ViewModelBase
     public string? PersistedGuid { get => _persistedGuid; set => SetProperty(ref _persistedGuid, value); }
     public string? InstanceId { get => _instanceId; set => SetProperty(ref _instanceId, value); }
     public string? StubInstanceId { get => _stubInstanceId; set => SetProperty(ref _stubInstanceId, value); }
+    public bool ForcedEnable => !IsBound;
+    public bool AttachEnabled => IsBound;
 }

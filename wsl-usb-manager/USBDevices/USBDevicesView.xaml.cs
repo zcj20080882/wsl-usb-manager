@@ -9,6 +9,8 @@
 * Create Date: 2024/10/2 18:58
 ******************************************************************************/
 using System.Windows;
+using System.Windows.Controls;
+using MessageBox = System.Windows.MessageBox;
 
 namespace wsl_usb_manager.USBDevices;
 
@@ -27,23 +29,67 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
     {
         if (sender is System.Windows.Controls.CheckBox checkBox)
         {
-            if (checkBox.DataContext is USBDeviceInfoModel)
+            if (checkBox.DataContext is USBDeviceInfoModel device)
             {
                 USBDevicesViewModel? dm = DataContext as USBDevicesViewModel;
-                dm?.RefeshCommand.Execute(null);
+                dm?.BindDevice(device, checkBox.IsChecked ?? false);
             }
         }
     }
 
-    private void AttaachCheckBox_Click(object sender, RoutedEventArgs e)
+    private void AttachCheckBox_Click(object sender, RoutedEventArgs e)
     {
         if (sender is System.Windows.Controls.CheckBox checkBox)
         {
-            if (checkBox.DataContext is USBDeviceInfoModel)
+            if (checkBox.DataContext is USBDeviceInfoModel device)
             {
                 USBDevicesViewModel? dm = DataContext as USBDevicesViewModel;
-                dm?.RefeshCommand.Execute(null);
+                dm?.AttachDevice(device, checkBox.IsChecked ?? false);
             }
+        }
+    }
+
+    private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (DataContext is USBDevicesViewModel dm && dm.SelectedDevice is USBDeviceInfoModel device)
+        {
+            dm.MenuBindEnabled = !device.IsBound;
+            dm.MenuAttachEnabled = device.IsBound;
+            dm.MenuDetachEnabled = device.IsAttached;
+            dm.MenuUnbindEnabled = device.IsBound;
+        }
+    }
+
+    private void MenuItem_Click(object sender, RoutedEventArgs e)
+    {
+
+        if(sender is System.Windows.Controls.MenuItem item && DataContext is USBDevicesViewModel dm)
+        {
+            if(dm.SelectedDevice is USBDeviceInfoModel device)
+            {
+                switch (item.Name)
+                {
+                    case "MenuItemBind":
+                        dm.BindDevice(device, true);
+                        break;
+
+                    case "MenuItemUnbind":
+                        dm.BindDevice(device, false);
+                        break;
+                    case "MenuItemAttach":
+                        dm.AttachDevice(device, true);
+                        break;
+                    case "MenuItemDetach":
+                        dm.AttachDevice(device, false);
+                        break;
+                    case "MenuItemAddToAutoAttach":
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else
+                MessageBox.Show("No device is selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

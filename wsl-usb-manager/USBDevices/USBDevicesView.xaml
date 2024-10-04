@@ -10,13 +10,39 @@
              mc:Ignorable="d"
              d:DesignHeight="450"
              d:DesignWidth="800">
+    <UserControl.Resources>
+        <ContextMenu x:Key="ListViewContextMenu">
+            <MenuItem Header="Bind" x:Name="MenuItemBind"
+                      IsEnabled="{Binding MenuBindEnabled}"
+                      Icon="{md:PackIcon Kind=ShieldLock}"
+                      Click="MenuItem_Click"/>
+                
+            <MenuItem Header="Unbind" x:Name="MenuItemUnbind"
+                      IsEnabled="{Binding MenuUnbindEnabled}"
+                      Icon="{md:PackIcon Kind=ShieldLockOpen}" 
+                      Click="MenuItem_Click"/>
+            <Separator />
+            <MenuItem Header="Attach" x:Name="MenuItemAttach"
+                      IsEnabled="{Binding MenuAttachEnabled}"
+                      Icon="{md:PackIcon Kind=Share}"
+                      Click="MenuItem_Click" />
+            <MenuItem Header="Detach" x:Name="MenuItemDetach"
+                      IsEnabled="{Binding MenuDetachEnabled}"
+                      Icon="{md:PackIcon Kind=ShareOff}"
+                      Click="MenuItem_Click" />
+            <Separator />
+            <MenuItem Header="Add to auto-attach" x:Name="MenuItemAddToAutoAttach"
+                      Icon="{md:PackIcon Kind=StarFourPoints}"
+                      Click="MenuItem_Click" />
+        </ContextMenu>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <!--#region Header and refresh button-->
+        <!--Header and refresh button-->
         <Grid Grid.Row="0"
               Margin="0,5,0,5">
             <Grid.ColumnDefinitions>
@@ -35,9 +61,8 @@
                     md:ButtonProgressAssist.IsIndicatorVisible="{Binding ShowRefreshProgress}"
                     md:ButtonProgressAssist.Value="-1"
                     Content="Refresh"
-                    Command="{Binding RefeshCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" />
+                    Command="{Binding RefreshCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" />
         </Grid>
-        <!--#endreegion-->
         <Separator Grid.Row="1" />
         <!--Device list and info-->
         <Grid Grid.Row="2"
@@ -50,8 +75,11 @@
             <ListView Grid.Row="0" SelectedItem="{Binding SelectedDevice}"
                       SelectionMode="Single" 
                       ItemsSource="{Binding USBDevicesItems}" 
-                      md:DataGridAssist.ColumnHeaderPadding="5">
-
+                      md:DataGridAssist.ColumnHeaderPadding="5"
+                      SelectedIndex="0"
+                      SelectionChanged="ListView_SelectionChanged"
+                      ContextMenu="{StaticResource ListViewContextMenu}">
+                
                 <ListView.View>
                     <GridView>
                         <GridViewColumn DisplayMemberBinding="{Binding BusID}"
@@ -72,8 +100,9 @@
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <CheckBox VerticalAlignment="Center"
-                                              Click="AttaachCheckBox_Click"
+                                              Click="AttachCheckBox_Click"
                                               HorizontalAlignment="Center"
+                                              IsEnabled="{Binding AttachEnabled}"
                                               IsChecked="{Binding IsAttached}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
@@ -83,6 +112,7 @@
                                 <DataTemplate>
                                     <CheckBox VerticalAlignment="Center"
                                               HorizontalAlignment="Center"
+                                              IsEnabled="{Binding ForcedEnable}"
                                               IsChecked="{Binding IsForced}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
