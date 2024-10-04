@@ -6,10 +6,11 @@
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:wsl_usb_manager"
         xmlns:domain="clr-namespace:wsl_usb_manager.Domain"
+        xmlns:Properties="clr-namespace:wsl_usb_manager.Properties"
         d:DataContext="{d:DesignInstance Type=local:MainWindowViewModel}"
         AutomationProperties.Name="{Binding Title, RelativeSource={RelativeSource Self}}"
         mc:Ignorable="d"
-        Title="WSL USB Manager"
+        Title="{DynamicResource WindowTitle}"
         Height="600"
         Width="800"
         WindowStartupLocation="CenterScreen">
@@ -77,7 +78,7 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
-                                           Text="Light"
+                                           Text="{DynamicResource WindowTitle}"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Left" />
                                 <ToggleButton x:Name="DarkModeToggleButton"
