@@ -1,7 +1,50 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!--Main window text-->
     <sys:String x:Key="WindowTitle">USL USB Manager</sys:String>
+    <sys:String x:Key="Settings">Settings</sys:String>
+    <sys:String x:Key="ClosToTray">Close to tray(Run in background)</sys:String>
+    <sys:String x:Key="Device">Device</sys:String>
+    <sys:String x:Key="Persisted">Persisted</sys:String>
+    <sys:String x:Key="Light">Light</sys:String>
+    <sys:String x:Key="Dark">Dark</sys:String>
+    <sys:String x:Key="English">English</sys:String>
+    <sys:String x:Key="Chinese">中文</sys:String>
+    <sys:String x:Key="Goodbye">Goodbye</sys:String>
+    
+    <!--Setting Dialog text-->
+    <sys:String x:Key="UseWSLAttach">Use WSL attach command</sys:String>
+    <sys:String x:Key="ToolTipUseWSLAttach">Use the usbip command in WSL to attach USB device</sys:String>
+    <sys:String x:Key="ForwardNetCard">Forward Network Card</sys:String>
+    <sys:String x:Key="ToolTipForwardNetCard">Select the network card for forwarding USB IP data</sys:String>
+    <sys:String x:Key="AttachToDistrib">Attach to Distribution</sys:String>
+    <sys:String x:Key="SelectDistrib">Select a WSL distribution</sys:String>
+    <sys:String x:Key="SelectDistribTooltip">Attach a USB device to a selected WSL distribution</sys:String>
+    <sys:String x:Key="ForwardFromnetCard">Forward USB data from</sys:String>
+    <sys:String x:Key="SelectNetCart">Select a network card</sys:String>
+    
+    <!--Message Dialog text-->
     <sys:String x:Key="OK">OK</sys:String>
     <sys:String x:Key="Cancel">Cancel</sys:String>
+    
+    <!--USB device view text-->
+    <sys:String x:Key="WindowsUSBDevice">Windows USB Device</sys:String>
+    <sys:String x:Key="Refresh">Refresh</sys:String>
+    <sys:String x:Key="Bind">Bind</sys:String>
+    <sys:String x:Key="Unbind">Unbind</sys:String>
+    <sys:String x:Key="Attach">Attach</sys:String>
+    <sys:String x:Key="Detach">Detach</sys:String>
+    <sys:String x:Key="AddToAuto">Add to auto-attach</sys:String>
+    
+    <!--Persisted device view text-->
+    <sys:String x:Key="DeleteSelected">Delete selected</sys:String>
+    <sys:String x:Key="DeleteAll">Delete all</sys:String>
+    
+    <!--Message text-->
+    <sys:String x:Key="ErrMsgNoSelectedDevice">No device is selected</sys:String>
+    <sys:String x:Key="ErrMsgBindFail">Failed to bind device</sys:String>
+    <sys:String x:Key="ErrMsgUnbindFail">Failed to unbind device</sys:String>
+    <sys:String x:Key="ErrMsgAttachFail">Failed to attach device</sys:String>
+    <sys:String x:Key="ErrMsgDetachFail">Failed to detach device</sys:String>
 </ResourceDictionary>

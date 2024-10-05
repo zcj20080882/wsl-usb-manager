@@ -31,14 +31,13 @@ public class MainWindowViewModel : ViewModelBase
     private bool _windowEnabled;
     private readonly string ConfigFilePath = Environment.CurrentDirectory + "/config.json";
     private bool _isDarkMode;
-    private bool _closeToTray;
-    private string _language = "en-US";
+    private bool _isChinese = false;
 
     public MainWindowViewModel(string? windowTitle)
     {
         this.BodyItems =
         [
-            new BodyItem("Devices", typeof(USBDevices.USBDevicesView), PackIconKind.UsbFlashDrive, PackIconKind.UsbFlashDriveOutline, new USBDevicesViewModel(this)),
+            new BodyItem("Devices", typeof(USBDevicesView), PackIconKind.UsbFlashDrive, PackIconKind.UsbFlashDriveOutline, new USBDevicesViewModel(this)),
             new BodyItem("Persisted", typeof(PersistedDeviceView), PackIconKind.StoreCheck, PackIconKind.StoreCheckOutline, new PersistedDeviceViewModel(this)),
         ];
         _windowTitle = windowTitle;
@@ -59,7 +58,6 @@ public class MainWindowViewModel : ViewModelBase
             SaveConfig();
         }
         IsDarkMode = Config.DarkMode;
-        CloseToTray = Config.CloseToTray;
     }
 
     public string? WindowTitle { get => _windowTitle; }
@@ -75,35 +73,23 @@ public class MainWindowViewModel : ViewModelBase
             }
         }
     }
-    public string Language { 
-        get => _language; 
+    public bool IsChinese { 
+        get => _isChinese; 
         set { 
-            SetProperty(ref _language, value); 
+            SetProperty(ref _isChinese, value); 
             if (Config != null)
             {
-                if (value != Config.Language && value != null)
+                if (value != Config.IsChinese)
                 {
-                    Config.Language = value;
+                    Config.IsChinese = value;
                     SaveConfig();
                 }
             }
         } 
     }
-    public bool CloseToTray
-    {
-        get => _closeToTray;
-        set
-        {
-            SetProperty(ref _closeToTray, value);
-            if (Config != null && value != Config.CloseToTray)
-            {
-                Config.CloseToTray = value;
-                SaveConfig();
-            }
-        }
-    }
+    
     public ObservableCollection<BodyItem> BodyItems { get; }
-    public static SystemConfig? Config { get; set; }
+    public SystemConfig? Config { get; set; }
 
     public BodyItem? SelectedItem
     {

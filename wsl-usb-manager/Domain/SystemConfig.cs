@@ -14,9 +14,10 @@ namespace wsl_usb_manager.Domain;
 public class SystemConfig
 {
     public bool DarkMode { get; set; } = false;
-    public string Language { get; set; } = "en-US";
+    public bool IsChinese { get; set; } = false;
     public bool CloseToTray = true;
     public bool UseWSLAttach = false;
+    public string ForwardNetCard = "";
     public string DefaultDistribution = "";
 
     public List<string> AutoAttachDevices = [];

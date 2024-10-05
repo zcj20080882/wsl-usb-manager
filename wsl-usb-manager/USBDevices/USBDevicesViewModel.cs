@@ -88,7 +88,7 @@ public class USBDevicesViewModel : ViewModelBase
         {
             if(!string.IsNullOrEmpty(device.HardwareId))
             {
-                CommandResult result = attach ? USBIPD.AttachDeviceLocal(device.HardwareId) : USBIPD.DetachDevice(device.HardwareId);
+                CommandResult result = attach ? USBIPD.AttachDevice(device.HardwareId) : USBIPD.DetachDevice(device.HardwareId);
                 if (result.ExitCode != 0 && result.StandardError.Length > 0)
                 {
                     MessageBox.Show($"Failed to {(attach ? "attach" : "detach")} {device.HardwareId}: {result.StandardError}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);

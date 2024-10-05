@@ -81,30 +81,62 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="Light"
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="50" />
+                                    <RowDefinition Height="50" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0"
+                                           Text="{DynamicResource Light}"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Left" />
                                 <ToggleButton x:Name="DarkModeToggleButton"
-                                              Grid.Column="1"
+                                              Grid.Row="0" Grid.Column="1"
                                               IsChecked="{Binding IsDarkMode, Mode=TwoWay}"
-                                              Click="MenuDarkModeButton_Click" />
-                                <TextBlock Grid.Column="2"
-                                           Text="Dark"
+                                              Click="MenuDarkModeButton_Click"
+                                              Margin="10,0,10,0" />
+                                <TextBlock Grid.Row="0" Grid.Column="2"
+                                           Text="{DynamicResource Dark}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="1" 
+                                           Grid.Column="0"
+                                           Text="{DynamicResource English}"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Left" />
+                                <ToggleButton x:Name="LangToggleButton"
+                                              Grid.Row="1"
+                                              Grid.Column="1"
+                                              IsChecked="{Binding IsChinese, Mode=TwoWay}"
+                                              Click="LangToggleButton_Click"
+                                              Margin="10,0,10,0" />
+                                <TextBlock Grid.Row="1"
+                                           Grid.Column="2"
+                                           Text="{DynamicResource Chinese}"
                                            HorizontalAlignment="Right"
                                            VerticalAlignment="Center" />
                             </Grid>
-                            <CheckBox Margin="10"
-                                      md:RippleAssist.IsDisabled="True"
-                                      Content="Close to tray(Run in background)"
-                                      IsChecked="{Binding CloseToTray}" />
-                            <Separator />
+                            <Border Height="1"
+                                    Margin="-5 5 -5 0"
+                                    SnapsToDevicePixels="True"
+                                    HorizontalAlignment="Stretch"
+                                    BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                    BorderThickness="0 0 0 1" />
                             <Button x:Name="btnSetting"
-                                    Content="Settings" />
-                            <Separator />
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Content="{DynamicResource Settings}"
+                                    Click="btnSetting_Click" />
+                            <Border Height="1"
+                                    Margin="-5 5 -5 0"
+                                    SnapsToDevicePixels="True"
+                                    HorizontalAlignment="Stretch"
+                                    BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                    BorderThickness="0 0 0 1" />
                             <Button x:Name="btnExit"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
                                     Click="MenuExitButton_OnClick"
-                                    Content="Goodbye" />
+                                    Content="{DynamicResource Goodbye}" />
                         </StackPanel>
                     </md:PopupBox>
                 </Grid>
