@@ -71,7 +71,7 @@ public class PersistedDeviceViewModel : ViewModelBase
     public void AfterRefresh()
     {
         ShowRefreshProgress = false;
-        if (_lastSelectedDevice != null)
+        if (_lastSelectedDevice != null && DevicesItems != null && DevicesItems.Any())
         {
             SelectedDevice = DevicesItems?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, StringComparison.CurrentCultureIgnoreCase)) ?? DevicesItems?.First();
         }

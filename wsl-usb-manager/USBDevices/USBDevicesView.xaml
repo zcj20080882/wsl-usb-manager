@@ -78,7 +78,8 @@
                       md:DataGridAssist.ColumnHeaderPadding="5"
                       SelectedIndex="0"
                       SelectionChanged="ListView_SelectionChanged"
-                      ContextMenu="{StaticResource ListViewContextMenu}">
+                      ContextMenu="{StaticResource ListViewContextMenu}"
+                      PreviewMouseRightButtonUp="ListView_PreviewMouseRightButtonUp">
                 
                 <ListView.View>
                     <GridView>

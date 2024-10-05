@@ -121,7 +121,7 @@ public class USBDevicesViewModel : ViewModelBase
     public void AfterRefresh()
     {
         ShowRefreshProgress = false;
-        if (_lastSelectedDevice != null)
+        if (_lastSelectedDevice != null && USBDevicesItems != null && USBDevicesItems.Any())
         {
             SelectedDevice = USBDevicesItems?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, StringComparison.CurrentCultureIgnoreCase)) ?? USBDevicesItems?.First();
         }

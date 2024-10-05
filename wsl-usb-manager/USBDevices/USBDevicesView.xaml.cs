@@ -10,6 +10,7 @@
 ******************************************************************************/
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using MessageBox = System.Windows.MessageBox;
 
 namespace wsl_usb_manager.USBDevices;
@@ -90,5 +91,21 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
             else
                 MessageBox.Show("No device is selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void ListView_PreviewMouseRightButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        DependencyObject? obj = e.OriginalSource as DependencyObject;
+        while (obj != null && obj is not System.Windows.Controls.ListViewItem)
+        {
+            obj = VisualTreeHelper.GetParent(obj);
+        }
+
+        if (obj is System.Windows.Controls.ListViewItem listViewItem)
+        {
+            listViewItem.Focus();
+            return;
+        }
+        e.Handled = true;
     }
 }

@@ -70,4 +70,20 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
             }
         }
     }
+
+    private void ListView_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        DependencyObject? obj = e.OriginalSource as DependencyObject;
+        while (obj != null && obj is not System.Windows.Controls.ListViewItem)
+        {
+            obj = VisualTreeHelper.GetParent(obj);
+        }
+
+        if (obj is System.Windows.Controls.ListViewItem listViewItem)
+        {
+            listViewItem.Focus();
+            return;
+        }
+        e.Handled = true;
+    }
 }

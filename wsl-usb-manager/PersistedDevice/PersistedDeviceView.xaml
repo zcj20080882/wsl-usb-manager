@@ -10,7 +10,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
-        <ContextMenu x:Key="ListViewContextMenu">
+        <ContextMenu x:Key="ListViewContextMenu" IsEnabled="True">
             <MenuItem Header="Delete Selected Device"
                       x:Name="MenuItemDeleteOne"
                       Icon="{md:PackIcon Kind=Delete}"
@@ -19,6 +19,8 @@
                       x:Name="MenuItemDeleteAll"
                       Icon="{md:PackIcon Kind=DeleteAlert}"
                       Click="MenuItem_Click" />
+        </ContextMenu>
+        <ContextMenu x:Key="EmptyMenu">
         </ContextMenu>
     </UserControl.Resources>
     <Grid>
@@ -59,18 +61,23 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <ListView Grid.Row="0"
+            <ListView x:Name="DisableHeaderRightClickProperty"
+                      Grid.Row="0"
                       SelectedItem="{Binding SelectedDevice}"
                       SelectionMode="Single"
                       ItemsSource="{Binding DevicesItems}"
                       md:DataGridAssist.ColumnHeaderPadding="5"
-                      ContextMenu="{StaticResource ListViewContextMenu}">
+                      ContextMenu="{StaticResource ListViewContextMenu}"
+                      PreviewMouseRightButtonUp="ListView_PreviewMouseRightButtonUp">
+                
                 <ListView.View>
                     <GridView>
                         <GridViewColumn DisplayMemberBinding="{Binding HardwareId}"
-                                        Header="Hardware ID" />
+                                        Header="Hardware ID" 
+                                        ContextMenuService.IsEnabled="False" />
                         <GridViewColumn DisplayMemberBinding="{Binding PersistedGuid}"
-                                        Header="Persisted Guid" />
+                                        Header="Persisted Guid"
+                                        ContextMenuService.IsEnabled="False" />
                         <GridViewColumn DisplayMemberBinding="{Binding Description}"
                                         Header="Description" />
                     </GridView>
