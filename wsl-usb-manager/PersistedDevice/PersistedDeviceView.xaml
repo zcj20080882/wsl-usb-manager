@@ -7,7 +7,6 @@
              xmlns:local="clr-namespace:wsl_usb_manager.PersistedDevice"
              xmlns:usbdevice="clr-namespace:wsl_usb_manager.USBDevices"
              d:DataContext="{d:DesignInstance local:PersistedDeviceViewModel}"
-             IsEnabled="{Binding PageEnabled}"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>

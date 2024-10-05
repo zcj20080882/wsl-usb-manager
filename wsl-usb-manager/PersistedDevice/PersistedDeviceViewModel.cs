@@ -23,96 +23,70 @@ public class PersistedDeviceViewModel : ViewModelBase
     public ICommand RefreshCommand { get; }
     public ObservableCollection<USBDeviceInfoModel>? DevicesItems { get => _devicesItems; set => SetProperty(ref _devicesItems, value); }
     public USBDeviceInfoModel? SelectedDevice { get => _selectedDevice; set => SetProperty(ref _selectedDevice, value); }
-    public bool PageEnabled { get => _pageEnabled; set => SetProperty(ref _pageEnabled, value); }
     public bool ShowRefreshProgress { get => _showRefreshProgresss; set => SetProperty(ref _showRefreshProgresss, value); }
 
-    public PersistedDeviceViewModel()
+    public PersistedDeviceViewModel(MainWindowViewModel mainDataContext)
     {
         RefreshCommand = new CommandImplementations(RefeshDevicesCommand);
-        _devicesItems = CreateData(0);
-        SelectedDevice = _devicesItems?.FirstOrDefault();
-        PageEnabled = true;
         ShowRefreshProgress = false;
+        _mainDataContext = mainDataContext;
     }
 
     private ObservableCollection<USBDeviceInfoModel>? _devicesItems;
     private USBDeviceInfoModel? _selectedDevice;
-    private bool _pageEnabled;
     private bool _showRefreshProgresss;
     private USBDeviceInfoModel? _lastSelectedDevice;
+    private MainWindowViewModel _mainDataContext { get; }
 
-    private static ObservableCollection<USBDeviceInfoModel> CreateData(int retryCount)
-    {
-        ObservableCollection<USBDeviceInfoModel> DeviceList = [];
-        (int ret, string errormsg, List<USBDevicesInfo> infolist) = USBIPD.GetAllUSBDevices();
-        while (retryCount > 0 && ret == 0)
-        {
-            (ret, errormsg, infolist) = USBIPD.GetAllUSBDevices();
-            Task.Delay(100);
-            retryCount--;
-        }
-        if (ret != 0 || infolist == null)
-        {
-            MessageBox.Show(errormsg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            return DeviceList;
-        }
-        else
-        {
-            foreach (var device in infolist)
-            {
-                USBDeviceInfoModel item = new(device);
-                if(!item.IsConnected && item.PersistedGuid?.Length >0)
-                    DeviceList.Add(item);
-            }
-        }
-        
-        return DeviceList;
-    }
     #region Commands
     /// <summary>
     /// Refresh Button command
     /// </summary>
     /// <param name="obj"></param>
-    private async void RefeshDevicesCommand(object? obj)
+    private void RefeshDevicesCommand(object? obj)
     {
-        BeforeRefresh();
-        await Task.Run(() =>
-        {
-            DevicesItems = CreateData(2);
-        });
-        AfterRefresh();
+        _mainDataContext.UpdateUSBDevicesAsync(2, 100);
     }
     #endregion
 
     public async void DeletePersistedDevices(List<USBDeviceInfoModel> devices)
     {
-        BeforeRefresh();
         await Task.Run(() =>
         {
             foreach (var item in devices)
             {
-                if(!string.IsNullOrEmpty(item.HardwareId))
+                if (!string.IsNullOrEmpty(item.HardwareId))
                     USBIPD.UnbindDevice(item.HardwareId);
             }
         });
-        DevicesItems = CreateData(3);
-        AfterRefresh();
+        _mainDataContext.UpdateUSBDevicesAsync(2, 100);
     }
 
-    private void BeforeRefresh()
+    public void BeforeRefresh()
     {
         _lastSelectedDevice = SelectedDevice;
         ShowRefreshProgress = true;
-        PageEnabled = false;
     }
 
-    private void AfterRefresh()
+    public void AfterRefresh()
     {
-        PageEnabled = true;
         ShowRefreshProgress = false;
         if (_lastSelectedDevice != null)
         {
-            SelectedDevice = _lastSelectedDevice;
+            SelectedDevice = DevicesItems?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, StringComparison.CurrentCultureIgnoreCase)) ?? DevicesItems?.First();
         }
+    }
+
+    public void UpdateDevices(List<USBDevicesInfo> UpdaterList)
+    {
+        ObservableCollection<USBDeviceInfoModel> DeviceList = [];
+
+        foreach (var device in UpdaterList)
+        {
+            USBDeviceInfoModel item = new(device);
+            if (!item.IsConnected)
+                DeviceList.Add(item);
+        }
+        DevicesItems = DeviceList;
     }
 }

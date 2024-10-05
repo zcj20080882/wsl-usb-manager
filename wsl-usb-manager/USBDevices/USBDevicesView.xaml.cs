@@ -22,7 +22,6 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
     public USBDevicesView()
     {
         InitializeComponent();
-        DataContext = new USBDevicesViewModel();
     }
 
     private void BoundCheckBox_Click(object sender, RoutedEventArgs e)

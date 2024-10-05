@@ -8,6 +8,9 @@
 * Description:
 * Create Date: 2024/10/2 18:58
 ******************************************************************************/
+
+// Ignore Spelling: infolist
+
 using System.Collections.ObjectModel;
 using System.Security.Permissions;
 using System.Windows;
@@ -22,7 +25,6 @@ public class USBDevicesViewModel : ViewModelBase
 {
     public ICommand RefreshCommand { get; }
     public bool ShowRefreshProgress { get => _showRefreshProgresss; set => SetProperty(ref _showRefreshProgresss, value); }
-    public bool PageEnabled { get => _pageEnabled; set => SetProperty(ref _pageEnabled, value); }
     public bool MenuBindEnabled { get => _menuBindEnabled; set => SetProperty(ref _menuBindEnabled, value); }
     public bool MenuAttachEnabled { get => _menuAttachEnabled; set => SetProperty(ref _menuAttachEnabled, value); }
     public bool MenuDetachEnabled { get => _menuDetachEnabled; set => SetProperty(ref _menuDetachEnabled, value); }
@@ -30,19 +32,16 @@ public class USBDevicesViewModel : ViewModelBase
     public ObservableCollection<USBDeviceInfoModel>? USBDevicesItems { get => _usbDevicesItems; set => SetProperty(ref _usbDevicesItems, value);}
     public USBDeviceInfoModel? SelectedDevice { get => _selectedDevice; set => SetProperty(ref _selectedDevice, value); }
 
-    public USBDevicesViewModel()
+    public USBDevicesViewModel(MainWindowViewModel mainDataContext)
     {
         RefreshCommand = new CommandImplementations(RefeshDevicesCommand);
         ShowRefreshProgress = false;
-        _usbDevicesItems = CreateData(0);
-// SelectedDevice = _usbDevicesItems?.FirstOrDefault();
-        PageEnabled = true;
         MenuBindEnabled = true;
         MenuAttachEnabled = true;
+        MainDataContext = mainDataContext;
     }
 
     private bool _showRefreshProgresss;
-    private bool _pageEnabled;
     private bool _menuBindEnabled;
     private bool _menuAttachEnabled;
     private bool _menuUnBindEnabled;
@@ -51,67 +50,20 @@ public class USBDevicesViewModel : ViewModelBase
     private ObservableCollection<USBDeviceInfoModel>? _usbDevicesItems;
     private USBDeviceInfoModel? _selectedDevice;
     private USBDeviceInfoModel? _lastSelectedDevice;
-
-    private void BeforeRefresh()
-    {
-        _lastSelectedDevice= SelectedDevice;
-        ShowRefreshProgress = true;
-        PageEnabled = false;
-    }
-
-    private void AfterRefresh()
-    {
-        PageEnabled = true;
-        ShowRefreshProgress = false;
-        if (_lastSelectedDevice != null)
-        {
-            SelectedDevice = _lastSelectedDevice;
-        }
-    }
-
-    private static ObservableCollection<USBDeviceInfoModel> CreateData(int retryCount)
-    {
-        ObservableCollection<USBDeviceInfoModel> DeviceList = [];
-        (int ret, string errormsg, List<USBDevicesInfo> infolist) = USBIPD.GetAllUSBDevices();
-        while (retryCount > 0 && ret == 0)
-        {
-            (ret, errormsg, infolist) = USBIPD.GetAllUSBDevices();
-            Task.Delay(100);
-            retryCount--;
-        }
-        if (ret != 0 || infolist == null)
-        {
-            MessageBox.Show(errormsg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            return DeviceList;
-        }
-
-        foreach (var device in infolist)
-        {
-            USBDeviceInfoModel item = new(device);
-            if (item.IsConnected)
-                DeviceList.Add(item);
-        }
-        return DeviceList;
-    }
+    private MainWindowViewModel MainDataContext { get; }
 
     #region Commands
     /// <summary>
     /// Refresh Button command
     /// </summary>
     /// <param name="obj"></param>
-    private async void RefeshDevicesCommand(object? obj)
+    private void RefeshDevicesCommand(object? obj)
     {
-        BeforeRefresh();
-        await Task.Run(() =>
-        {
-            USBDevicesItems = CreateData(2);
-        });
-        AfterRefresh();
+        MainDataContext.UpdateUSBDevicesAsync(2, 100);
     }
 
     public async void BindDevice(USBDeviceInfoModel device,bool bind)
     {
-        BeforeRefresh();
         await Task.Run(() =>
         {
             if (!string.IsNullOrEmpty(device.HardwareId))
@@ -121,15 +73,13 @@ public class USBDevicesViewModel : ViewModelBase
                 {
                     MessageBox.Show($"Failed to {(bind ? "bind" : "unbind")} {device.HardwareId}: {result.StandardError}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-                USBDevicesItems = CreateData(3);
             }
         });
-        AfterRefresh();
+        MainDataContext.UpdateUSBDevicesAsync(3, 100);
     }
 
     public async void AttachDevice(USBDeviceInfoModel device, bool attach)
     {
-        BeforeRefresh();
         await Task.Run(() =>
         {
             if(!string.IsNullOrEmpty(device.HardwareId))
@@ -139,10 +89,37 @@ public class USBDevicesViewModel : ViewModelBase
                 {
                     MessageBox.Show($"Failed to {(attach ? "attach" : "detach")} {device.HardwareId}: {result.StandardError}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-                USBDevicesItems = CreateData(3);
             }
         });
-        AfterRefresh();
+        MainDataContext.UpdateUSBDevicesAsync(3, 100);
     }
     #endregion
+
+    public void UpdateDevices(List<USBDevicesInfo> infolist)
+    {
+        ObservableCollection<USBDeviceInfoModel> DeviceList = [];
+        
+        foreach (var device in infolist)
+        {
+            USBDeviceInfoModel item = new(device);
+            if (item.IsConnected)
+                DeviceList.Add(item);
+        }
+        USBDevicesItems = DeviceList;
+    }
+
+    public void BeforeRefresh()
+    {
+        _lastSelectedDevice = SelectedDevice;
+        ShowRefreshProgress = true;
+    }
+
+    public void AfterRefresh()
+    {
+        ShowRefreshProgress = false;
+        if (_lastSelectedDevice != null)
+        {
+            SelectedDevice = USBDevicesItems?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, StringComparison.CurrentCultureIgnoreCase)) ?? USBDevicesItems?.First();
+        }
+    }
 }

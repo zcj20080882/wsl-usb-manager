@@ -9,8 +9,10 @@
         xmlns:Properties="clr-namespace:wsl_usb_manager.Properties"
         d:DataContext="{d:DesignInstance Type=local:MainWindowViewModel}"
         AutomationProperties.Name="{Binding Title, RelativeSource={RelativeSource Self}}"
+        IsEnabled="{Binding WindowEnabled}"
         mc:Ignorable="d"
         Title="{DynamicResource WindowTitle}"
+        Style="{StaticResource MaterialDesignWindow}"
         Height="600"
         Width="800"
         WindowStartupLocation="CenterScreen">
@@ -24,12 +26,14 @@
         </ResourceDictionary>
     </Window.Resources>
     <md:DialogHost DialogTheme="Inherit"
-                   Identifier="RootDialog">
+                   Identifier="RootDialog"
+                   SnackbarMessageQueue="{Binding ElementName=MainSnackbar, Path=MessageQueue}">
         
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <!-- Navigator Bar -->
             <md:ColorZone Grid.Row="0"
@@ -78,7 +82,7 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
-                                           Text="{DynamicResource WindowTitle}"
+                                           Text="Light"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Left" />
                                 <ToggleButton x:Name="DarkModeToggleButton"
@@ -118,6 +122,9 @@
                                 HorizontalContentAlignment="Stretch"
                                 VerticalContentAlignment="Stretch" />
             </ScrollViewer>
+            <md:Snackbar x:Name="MainSnackbar"
+                                     Grid.Row="2"
+                                     MessageQueue="{md:MessageQueue}" />
         </Grid>
         
         

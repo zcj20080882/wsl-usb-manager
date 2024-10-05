@@ -11,6 +11,8 @@
 using System.ComponentModel;
 using System.Windows;
 using wsl_usb_manager.Controller;
+using wsl_usb_manager.Domain;
+using MessageBox = System.Windows.MessageBox;
 
 namespace wsl_usb_manager;
 

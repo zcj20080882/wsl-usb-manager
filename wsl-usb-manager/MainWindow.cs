@@ -110,11 +110,16 @@ public partial class MainWindow : Window
                 msg += "disconnected";
             }
             msg += ".";
-            //if (NotificationView.MessageQueue is { } messageQueue)
-            //{
-            //    //the message queue can be called from any thread
-            //    Task.Factory.StartNew(() => messageQueue.Enqueue(msg));
-            //}
+            ShowNotification(msg);
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.UpdateUSBDevicesAsync(2, 100);
+            }
         });
+    }
+
+    public void ShowNotification(string message)
+    {
+        MainSnackbar.MessageQueue?.Enqueue(message);
     }
 }
