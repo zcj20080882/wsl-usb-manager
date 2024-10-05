@@ -11,8 +11,9 @@
 
 // Ignore Spelling: App
 
+using System.Diagnostics.Metrics;
+using System.Threading;
 using System.Windows;
-using log4net.Config;
 
 //[assembly: XmlConfigurator(ConfigFile = "Log4Net.config", Watch = true)]
 
@@ -23,10 +24,24 @@ namespace wsl_usb_manager
     /// </summary>
     public partial class App : System.Windows.Application
     {
+        private static readonly Mutex mutex = new(true, "WSL-USB-Manager-1ddc73e5-c499-484f-b663-87edaee7bfdc");
         protected override void OnStartup(StartupEventArgs e)
         {
+            if (!mutex.WaitOne(TimeSpan.Zero, true))
+            {
+                System.Windows.MessageBox.Show("Another instance of the app is already running,\r\ncheck system tray icon to restore instance.");
+                Shutdown();
+                return;
+            }
+
             log4net.Config.XmlConfigurator.Configure();
             base.OnStartup(e);
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            mutex.ReleaseMutex();
+            base.OnExit(e);
         }
     }
 
