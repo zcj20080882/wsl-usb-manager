@@ -11,6 +11,7 @@
 
 // Ignore Spelling: infolist
 
+using log4net;
 using System.Collections.ObjectModel;
 using System.Security.Permissions;
 using System.Windows;
@@ -23,6 +24,7 @@ namespace wsl_usb_manager.USBDevices;
 
 public class USBDevicesViewModel : ViewModelBase
 {
+    private static readonly ILog log = LogManager.GetLogger(typeof(USBDevicesViewModel));
     public ICommand RefreshCommand { get; }
     public bool ShowRefreshProgress { get => _showRefreshProgresss; set => SetProperty(ref _showRefreshProgresss, value); }
     public bool MenuBindEnabled { get => _menuBindEnabled; set => SetProperty(ref _menuBindEnabled, value); }
@@ -59,11 +61,13 @@ public class USBDevicesViewModel : ViewModelBase
     /// <param name="obj"></param>
     private void RefeshDevicesCommand(object? obj)
     {
+        log.Info("Refresh device...");
         MainDataContext.UpdateUSBDevicesAsync(2, 100);
     }
 
     public async void BindDevice(USBDeviceInfoModel device,bool bind)
     {
+        log.Info("Binding device...");
         await Task.Run(() =>
         {
             if (!string.IsNullOrEmpty(device.HardwareId))

@@ -8,11 +8,8 @@
 * Description:
 * Create Date: 2024/10/1 19:08
 ******************************************************************************/
-using System.ComponentModel;
 using System.Windows;
 using wsl_usb_manager.Controller;
-using wsl_usb_manager.Domain;
-using MessageBox = System.Windows.MessageBox;
 
 namespace wsl_usb_manager;
 
@@ -30,5 +27,6 @@ public partial class MainWindow : Window
         m.Start();
         initNotifyIcon();
         DataContext = new MainWindowViewModel(this.Title);
+        log.Info("Starting...");
     }
 }

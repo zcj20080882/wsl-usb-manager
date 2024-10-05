@@ -8,6 +8,7 @@
 * Description:
 * Create Date: 2024/10/2 19:00
 ******************************************************************************/
+using log4net;
 using MaterialDesignThemes.Wpf;
 using System.ComponentModel;
 using System.Windows;
@@ -18,7 +19,7 @@ namespace wsl_usb_manager;
 public partial class MainWindow : Window
 {
     private NotifyIcon notifyIcon = new();
-
+    private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
     private void MenuExitButton_OnClick(object sender, RoutedEventArgs e)
     {
         Environment.Exit(0);
