@@ -26,7 +26,7 @@ public struct CommandResult
     public string StandardError;
 }
 
-public struct USBDevicesInfo
+public class USBDevicesInfo
 {
     public string? InstanceId;
     public string? HardwareId;

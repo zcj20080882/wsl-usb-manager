@@ -17,6 +17,9 @@ using System.Reflection;
 using System.Windows;
 using wsl_usb_manager.Controller;
 using MessageBox = System.Windows.MessageBox;
+using System.Xml;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace wsl_usb_manager;
 
@@ -26,6 +29,10 @@ public class MainWindowViewModel : ViewModelBase
     private int _selectedIndex;
     private readonly string? _windowTitle;
     private bool _windowEnabled;
+    private readonly string ConfigFilePath = Environment.CurrentDirectory + "/config.json";
+    private bool _isDarkMode;
+    private bool _closeToTray;
+    private string _language = "en-US";
 
     public MainWindowViewModel(string? windowTitle)
     {
@@ -38,11 +45,65 @@ public class MainWindowViewModel : ViewModelBase
         UpdateUSBDevicesAsync(0,0);
         SelectedItem = BodyItems.First();
         WindowEnabled = true;
+
+        if (File.Exists(ConfigFilePath))
+        {
+            string json = File.ReadAllText(ConfigFilePath);
+            var cfg = JsonConvert.DeserializeObject<SystemConfig>(json);
+            if (cfg != null) Config = cfg;
+        }
+
+        if (Config == null)
+        {
+            Config ??= new SystemConfig();
+            SaveConfig();
+        }
+        IsDarkMode = Config.DarkMode;
+        CloseToTray = Config.CloseToTray;
     }
 
     public string? WindowTitle { get => _windowTitle; }
     public bool WindowEnabled { get => _windowEnabled; set => SetProperty(ref _windowEnabled, value); }
+    public bool IsDarkMode { 
+        get => _isDarkMode;
+        set { 
+            SetProperty(ref _isDarkMode, value);
+            if (Config != null && value != Config.DarkMode)
+            {
+                Config.DarkMode = value;
+                SaveConfig();
+            }
+        }
+    }
+    public string Language { 
+        get => _language; 
+        set { 
+            SetProperty(ref _language, value); 
+            if (Config != null)
+            {
+                if (value != Config.Language && value != null)
+                {
+                    Config.Language = value;
+                    SaveConfig();
+                }
+            }
+        } 
+    }
+    public bool CloseToTray
+    {
+        get => _closeToTray;
+        set
+        {
+            SetProperty(ref _closeToTray, value);
+            if (Config != null && value != Config.CloseToTray)
+            {
+                Config.CloseToTray = value;
+                SaveConfig();
+            }
+        }
+    }
     public ObservableCollection<BodyItem> BodyItems { get; }
+    public static SystemConfig? Config { get; set; }
 
     public BodyItem? SelectedItem
     {
@@ -108,5 +169,11 @@ public class MainWindowViewModel : ViewModelBase
             CallReflectionMethod(obj2, "AfterRefresh", null);
         }
         WindowEnabled = true;
+    }
+
+    public void SaveConfig()
+    {
+        string json = JsonConvert.SerializeObject(Config, Newtonsoft.Json.Formatting.Indented);
+        File.WriteAllText(ConfigFilePath, json);
     }
 }

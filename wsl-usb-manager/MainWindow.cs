@@ -80,9 +80,12 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(CancelEventArgs e)
     {
-        e.Cancel = true;
-        Hide();
-        base.OnClosing(e);
+        if (DataContext is MainWindowViewModel vm && vm.CloseToTray)
+        {
+            e.Cancel = true;
+            Hide();
+            base.OnClosing(e);
+        }
     }
 
     private void OnSelectedItemChanged(object sender, DependencyPropertyChangedEventArgs e)

@@ -87,6 +87,7 @@
                                            HorizontalAlignment="Left" />
                                 <ToggleButton x:Name="DarkModeToggleButton"
                                               Grid.Column="1"
+                                              IsChecked="{Binding IsDarkMode, Mode=TwoWay}"
                                               Click="MenuDarkModeButton_Click" />
                                 <TextBlock Grid.Column="2"
                                            Text="Dark"
@@ -96,7 +97,7 @@
                             <CheckBox Margin="10"
                                       md:RippleAssist.IsDisabled="True"
                                       Content="Close to tray(Run in background)"
-                                      IsChecked="True" />
+                                      IsChecked="{Binding CloseToTray}" />
                             <Separator />
                             <Button x:Name="btnSetting"
                                     Content="Settings" />
