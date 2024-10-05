@@ -11,20 +11,7 @@
 
 // Ignore Spelling: USBIPD hardwareid harwareid busid
 
-using System.Reflection;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System;
-using System.Text.RegularExpressions;
-
 namespace wsl_usb_manager.Controller;
-
-public struct CommandResult
-{
-    public int ExitCode;
-    public string StandardOutput;
-    public string StandardError;
-}
 
 public class USBDevicesInfo
 {
@@ -48,140 +35,55 @@ public class USBIPD
     private static readonly string[] separator = [""];
     private static readonly char[] separatorOfDictionary = [':'];
 
-    private static (string,string) SpliteCommandString(string command)
-    {
-        string[] blocks = command.Split(" ");
-        string cmd = blocks[0];
-        string args = "";
-        for (int i = 1; i < blocks.Length; i++)
-        {
-            args += " " + blocks[i];
-        }   
-        return (cmd, args);
-    }
-
-    private static string CreateWSLCommand(string cmd, string distribution, bool privilege)
-    {
-        // wsl --distribution Ubuntu-22.04 --user root --exec bash -c 'ls -l /'
-        return $"wsl --distribution {distribution} {(privilege ? "--user root " : "")} --exec bash -c '{cmd}'";
-    }
-
-    private static string CreateWSLCommand(string cmd, bool privilege)
-    {
-        return $"wsl {(privilege ? "--user root " : "")} --exec bash -c '{cmd}'";
-    }
-
     public USBIPD()
     {
 
     }
 
-    public static CommandResult RunPowerShellCommand(string command, bool privilege)
-    {
-        string error_string = "";
-        CommandResult result = new()
-        {
-            ExitCode = -1,
-            StandardOutput = "",
-            StandardError = ""
-        };
-        ProcessStartInfo startInfo = new()
-        {
-            FileName = "powershell.exe",
-            Verb = privilege ? "runas" : "",
-            Arguments = $"-Command \"{command}\"",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        if (privilege) {
-            //Start-Process <process> -Verb runAs -ArgumentList '<ArgumentList>'
-            (string cmd,string args) = SpliteCommandString(command);
-            startInfo.Arguments = $"Start-Process {cmd} -Verb RunAs -ArgumentList '{args}' -WindowStyle Hidden\r\n";
-        }
-        Process process = new()
-        {
-            StartInfo = startInfo
-        };
-        try
-        {
-            process.Start();
-
-            result.StandardOutput = process.StandardOutput.ReadToEnd();
-            error_string = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-            result.ExitCode = process.ExitCode;
-            error_string = error_string.Split(new string[] { Environment.NewLine }, StringSplitOptions.None)[0];
-            int index = error_string.IndexOf(":");
-            if (index != -1)
-                error_string = error_string[(index + 1)..];
-            
-            result.StandardError = error_string.Trim();
-        }
-        catch (Exception e)
-        {
-            result.StandardError = e.Message;
-        }
-        
-        return result;
-    }
-
     public static CommandResult BindDevice(string hardwareid)
     {
-        return RunPowerShellCommand($"{USBIPD_CMD} bind --hardware-id {hardwareid}", true);
+        return new PowerShellRunner($"{USBIPD_CMD} bind --hardware-id {hardwareid}").Run(true);
     }
 
     public static CommandResult BindDevice(string hardwareid, bool force)
     {
-        return RunPowerShellCommand($"{USBIPD_CMD} bind --hardware-id {hardwareid} {(force ? "--force" : "")}", true);
+        return new PowerShellRunner($"{USBIPD_CMD} bind --hardware-id {hardwareid} {(force ? "--force" : "")}").Run(true);
     }
 
     public static CommandResult UnbindDevice(string harwareid)
     {
-        return RunPowerShellCommand($"{USBIPD_CMD} unbind --hardware-id {harwareid}", true);
+        return new PowerShellRunner($"{USBIPD_CMD} unbind --hardware-id {harwareid}").Run(true);
     }
 
     public static CommandResult UnbindAAllDevice()
     {
-        return RunPowerShellCommand($"{USBIPD_CMD} unbind --all", true);
+        return new PowerShellRunner($"{USBIPD_CMD} unbind --all").Run(true);
     }
 
-    public static CommandResult AttachDeviceLocal(string harwareid)
+    public static CommandResult AttachDevice(string harwareid)
     {
-        return RunPowerShellCommand($"{USBIPD_CMD} attach --wsl --hardware-id {harwareid}", false);
+        return new PowerShellRunner($"{USBIPD_CMD} attach --wsl --hardware-id {harwareid}").Run(false);
     }
 
-    public static CommandResult AttachDeviceLocal(string harwareid, string distribution)
+    public static CommandResult AttachDevice(string harwareid, string distribution)
     {
-        return RunPowerShellCommand($"{USBIPD_CMD} attach --wsl {distribution} --hardware-id {harwareid}", false);
-    }
-
-    public static CommandResult AttachDeviceRemote(string busid, string ip)
-    {
-        return RunPowerShellCommand(CreateWSLCommand($"usbip attach --remote={ip} --busid={busid}",true), false);
-    }
-
-    public static CommandResult AttachDeviceRemote(string busid, string distribution, string ip)
-    {
-        return RunPowerShellCommand(CreateWSLCommand($"usbip attach --remote={ip} --busid={busid}", distribution, true), false);
+        return new PowerShellRunner($"{USBIPD_CMD} attach --wsl {distribution} --hardware-id {harwareid}").Run(false);
     }
 
     public static CommandResult DetachDevice(string harwareid)
     {
-        return RunPowerShellCommand($"{USBIPD_CMD} detach --hardware-id {harwareid}", false);
+        return new PowerShellRunner($"{USBIPD_CMD} detach --hardware-id {harwareid}").Run(false);
     }
 
     public static CommandResult DetachAllDevice()
     {
-        return RunPowerShellCommand($"{USBIPD_CMD} detach --all", false);
+        return new PowerShellRunner($"{USBIPD_CMD} detach --all").Run(false);
     }
 
     public static ValueTuple<int, string, List<USBDevicesInfo>> GetAllUSBDevices()
     {
         List<USBDevicesInfo> deviceslist = [];
-        CommandResult result = RunPowerShellCommand(CmdGetAllDevices, false);
+        CommandResult result = new PowerShellRunner(CmdGetAllDevices).Run(false);
 
         if (result.ExitCode != 0 || result.StandardOutput.Length == 0)
         {
