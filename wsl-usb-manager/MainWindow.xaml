@@ -15,7 +15,7 @@
         Style="{StaticResource MaterialDesignWindow}"
         Height="600"
         Width="800"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" FontFamily="Microsoft YaHei UI">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -33,24 +33,25 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <!-- Navigator Bar -->
             <md:ColorZone Grid.Row="0"
-                          md:ElevationAssist.Elevation="Dp3"
+                          md:ElevationAssist.Elevation="Dp1"
                           Height="70">
                 <Grid HorizontalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <ListBox Grid.Column="0"
                              Height="80"
-                             Width="200"
+                             Width="400"
+                             x:Name="ListBoxNavigater"
                              ItemsSource="{Binding BodyItems}"
                              SelectedValue="{Binding SelectedItem}"
                              Style="{StaticResource MaterialDesign3.NavigationBarPrimaryListBox}"
-                             HorizontalAlignment="Left">
+                             HorizontalAlignment="Left" SelectionChanged="ListBoxNavigater_SelectionChanged">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem"
                                    BasedOn="{StaticResource MaterialDesign3.NavigationBarPrimaryListBoxItem}">
@@ -68,7 +69,23 @@
                             </DataTemplate>
                         </ListBox.Resources>
                     </ListBox>
-                    <md:PopupBox Grid.Column="1"
+                    <Button Grid.Column="1" x:Name="RefreshButton" 
+                        Margin="2,0,6,0"
+                        Width="120"
+                        HorizontalAlignment="Right"
+                        md:ButtonProgressAssist.IsIndeterminate="True"
+                        md:ButtonProgressAssist.IsIndicatorVisible="{Binding ShowRefreshProgress}"
+                        md:ButtonProgressAssist.Value="-1"
+                        Command="{Binding RefreshCommand}" 
+                            Style="{StaticResource MaterialDesignFlatButton}" >
+
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <md:PackIcon Height="20" Width="20" Kind="Refresh"/>
+                            <TextBlock Text="{DynamicResource Refresh}" Margin="5,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <md:PopupBox Grid.Column="2"
                                  PlacementMode="BottomAndAlignRightEdges"
                                  StaysOpen="False"
                                  VerticalAlignment="Center"
@@ -122,10 +139,17 @@
                                     BorderBrush="{DynamicResource MaterialDesignDivider}"
                                     BorderThickness="0 0 0 1" />
                             <Button x:Name="BtnSetting"
+                                    Height="50"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Center"
-                                    Content="{DynamicResource Settings}"
-                                    Click="BtnSetting_Click" />
+                                    HorizontalContentAlignment="Center"
+                                    Click="BtnSetting_Click" 
+                                    Style="{StaticResource MaterialDesignFlatButton}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <md:PackIcon Height="20" Width="20" Kind="Cog"/>
+                                    <TextBlock Text="{DynamicResource Settings}" Margin="5,0,0,0"/>
+                                </StackPanel>
+                            </Button>
                             <Border Height="1"
                                     Margin="-5,5,-5,5"
                                     SnapsToDevicePixels="True"
@@ -133,19 +157,26 @@
                                     BorderBrush="{DynamicResource MaterialDesignDivider}"
                                     BorderThickness="0 0 0 1" />
                             <Button x:Name="btnExit"
+                                    Height="50"
                                     HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
                                     VerticalAlignment="Center"
                                     Click="MenuExitButton_OnClick"
-                                    Content="{DynamicResource Goodbye}" />
+                                    Style="{StaticResource MaterialDesignFlatButton}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <md:PackIcon Height="20" Width="20" Kind="ExitToApp"/>
+                                    <TextBlock Text="{DynamicResource Exit}" Margin="5,0,0,0"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </md:PopupBox>
+                    
                 </Grid>
             </md:ColorZone>
             <ScrollViewer Grid.Row="1"
                           x:Name="MainScrollViewer"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
-                          Background="{DynamicResource MaterialDesignPaper}"
                           Style="{StaticResource MaterialDesignScrollViewer}"
                           md:ScrollViewerAssist.IsAutoHideEnabled="True">
                 <ContentControl Margin="{Binding MarginRequirement, FallbackValue=16}"
@@ -156,8 +187,8 @@
                                 VerticalContentAlignment="Stretch" />
             </ScrollViewer>
             <md:Snackbar x:Name="MainSnackbar"
-                                     Grid.Row="2"
-                                     MessageQueue="{md:MessageQueue}" />
+                                     Grid.Row="1"
+                         MessageQueue="{Binding SnackbarMessageQueue}" />
         </Grid>
         
         

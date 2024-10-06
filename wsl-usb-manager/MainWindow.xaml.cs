@@ -6,15 +6,19 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/1 19:08
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
 using MaterialDesignThemes.Wpf;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Markup;
+using wsl_usb_manager.AutoAttach;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
+using wsl_usb_manager.PersistedDevice;
+using wsl_usb_manager.Resources;
 using wsl_usb_manager.Settings;
+using wsl_usb_manager.USBDevices;
 
 namespace wsl_usb_manager;
 
@@ -23,42 +27,24 @@ namespace wsl_usb_manager;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private readonly string EnglishResource = @"pack://application:,,,/Resources/LangEnglish.xaml";
-    private readonly string ChineseResource = @"pack://application:,,,/Resources/LangChinese.xaml";
 
     public MainWindow()
     {
         InitializeComponent();
         USBMonitor m = new(OnUSBEvent);
         m.Start();
-        initNotifyIcon();
-        DataContext = new MainWindowViewModel(this.Title);
+        InitNotifyIcon();
+        DataContext = new MainWindowViewModel(this.Title,this);
+        ModifyTheme(App.GetAppConfig().DarkMode == true);
         log.Info("Starting...");
-    }
-
-    private void ChangeLanguage(bool isChinese)
-    {
-        try
-        {
-            if (isChinese)
-            {
-                System.Windows.Application.Current.Resources.MergedDictionaries[0].Source = new Uri(ChineseResource);
-            }
-            else
-            {
-                System.Windows.Application.Current.Resources.MergedDictionaries[0].Source = new Uri(EnglishResource);
-            }
-        }
-        catch (Exception e)
-        {
-            log.Error(e);
-        }
-
     }
 
     private void LangToggleButton_Click(object sender, RoutedEventArgs e)
     {
-        ChangeLanguage(LangToggleButton.IsChecked??false);
+        Lang.ChangeLanguage(LangToggleButton.IsChecked??false);
+        if (DataContext is MainWindowViewModel viewModel) { 
+            viewModel.UpdateUI();
+        }
     }
 
     private async void BtnSetting_Click(object sender, RoutedEventArgs e)
@@ -73,6 +59,36 @@ public partial class MainWindow : Window
                 if (result == "OK")
                 {
                     App.SetAppConfig(new_cfg);
+                }
+            }
+        }
+    }
+
+    private async void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        if(DataContext is MainWindowViewModel vm)
+        {
+            await vm.UpdateUSBDevices(null);
+        }
+    }
+
+    private void ListBoxNavigater_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if(DataContext is MainWindowViewModel vm)
+        {
+            if(vm.SelectedItem != null)
+            {
+                if(vm.SelectedItem.DataContext is USBDevicesViewModel uvm)
+                {
+                    uvm.UpdateDevices(vm.GetConnectedDeviceList());
+                }
+                else if(vm.SelectedItem.DataContext is PersistedDeviceViewModel pvm)
+                {
+                    pvm.UpdateDevices(vm.GetPersistedDeviceList());
+                }
+                else if (vm.SelectedItem.DataContext is AutoAttachViewModel avm)
+                {
+                    avm.UpdateDevices(App.GetSysConfig().AutoAttachDeviceList);
                 }
             }
         }

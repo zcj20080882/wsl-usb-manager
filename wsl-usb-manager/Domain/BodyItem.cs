@@ -6,7 +6,7 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/2 18:03
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
 using MaterialDesignThemes.Wpf;
 using System.Windows;
@@ -21,8 +21,9 @@ public class BodyItem(string name, Type contentType,
 
     private object? _content;
     private Thickness _marginRequirement = new(5);
+    private string _name = name;
 
-    public string Name { get; } = name;
+    public string Name { get => _name; set => SetProperty(ref _name,value) ; }
     public PackIconKind SelectedIcon { get; set; } = selectedIcon;
     public PackIconKind UnselectedIcon { get; set; } = unselectedIcon;
 
@@ -33,7 +34,7 @@ public class BodyItem(string name, Type contentType,
     }
 
     public object? Content => _content ??= CreateContent();
-
+    public object? DataContext => _dataContext;
     private object? CreateContent()
     {
         var content = Activator.CreateInstance(_contentType);

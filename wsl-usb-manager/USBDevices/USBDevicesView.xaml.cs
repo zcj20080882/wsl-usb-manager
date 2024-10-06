@@ -6,12 +6,17 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/2 18:58
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using wsl_usb_manager.Domain;
+using System.Windows.Input;
 using MessageBox = System.Windows.MessageBox;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace wsl_usb_manager.USBDevices;
 
@@ -25,14 +30,27 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
         InitializeComponent();
     }
 
+    private void AutoAttachCheckBox_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is USBDevicesViewModel vm)
+        {
+            vm.UpdateDevices(null);
+        }
+    }
+
     private void BoundCheckBox_Click(object sender, RoutedEventArgs e)
     {
         if (sender is System.Windows.Controls.CheckBox checkBox)
         {
             if (checkBox.DataContext is USBDeviceInfoModel device)
             {
-                USBDevicesViewModel? dm = DataContext as USBDevicesViewModel;
-                dm?.BindDevice(device, checkBox.IsChecked ?? false);
+                if (device.IsBound) {
+                    device.Bind();
+                }
+                else
+                {
+                    device.Unbind();
+                }
             }
         }
     }
@@ -43,8 +61,13 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
         {
             if (checkBox.DataContext is USBDeviceInfoModel device)
             {
-                USBDevicesViewModel? dm = DataContext as USBDevicesViewModel;
-                dm?.AttachDevice(device, checkBox.IsChecked ?? false);
+                if (device.IsAttached)
+                {
+                    device.Attach();
+                }
+                else { 
+                    device.Detach();
+                }
             }
         }
     }
@@ -53,36 +76,67 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
     {
         if (DataContext is USBDevicesViewModel dm && dm.SelectedDevice is USBDeviceInfoModel device)
         {
-            dm.MenuBindEnabled = !device.IsBound;
-            dm.MenuAttachEnabled = device.IsBound;
-            dm.MenuDetachEnabled = device.IsAttached;
-            dm.MenuUnbindEnabled = device.IsBound;
+            bool isInFilterList = App.GetSysConfig().IsInFilterDeviceList(device.Device);
+            bool isInAutoAttachList = App.GetSysConfig().IsInAutoAttachDeviceList(device.Device);
+            dm.MenuBindEnabled = !device.IsBound && !isInAutoAttachList && !isInFilterList;
+            dm.MenuAttachEnabled = device.IsBound && !device.IsAttached && !isInAutoAttachList;
+            dm.MenuDetachEnabled = device.IsAttached && !isInAutoAttachList;
+            dm.MenuUnbindEnabled = device.IsBound && !isInAutoAttachList;
+            dm.MenuHideEnabled = !isInFilterList && !isInAutoAttachList;
+            dm.MenuUnhiddenEnabled = isInFilterList;
+            dm.MenuAddToAutoEnabled = !isInAutoAttachList && !isInFilterList;
+            dm.MenuRemoveFromAutoEnabled = isInAutoAttachList && !isInFilterList;
         }
     }
 
     private void MenuItem_Click(object sender, RoutedEventArgs e)
     {
 
-        if(sender is System.Windows.Controls.MenuItem item && DataContext is USBDevicesViewModel dm)
+        if(sender is MenuItem item && DataContext is USBDevicesViewModel dm)
         {
             if(dm.SelectedDevice is USBDeviceInfoModel device)
             {
+                ObservableCollection<USBDeviceInfoModel>? oldList = dm.USBDevicesItems;
                 switch (item.Name)
                 {
                     case "MenuItemBind":
-                        dm.BindDevice(device, true);
+                        device.Bind();
                         break;
 
                     case "MenuItemUnbind":
-                        dm.BindDevice(device, false);
+                        device.Unbind();
                         break;
                     case "MenuItemAttach":
-                        dm.AttachDevice(device, true);
+                        device.AutoAttach();
                         break;
                     case "MenuItemDetach":
-                        dm.AttachDevice(device, false);
+                        device.Detach();
                         break;
                     case "MenuItemAddToAutoAttach":
+                        device.AddToAutoAttach();
+                        break;
+                    case "MenuItemRemoveFromAutoAttach":
+                        device.RemoveFromAutoAttach();
+                        dm.UpdateDevices(null);
+                        break;
+                    case "MenuItemHide":
+                        device.AddToFilter();
+                        dm.UpdateDevices(null);
+                        break;
+                    case "MenuItemUnhiden":
+                        device.RemoveFromFilter();
+                        dm.UpdateDevices(null);
+                        break;
+                    case "MenuItemShowHide":
+                        if(dm.USBDevicesItems == null)
+                        {
+                            break;
+                        }
+                        foreach (USBDeviceInfoModel usbDeviceInfo in dm.USBDevicesItems)
+                        {
+                            usbDeviceInfo.IsVisible = true;
+                        }
+                        dm.USBDevicesItems = oldList;
                         break;
                     default:
                         break;
@@ -96,8 +150,13 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
     private void ListView_PreviewMouseRightButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         DependencyObject? obj = e.OriginalSource as DependencyObject;
+        int listCount = 0;
         while (obj != null && obj is not System.Windows.Controls.ListViewItem)
         {
+            if(obj is ItemsControl ic)
+            {
+                listCount = ic.Items.Count;
+            }
             obj = VisualTreeHelper.GetParent(obj);
         }
 
@@ -105,6 +164,18 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
         {
             listViewItem.Focus();
             return;
+        }
+        if (DataContext is USBDevicesViewModel dm && listCount > 0)
+        {
+            dm.MenuBindEnabled = false;
+            dm.MenuAttachEnabled = false;
+            dm.MenuDetachEnabled = false;
+            dm.MenuUnbindEnabled = false;
+            dm.MenuHideEnabled = false;
+            dm.MenuUnhiddenEnabled = false;
+            dm.MenuAddToAutoEnabled = false;
+            dm.MenuRemoveFromAutoEnabled = false;
+            return ;
         }
         e.Handled = true;
     }

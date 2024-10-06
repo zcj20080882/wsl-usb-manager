@@ -6,13 +6,13 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/5 17:07
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
 using System.Net.NetworkInformation;
 
 namespace wsl_usb_manager.Controller;
 
-public class NetworkCardInfo
+internal class NetworkCardInfo
 {
     public static List<string> GetAllNetworkCardName()
     {
@@ -39,6 +39,9 @@ public class NetworkCardInfo
 
     public static string? GetIPAddress(string networkCardName)
     {
+        if (string.IsNullOrEmpty(networkCardName)) { 
+            return null;
+        }
         NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
 
         foreach (NetworkInterface ni in networkInterfaces)

@@ -5,33 +5,60 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:wsl_usb_manager.USBDevices"
+             xmlns:domain="clr-namespace:wsl_usb_manager.Domain"
              d:DataContext="{d:DesignInstance local:USBDevicesViewModel}"
              mc:Ignorable="d"
              d:DesignHeight="450"
              d:DesignWidth="800">
     <UserControl.Resources>
         <ContextMenu x:Key="ListViewContextMenu">
-            <MenuItem Header="Bind" x:Name="MenuItemBind"
+            <MenuItem Header="{DynamicResource Bind}" 
+                      x:Name="MenuItemBind"
                       IsEnabled="{Binding MenuBindEnabled}"
                       Icon="{md:PackIcon Kind=ShieldLock}"
                       Click="MenuItem_Click"/>
                 
-            <MenuItem Header="Unbind" x:Name="MenuItemUnbind"
+            <MenuItem Header="{DynamicResource Unbind}" 
+                      x:Name="MenuItemUnbind"
                       IsEnabled="{Binding MenuUnbindEnabled}"
                       Icon="{md:PackIcon Kind=ShieldLockOpen}" 
                       Click="MenuItem_Click"/>
             <Separator />
-            <MenuItem Header="Attach" x:Name="MenuItemAttach"
+            <MenuItem Header="{DynamicResource Attach}" 
+                      x:Name="MenuItemAttach"
                       IsEnabled="{Binding MenuAttachEnabled}"
                       Icon="{md:PackIcon Kind=Share}"
                       Click="MenuItem_Click" />
-            <MenuItem Header="Detach" x:Name="MenuItemDetach"
+            <MenuItem Header="{DynamicResource Detach}" 
+                      x:Name="MenuItemDetach"
                       IsEnabled="{Binding MenuDetachEnabled}"
                       Icon="{md:PackIcon Kind=ShareOff}"
                       Click="MenuItem_Click" />
             <Separator />
-            <MenuItem Header="Add to auto-attach" x:Name="MenuItemAddToAutoAttach"
-                      Icon="{md:PackIcon Kind=StarFourPoints}"
+             <MenuItem Header="{DynamicResource Hide}" 
+                       x:Name="MenuItemHide"
+                      Icon="{md:PackIcon Kind=EyeOff}"
+                       IsEnabled="{Binding MenuHideEnabled}"
+                      Click="MenuItem_Click" />
+            <MenuItem Header="{DynamicResource Show}" 
+                      x:Name="MenuItemUnhiden"
+                      Icon="{md:PackIcon Kind=Eye}"
+                      IsEnabled="{Binding MenuUnhiddenEnabled}"
+                      Click="MenuItem_Click" />
+            <MenuItem Header="{DynamicResource ShowHide}" 
+                      x:Name="MenuItemShowHide"
+                      Icon="{md:PackIcon Kind=EyeRefresh}"
+                      Click="MenuItem_Click" />
+            <Separator />
+            <MenuItem Header="{DynamicResource AddToAuto}" 
+                      x:Name="MenuItemAddToAutoAttach"
+                      Icon="{md:PackIcon Kind=StarPlus}"
+                      IsEnabled="{Binding MenuAddToAutoEnabled}"
+                      Click="MenuItem_Click" />
+            <MenuItem Header="{DynamicResource RemoveFromAuto}" 
+                      x:Name="MenuItemRemoveFromAutoAttach"
+                      Icon="{md:PackIcon Kind=StarMinus}"
+                      IsEnabled="{Binding MenuRemoveFromAutoEnabled}"
                       Click="MenuItem_Click" />
         </ContextMenu>
     </UserControl.Resources>
@@ -43,26 +70,11 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <!--Header and refresh button-->
-        <Grid Grid.Row="0"
-              Margin="0,5,0,5">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0"
-                       Margin="6"
-                       Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                       Text="Windows USB Devices" />
-            <Button Grid.Column="1" x:Name="RefreshButton" 
-                    Margin="2,0,6,0"
-                    Width="100"
-                    HorizontalAlignment="Right"
-                    md:ButtonProgressAssist.IsIndeterminate="True"
-                    md:ButtonProgressAssist.IsIndicatorVisible="{Binding ShowRefreshProgress}"
-                    md:ButtonProgressAssist.Value="-1"
-                    Content="Refresh"
-                    Command="{Binding RefreshCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" />
-        </Grid>
+        <TextBlock Grid.Row="0"
+                   Margin="6"
+                   HorizontalAlignment="Left"
+                   Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                   Text="{DynamicResource WindowsUSBDevice}" />
         <Separator Grid.Row="1" />
         <!--Device list and info-->
         <Grid Grid.Row="2"
@@ -72,54 +84,78 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <ListView Grid.Row="0" SelectedItem="{Binding SelectedDevice}"
+            <ListView Grid.Row="0" 
+                      x:Name="ListViewUSBDevice"
+                      SelectedItem="{Binding SelectedDevice}"
                       SelectionMode="Single" 
                       ItemsSource="{Binding USBDevicesItems}" 
                       md:DataGridAssist.ColumnHeaderPadding="5"
+                      md:ListViewAssist.ListViewItemPadding="5"
                       SelectedIndex="0"
                       SelectionChanged="ListView_SelectionChanged"
                       ContextMenu="{StaticResource ListViewContextMenu}"
-                      PreviewMouseRightButtonUp="ListView_PreviewMouseRightButtonUp">
-                
+                      PreviewMouseRightButtonUp="ListView_PreviewMouseRightButtonUp" >
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem" BasedOn="{StaticResource MaterialDesignGridViewItem}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsVisible}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.View>
                     <GridView>
+                        <GridViewColumn Header="{DynamicResource AutoAttach}">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox VerticalAlignment="Center"
+                                          HorizontalAlignment="Center"
+                                          Click="AutoAttachCheckBox_Click"
+                                          IsEnabled="{Binding CBAutoAttachEnabled}"
+                                          IsChecked="{Binding IsAutoAttach}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        
                         <GridViewColumn DisplayMemberBinding="{Binding BusID}"
-                                        Header="Bus ID" />
+                                        Header="{DynamicResource BusID}"/>
                         <GridViewColumn DisplayMemberBinding="{Binding HardwareId}"
-                                        Header="Hardware ID" />
-                        <GridViewColumn Header="Bound">
+                                        Header="{DynamicResource HardwareID}"/>
+                        <GridViewColumn Header="{DynamicResource Bound}">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <CheckBox VerticalAlignment="Center"
                                               HorizontalAlignment="Center"
                                               Click="BoundCheckBox_Click"
+                                              IsEnabled="{Binding CBBindEnabled}"
                                               IsChecked="{Binding IsBound}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Attached">
+                        <GridViewColumn Header="{DynamicResource Attached}">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <CheckBox VerticalAlignment="Center"
                                               Click="AttachCheckBox_Click"
                                               HorizontalAlignment="Center"
-                                              IsEnabled="{Binding AttachEnabled}"
+                                              IsEnabled="{Binding CBAttachEnabled}"
                                               IsChecked="{Binding IsAttached}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Forced">
+                        <GridViewColumn Header="{DynamicResource ForceBind}">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <CheckBox VerticalAlignment="Center"
                                               HorizontalAlignment="Center"
-                                              IsEnabled="{Binding ForcedEnable}"
+                                              IsEnabled="{Binding CBForcedEnable}"
                                               IsChecked="{Binding IsForced}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Description}"
-                                        Header="Description" />
+                                        Header="{DynamicResource Description}" Width="Auto"/>
                     </GridView>
                 </ListView.View>
             </ListView>
@@ -127,7 +163,7 @@
             <StackPanel Grid.Row="1" HorizontalAlignment="Stretch"
                         VerticalAlignment="Top"
                         Margin="0,10,0,0">
-                <local:DeviceInfoView DataContext="{Binding SelectedDevice}" />
+                <domain:DeviceInfoView DataContext="{Binding SelectedDevice}" />
             </StackPanel>
         </Grid>
     </Grid>

@@ -6,7 +6,7 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/5 16:41
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
 using System;
 using System.Collections.Generic;
@@ -49,17 +49,9 @@ namespace wsl_usb_manager.Settings
             }
         }
 
-        private void CheckboxAttachToDistrib_Unchecked(object sender, RoutedEventArgs e)
+        private void CheckboxCheckboxSpecifyNetCard_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.CheckBox checkBox && DataContext is SettingViewModel viewModel)
-            {
-                viewModel.SelectedDistribution = null;
-            }
-        }
-
-        private void CheckboxUseWSLAttachCmd_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (sender is System.Windows.Controls.CheckBox checkBox && DataContext is SettingViewModel viewModel)
+            if (sender is System.Windows.Controls.CheckBox && DataContext is SettingViewModel viewModel)
             {
                 viewModel.SelectedForwardNetCard = null;
             }

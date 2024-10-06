@@ -10,9 +10,11 @@
     <SignAssembly>False</SignAssembly>
     <Authors>Chuckie</Authors>
     <Copyright>Copyright (c) Chuckie, 2024</Copyright>
-    <PackageIcon>032-usb.png</PackageIcon>
+    <PackageIcon>appicon.png</PackageIcon>
     <UseWindowsForms>True</UseWindowsForms>
     <ApplicationIcon>images\appicon.ico</ApplicationIcon>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>wsl_usb_manager.App</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,7 +41,7 @@
     <PackageReference Include="MaterialDesignColors" Version="3.1.0" />
     <PackageReference Include="MaterialDesignThemes" Version="5.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
@@ -71,8 +73,16 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <None Update="images\appicon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Update="Log4Net.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="WSL\auto-attach.sh">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CustomToolNamespace>WSL</CustomToolNamespace>
     </None>
   </ItemGroup>
 
@@ -82,5 +92,9 @@
       <Generator></Generator>
     </Page>
   </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="xcopy /y /e /i &quot;WSL&quot; &quot;$(TargetDir)/WSL&quot;" />
+  </Target>
 
 </Project>

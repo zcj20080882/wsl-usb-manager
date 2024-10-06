@@ -6,17 +6,9 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/1 19:08
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Management;
-using static System.Formats.Asn1.AsnWriter;
-using System.Collections;
-using System.Windows.Threading;
 using System.Text.RegularExpressions;
 
 namespace wsl_usb_manager.Controller;
@@ -24,8 +16,7 @@ namespace wsl_usb_manager.Controller;
 public class USBEventArgs : EventArgs
 {
     public string? Name { get; set; }
-    public string? VID { get; set; }
-    public string? PID { get; set; }
+    public string? HardwareID { get; set; }
     public string? Description { get; set; }
     public string? ClassGuid { get; set; } 
     public string? PNPDeviceID { get; set; }
@@ -36,12 +27,17 @@ public class USBEventArgs : EventArgs
 
 public delegate void USBEventHandler(object sender, USBEventArgs e);
 
-public class USBMonitor
+public partial class USBMonitor
 {
     private readonly ManagementEventWatcher usbInsertWatcher;
     private readonly ManagementEventWatcher usbRemoveWatcher;
-
+    public const string VBOX_USB_HARDWARE_ID = "80EE:CAFE";
+    private const string WqlEventQueryCondition = @"TargetInstance ISA 'Win32_USBControllerDevice' AND NOT TargetInstance.Dependent LIKE '%HUB%'";
     private USBEventHandler? UsbChangeEvent { set; get; }
+
+    [GeneratedRegex(@"VID_([0-9a-fA-F]{4})(.*?)PID_([0-9a-fA-F]{4})")]
+    private static partial Regex USBVIDPIDRegex();
+
     public USBMonitor(USBEventHandler eventHandler)
     {
         // Bind to local machine
@@ -51,15 +47,15 @@ public class USBMonitor
         var insertQuery = new WqlEventQuery
         {
             EventClassName = "__InstanceCreationEvent",
-            WithinInterval = TimeSpan.FromMilliseconds(500),
-            Condition = @"TargetInstance ISA 'Win32_USBControllerDevice'"
+            WithinInterval = TimeSpan.FromMilliseconds(200),
+            Condition = WqlEventQueryCondition
         };
 
         var removeQuery = new WqlEventQuery
         {
             EventClassName = "__InstanceDeletionEvent",
-            WithinInterval = TimeSpan.FromMilliseconds(500),
-            Condition = @"TargetInstance ISA 'Win32_USBControllerDevice'"
+            WithinInterval = TimeSpan.FromMilliseconds(200),
+            Condition = WqlEventQueryCondition
         };
 
 
@@ -93,11 +89,10 @@ public class USBMonitor
         if (e.NewEvent["TargetInstance"] is ManagementBaseObject mbo && mbo.ClassPath.ClassName == "Win32_USBControllerDevice")
         {
             string Dependent = ((string)mbo["Dependent"]).Split(['='])[1];
-            Match match = Regex.Match(Dependent, @"VID_([0-9a-fA-F]{4})(.*?)PID_([0-9a-fA-F]{4})");
+            Match match = USBVIDPIDRegex().Match(Dependent);
             if (match.Success)
             {
-                usbEventArgs.VID = match.Groups[1].Value;
-                usbEventArgs.PID = match.Groups[3].Value;
+                usbEventArgs.HardwareID = $"{match.Groups[1].Value}:{match.Groups[3].Value}";
 
                 ManagementObjectCollection PnPEntityCollection = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE DeviceID=" + Dependent).Get();
                 if (PnPEntityCollection != null)

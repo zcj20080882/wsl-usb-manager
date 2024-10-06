@@ -6,7 +6,7 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/5 16:45
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
 
 // Ignore Spelling: App
@@ -20,46 +20,30 @@ namespace wsl_usb_manager.Settings;
 
 public class SettingViewModel : ViewModelBase
 {
-    private string? _distribution;
     private string? _forwardNetCard;
-    private bool _useWSLAttach;
+    private bool _isSpecifyNetCard;
     private bool _closeToTray;
-    private bool _specifyWSLDistribution;
-    private ObservableCollection<string>? _listDistribution;
     private ObservableCollection<string>? _listNetworkCard;
     private ApplicationConfig AppConfig { get; set; }
     private static readonly ILog log = LogManager.GetLogger(typeof(SettingViewModel));
 
     public SettingViewModel(ApplicationConfig appcfg)
     {
-        Distributions = [];
-        foreach (var distrib in WSLHelper.GetAllWSLDistribution())
-        {
-            Distributions.Add(distrib);
-        }
         NetworkCards = [];
         foreach (var netcard in NetworkCardInfo.GetAllNetworkCardName())
         {
             NetworkCards.Add(netcard);
         }
         AppConfig = appcfg;
-        SelectedDistribution = appcfg.DefaultDistribution;
         SelectedForwardNetCard = appcfg.ForwardNetCard;
-        UseWSLAttach = appcfg.UseWSLAttach;
+        IsSpecifyNetCard = appcfg.SpecifyNetCard;
         CloseToTray = appcfg.CloseToTray;
-        SpecifyWSLDistribution = appcfg.SpecifyWSLDistribution;
     }
 
     
-    public ObservableCollection<string>? Distributions { get => _listDistribution; set => SetProperty(ref _listDistribution, value);}
 
     public ObservableCollection<string>? NetworkCards { get => _listNetworkCard; set => SetProperty(ref _listNetworkCard, value);}
 
-    public string? SelectedDistribution
-    {
-        get => _distribution;
-        set => SetProperty(ref _distribution, value);
-    }
 
     public string? SelectedForwardNetCard
     {
@@ -67,10 +51,10 @@ public class SettingViewModel : ViewModelBase
         set => SetProperty(ref _forwardNetCard, value);
     }
 
-    public bool UseWSLAttach
+    public bool IsSpecifyNetCard
     {
-        get => _useWSLAttach;
-        set => SetProperty(ref _useWSLAttach, value);
+        get => _isSpecifyNetCard;
+        set => SetProperty(ref _isSpecifyNetCard, value);
     }
 
     public bool CloseToTray
@@ -79,20 +63,12 @@ public class SettingViewModel : ViewModelBase
         set => SetProperty(ref _closeToTray, value);
     }
 
-    public bool SpecifyWSLDistribution
-    {
-        get => _specifyWSLDistribution;
-        set => SetProperty(ref _specifyWSLDistribution, value);
-    }
 
     public void SaveConfig()
     {
         AppConfig.CloseToTray = CloseToTray;
-        AppConfig.SpecifyWSLDistribution = SpecifyWSLDistribution;
-        AppConfig.UseWSLAttach = UseWSLAttach;
+        AppConfig.SpecifyNetCard = IsSpecifyNetCard;
         AppConfig.ForwardNetCard = SelectedForwardNetCard ?? "";
-        AppConfig.DefaultDistribution = SelectedDistribution ?? "";
-        log.Debug($"Selected distribution: {SelectedDistribution}");
     }
 }
 

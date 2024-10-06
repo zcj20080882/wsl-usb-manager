@@ -6,20 +6,31 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/2 19:00
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
 using log4net;
 using MaterialDesignThemes.Wpf;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Threading;
 using wsl_usb_manager.Controller;
+using wsl_usb_manager.USBDevices;
+using System.Windows.Forms;
 
 namespace wsl_usb_manager;
 
-public partial class MainWindow : Window
+public interface INotifyIconService
 {
-    private NotifyIcon notifyIcon = new();
+    void ShowNotification(string message);
+    void ShowErrorMessage(string message);
+}
+
+public partial class MainWindow : Window, INotifyIconService
+{
+    private static readonly NotifyIcon notifyIcon = new();
     private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
+
     private void MenuExitButton_OnClick(object sender, RoutedEventArgs e)
     {
         Environment.Exit(0);
@@ -39,7 +50,7 @@ public partial class MainWindow : Window
         paletteHelper.SetTheme(theme);
     }
 
-    private void initNotifyIcon()
+    private void InitNotifyIcon()
     {
         notifyIcon.Visible = true;
         notifyIcon.Icon = Properties.Resources.NotifyIcon;
@@ -55,7 +66,6 @@ public partial class MainWindow : Window
         var exitItem = new ToolStripMenuItem("Exit");
         exitItem.Click += new EventHandler(Exit_Click);
         notifyIcon.ContextMenuStrip.Items.Add(exitItem);
-
     }
 
     private void Exit_Click(object? sender, EventArgs e)
@@ -67,6 +77,7 @@ public partial class MainWindow : Window
     {
         if (WindowState == WindowState.Minimized)
             WindowState = WindowState.Normal;
+
         Show();
         Activate();
     }
@@ -80,9 +91,7 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(CancelEventArgs e)
     {
-        if (DataContext is MainWindowViewModel vm && vm.Config != null && 
-            vm.Config != null && vm.Config.AppConfig != null &&
-            vm.Config.AppConfig.CloseToTray)
+        if (App.GetAppConfig().CloseToTray)
         {
             e.Cancel = true;
             Hide();
@@ -95,37 +104,40 @@ public partial class MainWindow : Window
 
     private void OnUSBEvent(object sender, USBEventArgs e)
     {
-        Dispatcher.Invoke(() =>
+        Dispatcher.InvokeAsync(async () =>
         {
-            string msg = "Device ";
-            if (e.Name != null)
+            if (DataContext is not MainWindowViewModel vm)
             {
-                msg += e.Name + "(" + e.VID + ":" + e.PID + ")";
+                log.Error("Cannot get MainWindowViewModel");
+                return;
             }
-            else
-            {
-                msg += e.VID + ":" + e.PID;
-            }
-            msg += " ";
-            if (e.IsConnected)
-            {
-                msg += "connected";
-            }
-            else
-            {
-                msg += "disconnected";
-            }
-            msg += ".";
-            ShowNotification(msg);
-            if (DataContext is MainWindowViewModel vm)
-            {
-                vm.UpdateUSBDevicesAsync(2, 100);
-            }
+            await vm.USBEventProcess(e);
         });
     }
 
     public void ShowNotification(string message)
     {
-        MainSnackbar.MessageQueue?.Enqueue(message);
+        if (!IsVisible)
+        {
+            notifyIcon.Visible = true;
+            notifyIcon.ShowBalloonTip(5, Title, message, ToolTipIcon.Info);
+        }
+        else {
+            MainSnackbar.MessageQueue?.Clear();
+            MainSnackbar.MessageQueue?.Enqueue(message);
+        }
+    }
+
+    public void ShowErrorMessage(string message)
+    {
+        if (!IsVisible)
+        {
+            notifyIcon.Visible = true;
+            notifyIcon.ShowBalloonTip(5, Title, message, ToolTipIcon.Error);
+        }
+        else
+        {
+            System.Windows.MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }

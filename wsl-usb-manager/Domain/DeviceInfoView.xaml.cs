@@ -6,9 +6,9 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/3 11:43
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
-namespace wsl_usb_manager.USBDevices;
+namespace wsl_usb_manager.Domain;
 
 /// <summary>
 /// DeviceInfoView.xaml 的交互逻辑

@@ -7,39 +7,63 @@
     <sys:String x:Key="ClosToTray">Close to tray(Run in background)</sys:String>
     <sys:String x:Key="Device">Device</sys:String>
     <sys:String x:Key="Persisted">Persisted</sys:String>
+    <sys:String x:Key="AutoAttach">Auto Attach</sys:String>
     <sys:String x:Key="Light">Light</sys:String>
     <sys:String x:Key="Dark">Dark</sys:String>
     <sys:String x:Key="English">English</sys:String>
     <sys:String x:Key="Chinese">中文</sys:String>
-    <sys:String x:Key="Goodbye">Goodbye</sys:String>
+    <sys:String x:Key="Exit">Exit</sys:String>
     
     <!--Setting Dialog text-->
-    <sys:String x:Key="UseWSLAttach">Use WSL attach command</sys:String>
-    <sys:String x:Key="ToolTipUseWSLAttach">Use the usbip command in WSL to attach USB device</sys:String>
-    <sys:String x:Key="ForwardNetCard">Forward Network Card</sys:String>
+    <sys:String x:Key="SpecifyNetworkCard">Specify Network Card</sys:String>
+    <sys:String x:Key="ToolTipSpecifyNetworkCard">Specify the network card that WSL can access Windows.</sys:String>
     <sys:String x:Key="ToolTipForwardNetCard">Select the network card for forwarding USB IP data</sys:String>
-    <sys:String x:Key="AttachToDistrib">Attach to Distribution</sys:String>
     <sys:String x:Key="SelectDistrib">Select a WSL distribution</sys:String>
     <sys:String x:Key="SelectDistribTooltip">Attach a USB device to a selected WSL distribution</sys:String>
     <sys:String x:Key="ForwardFromnetCard">Forward USB data from</sys:String>
     <sys:String x:Key="SelectNetCart">Select a network card</sys:String>
     
-    <!--Message Dialog text-->
+    <!--Button text-->
     <sys:String x:Key="OK">OK</sys:String>
     <sys:String x:Key="Cancel">Cancel</sys:String>
+    <sys:String x:Key="Refresh">Refresh</sys:String>
+
+    <!--Device info text-->
+    <sys:String x:Key="DeviceInfo">Device information:</sys:String>
+    <sys:String x:Key="InstanceID">Instance ID</sys:String>
+    <sys:String x:Key="HardwareID">Hardware ID</sys:String>
+    <sys:String x:Key="BusID">Bus ID</sys:String>
+    <sys:String x:Key="Description">Description</sys:String>
+    <sys:String x:Key="Connected">Connected</sys:String>
+    <sys:String x:Key="ForceBind">Force Bind</sys:String>
+    <sys:String x:Key="Bound">Bound</sys:String>
+    <sys:String x:Key="Attached">Attached</sys:String>
+    <sys:String x:Key="ClientIP">Client IP Address</sys:String>
+    <sys:String x:Key="PersistedGUID">Persisted GUID</sys:String>
+    <sys:String x:Key="StubInstanceID">Stub Instance ID</sys:String>
+    
     
     <!--USB device view text-->
     <sys:String x:Key="WindowsUSBDevice">Windows USB Device</sys:String>
-    <sys:String x:Key="Refresh">Refresh</sys:String>
+
+    <!--Menu item text-->
     <sys:String x:Key="Bind">Bind</sys:String>
     <sys:String x:Key="Unbind">Unbind</sys:String>
     <sys:String x:Key="Attach">Attach</sys:String>
     <sys:String x:Key="Detach">Detach</sys:String>
-    <sys:String x:Key="AddToAuto">Add to auto-attach</sys:String>
-    
-    <!--Persisted device view text-->
+    <sys:String x:Key="Hide">Hide</sys:String>
+    <sys:String x:Key="Show">Show</sys:String>
+    <sys:String x:Key="ShowHide">Show Hidden</sys:String>
+    <sys:String x:Key="AddToAuto">Add to Auto Attach</sys:String>
+    <sys:String x:Key="RemoveFromAuto">Remove from Auto Attach</sys:String>
     <sys:String x:Key="DeleteSelected">Delete selected</sys:String>
     <sys:String x:Key="DeleteAll">Delete all</sys:String>
+
+    <!--Persisted device view text-->
+    <sys:String x:Key="PersistedDevices">Persisted Devices(Bound but not connected)</sys:String>
+    
+    <!--Auto Attach view text-->
+    <sys:String x:Key="AutoAttachHeaderTitle">Auto-attach devices</sys:String>
     
     <!--Message text-->
     <sys:String x:Key="ErrMsgNoSelectedDevice">No device is selected</sys:String>
@@ -47,4 +71,5 @@
     <sys:String x:Key="ErrMsgUnbindFail">Failed to unbind device</sys:String>
     <sys:String x:Key="ErrMsgAttachFail">Failed to attach device</sys:String>
     <sys:String x:Key="ErrMsgDetachFail">Failed to detach device</sys:String>
+    <sys:String x:Key="ErrMsgNotFoundIP">has no IP address</sys:String>
 </ResourceDictionary>

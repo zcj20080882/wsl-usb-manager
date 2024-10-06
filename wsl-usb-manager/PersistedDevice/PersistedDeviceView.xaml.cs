@@ -6,7 +6,7 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/3 20:21
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using wsl_usb_manager.USBDevices;
+using wsl_usb_manager.Controller;
+using wsl_usb_manager.Domain;
 using MessageBox = System.Windows.MessageBox;
 
 namespace wsl_usb_manager.PersistedDevice;
@@ -39,15 +40,14 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
 
     private void MenuItem_Click(object sender, RoutedEventArgs e)
     {
-        List<USBDeviceInfoModel> devicelist = [];
-        if (sender is System.Windows.Controls.MenuItem item && DataContext is PersistedDeviceViewModel dm)
+        if (sender is MenuItem item && DataContext is PersistedDeviceViewModel dm)
         {
             switch (item.Name)
             {
                 case "MenuItemDeleteOne":
                     if (dm.SelectedDevice is USBDeviceInfoModel device)
                     {
-                        devicelist.Add(device);
+                        device.Unbind();
                     }
                     else
                         MessageBox.Show("No device is selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -57,16 +57,12 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
                     {
                         foreach (var d in dm.DevicesItems)
                         {
-                            devicelist.Add(d);
+                            d.Unbind();
                         }
                     }
                     break;
                 default:
                     break;
-            }
-            if (devicelist.Count > 0)
-            {
-                dm?.DeletePersistedDevices(devicelist);
             }
         }
     }

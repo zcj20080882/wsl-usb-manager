@@ -6,103 +6,113 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/5 13:35
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
 
 // Ignore Spelling: App
 
+using Microsoft.VisualBasic.Logging;
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using wsl_usb_manager.Controller;
+using wsl_usb_manager.USBDevices;
 
 namespace wsl_usb_manager.Settings;
+
 
 public class ApplicationConfig
 {
     public bool DarkMode = false;
-    public bool IsChinese = false;
+    public string Lang = "";
     public bool CloseToTray = true;
-    public bool UseWSLAttach = false;
-    public bool SpecifyWSLDistribution = false;
+    public bool SpecifyNetCard = false;
     public string ForwardNetCard = "";
-    public string DefaultDistribution = "";
 
     public override bool Equals(object? obj)
     {
         if (obj is ApplicationConfig other)
         {
-            return (this.DarkMode == other.DarkMode && this.IsChinese == other.IsChinese
-                    && this.CloseToTray == other.CloseToTray && this.UseWSLAttach == other.UseWSLAttach
-                    && this.SpecifyWSLDistribution == other.SpecifyWSLDistribution && 
-                    this.ForwardNetCard == other.ForwardNetCard && this.DefaultDistribution == other.DefaultDistribution);
+            return (this.DarkMode == other.DarkMode && this.Lang == other.Lang
+                    && this.CloseToTray == other.CloseToTray && this.SpecifyNetCard == other.SpecifyNetCard
+                    && this.ForwardNetCard == other.ForwardNetCard);
         }
         return false;
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(DarkMode, IsChinese, CloseToTray, UseWSLAttach, SpecifyWSLDistribution, ForwardNetCard);
+        return HashCode.Combine(DarkMode, Lang, CloseToTray, SpecifyNetCard, ForwardNetCard);
     }
 
     public ApplicationConfig Clone() => new()
     {
         DarkMode = DarkMode,
-        IsChinese = IsChinese,
+        Lang = Lang,
         CloseToTray = CloseToTray,
-        UseWSLAttach = UseWSLAttach,
-        SpecifyWSLDistribution = SpecifyWSLDistribution,
+        SpecifyNetCard = SpecifyNetCard,
         ForwardNetCard = new string(ForwardNetCard),
-        DefaultDistribution = new string(DefaultDistribution)
     };
 
     public void CopyFrom(ApplicationConfig other)
     {
         DarkMode = other.DarkMode;
-        IsChinese = other.IsChinese;
+        Lang = other.Lang;
         CloseToTray = other.CloseToTray;
-        UseWSLAttach = other.UseWSLAttach;
-        SpecifyWSLDistribution = other.SpecifyWSLDistribution;
+        SpecifyNetCard = other.SpecifyNetCard;
         ForwardNetCard = other.ForwardNetCard;
-        DefaultDistribution = other.DefaultDistribution;
     }
 }
 
 public class SystemConfig
 {
     public ApplicationConfig AppConfig = new();
-    public List<List<USBDevicesInfo>> AutoAttachDevices = [];
+    public List<USBDevice> AutoAttachDeviceList = [];
+    public List<USBDevice> FilteredDeviceList = [];
 
-    public override bool Equals(object? obj)
+    public bool IsInAutoAttachDeviceList(string? HardwareId)
     {
-        if (obj is SystemConfig other)
-        {
-            if (!AppConfig.Equals(other.AppConfig))
-            {
-                return false;
-            }
+        if (AutoAttachDeviceList.Count == 0 || string.IsNullOrEmpty(HardwareId)) { return false; }
 
-            if (AutoAttachDevices.Count != other.AutoAttachDevices.Count)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < AutoAttachDevices.Count; i++)
-            {
-                if (!other.AutoAttachDevices[i].Equals(AutoAttachDevices[i]))
-                {
-                    return false;
-                }
-            } 
-
-            return true;
-        }
-        return false;
+        return AutoAttachDeviceList.Any(d => d.HardwareId.Equals(HardwareId, StringComparison.OrdinalIgnoreCase));
     }
 
-    public override int GetHashCode()
+    public bool IsInAutoAttachDeviceList(USBDevice? dev) => IsInAutoAttachDeviceList(dev?.HardwareId);
+
+    public bool IsInFilterDeviceList(string? HardwareId)
     {
-        return HashCode.Combine(AppConfig, AutoAttachDevices);
+        if (FilteredDeviceList.Count == 0 || string.IsNullOrEmpty(HardwareId)) { return false; }
+
+        return FilteredDeviceList.Any(d => d.HardwareId.Equals(HardwareId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsInFilterDeviceList(USBDevice dev) => IsInFilterDeviceList(dev?.HardwareId);
+
+    public void AddToAutoAttachDeviceList(USBDevice dev)
+    {
+        if (!IsInAutoAttachDeviceList(dev))
+        {
+            AutoAttachDeviceList.Add(dev);
+        }
+    }
+
+    public void RemoveFromAutoAttachDeviceList(USBDevice dev)
+    {
+        AutoAttachDeviceList.RemoveAll(d => d.HardwareId == dev.HardwareId);
+    }
+
+    public void AddToFilteredDeviceList(USBDevice dev)
+    {
+        if (!IsInFilterDeviceList(dev))
+        {
+            FilteredDeviceList.Add(dev);
+        }
+    }
+
+    public void RemoveFromFilteredDevice(USBDevice dev)
+    {
+        FilteredDeviceList.RemoveAll(d => d.HardwareId == dev.HardwareId);
     }
 }

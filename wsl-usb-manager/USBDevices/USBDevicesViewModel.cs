@@ -6,7 +6,7 @@
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/2 18:58
+* Create Date: 2024/10/17 20:22
 ******************************************************************************/
 
 // Ignore Spelling: infolist
@@ -16,8 +16,13 @@ using System.Collections.ObjectModel;
 using System.Security.Permissions;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using wsl_usb_manager.AutoAttach;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
+using wsl_usb_manager.Settings;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
+using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
 
 namespace wsl_usb_manager.USBDevices;
@@ -25,105 +30,69 @@ namespace wsl_usb_manager.USBDevices;
 public class USBDevicesViewModel : ViewModelBase
 {
     private static readonly ILog log = LogManager.GetLogger(typeof(USBDevicesViewModel));
-    public ICommand RefreshCommand { get; }
-    public bool ShowRefreshProgress { get => _showRefreshProgresss; set => SetProperty(ref _showRefreshProgresss, value); }
+    
     public bool MenuBindEnabled { get => _menuBindEnabled; set => SetProperty(ref _menuBindEnabled, value); }
     public bool MenuAttachEnabled { get => _menuAttachEnabled; set => SetProperty(ref _menuAttachEnabled, value); }
     public bool MenuDetachEnabled { get => _menuDetachEnabled; set => SetProperty(ref _menuDetachEnabled, value); }
     public bool MenuUnbindEnabled { get => _menuUnBindEnabled; set => SetProperty(ref _menuUnBindEnabled, value); }
+    public bool MenuHideEnabled { get => _menuHideEnabled; set => SetProperty(ref _menuHideEnabled, value); }
+    public bool MenuShowEnabled { get => _menuShowEnabled; set => SetProperty(ref _menuShowEnabled, value); }
+    public bool MenuUnhiddenEnabled { get => _menuUnhidenEnabled; set => SetProperty(ref _menuUnhidenEnabled, value); }
+    public bool MenuAddToAutoEnabled { get => _menuAddToAutoEanbled; set =>SetProperty(ref _menuAddToAutoEanbled, value); }
+    public bool MenuRemoveFromAutoEnabled { get => _menuRemoveFromAutoEnabled; set => SetProperty(ref _menuRemoveFromAutoEnabled, value); }
     public ObservableCollection<USBDeviceInfoModel>? USBDevicesItems { get => _usbDevicesItems; set => SetProperty(ref _usbDevicesItems, value);}
     public USBDeviceInfoModel? SelectedDevice { get => _selectedDevice; set => SetProperty(ref _selectedDevice, value); }
 
     public USBDevicesViewModel(MainWindowViewModel mainDataContext)
     {
-        RefreshCommand = new CommandImplementations(RefeshDevicesCommand);
-        ShowRefreshProgress = false;
         MenuBindEnabled = true;
         MenuAttachEnabled = true;
-        MainDataContext = mainDataContext;
+        MainVM = mainDataContext;
     }
 
-    private bool _showRefreshProgresss;
     private bool _menuBindEnabled;
     private bool _menuAttachEnabled;
     private bool _menuUnBindEnabled;
     private bool _menuDetachEnabled;
+    private bool _menuHideEnabled;
+    private bool _menuShowEnabled;
+    private bool _menuUnhidenEnabled;
+    private bool _menuAddToAutoEanbled;
+    private bool _menuRemoveFromAutoEnabled;
 
     private ObservableCollection<USBDeviceInfoModel>? _usbDevicesItems;
     private USBDeviceInfoModel? _selectedDevice;
     private USBDeviceInfoModel? _lastSelectedDevice;
-    private MainWindowViewModel MainDataContext { get; }
+    private MainWindowViewModel MainVM { get; }
 
-    #region Commands
-    /// <summary>
-    /// Refresh Button command
-    /// </summary>
-    /// <param name="obj"></param>
-    private void RefeshDevicesCommand(object? obj)
-    {
-        log.Info("Refresh device...");
-        MainDataContext.UpdateUSBDevicesAsync(2, 100);
-    }
 
-    public async void BindDevice(USBDeviceInfoModel device,bool bind)
-    {
-        log.Info("Binding device...");
-        await Task.Run(() =>
-        {
-            if (!string.IsNullOrEmpty(device.HardwareId))
-            {
-                CommandResult result = bind ? USBIPD.BindDevice(device.HardwareId, device.IsForced) : USBIPD.UnbindDevice(device.HardwareId);
-                if (result.ExitCode != 0 && result.StandardError.Length > 0)
-                {
-                    MessageBox.Show($"Failed to {(bind ? "bind" : "unbind")} {device.HardwareId}: {result.StandardError}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-        });
-        MainDataContext.UpdateUSBDevicesAsync(3, 100);
-    }
-
-    public async void AttachDevice(USBDeviceInfoModel device, bool attach)
-    {
-        await Task.Run(() =>
-        {
-            if(!string.IsNullOrEmpty(device.HardwareId))
-            {
-                CommandResult result = attach ? USBIPD.AttachDevice(device.HardwareId) : USBIPD.DetachDevice(device.HardwareId);
-                if (result.ExitCode != 0 && result.StandardError.Length > 0)
-                {
-                    MessageBox.Show($"Failed to {(attach ? "attach" : "detach")} {device.HardwareId}: {result.StandardError}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-        });
-        MainDataContext.UpdateUSBDevicesAsync(3, 100);
-    }
-    #endregion
-
-    public void UpdateDevices(List<USBDevicesInfo> infolist)
+    public void UpdateDevices(List<USBDevice>? infolist)
     {
         ObservableCollection<USBDeviceInfoModel> DeviceList = [];
-        
+        if (infolist == null) { 
+            if(USBDevicesItems == null)
+            {
+                return;
+            }
+            infolist = [];
+            foreach (var usbDevice in USBDevicesItems) {
+                infolist.Add(usbDevice.Device);
+            }
+        }
+
+        _lastSelectedDevice = SelectedDevice;
         foreach (var device in infolist)
         {
-            USBDeviceInfoModel item = new(device);
-            if (item.IsConnected)
-                DeviceList.Add(item);
+            USBDeviceInfoModel item = new(device, MainVM);
+            DeviceList.Add(item);
         }
+        
+        
         USBDevicesItems = DeviceList;
-    }
-
-    public void BeforeRefresh()
-    {
-        _lastSelectedDevice = SelectedDevice;
-        ShowRefreshProgress = true;
-    }
-
-    public void AfterRefresh()
-    {
-        ShowRefreshProgress = false;
         if (_lastSelectedDevice != null && USBDevicesItems != null && USBDevicesItems.Any())
         {
             SelectedDevice = USBDevicesItems?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, StringComparison.CurrentCultureIgnoreCase)) ?? USBDevicesItems?.First();
         }
     }
+
 }

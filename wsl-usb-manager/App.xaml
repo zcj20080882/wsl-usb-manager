@@ -8,12 +8,18 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Resources/LangEnglish.xaml" />
-                <materialDesign:BundledTheme BaseTheme="Light"
-                                             PrimaryColor="DeepPurple"
-                                             SecondaryColor="Lime" />
+                <materialDesign:BundledTheme BaseTheme="Inherit"
+                                             ColorAdjustment="{materialDesign:ColorAdjustment}"
+                                             PrimaryColor="Teal"
+                                             SecondaryColor="Indigo" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Microsoft YaHei UI"/>
+            </Style>
+            <Style TargetType="Label">
+                <Setter Property="FontFamily" Value="Microsoft YaHei UI"/>
+            </Style>
         </ResourceDictionary>
-        
     </Application.Resources>
 </Application>
