@@ -7,12 +7,12 @@
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              xmlns:wpf="clr-namespace:MaterialDesignThemes.Wpf;assembly=MaterialDesignThemes.Wpf"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
-             Height="260"
-             Width="480"
+             Height="240"
+             Width="460"
              d:DataContext="{d:DesignInstance Type=local:SettingViewModel}"
              mc:Ignorable="d"
-             d:DesignHeight="260"
-             d:DesignWidth="480">
+             d:DesignHeight="240"
+             d:DesignWidth="460">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -25,7 +25,7 @@
         <StackPanel Orientation="Horizontal"
                     Grid.Row="0"
                     Height="24"
-                    Margin="10,0,10,0">
+                    Margin="10,5,10,0">
             <md:PackIcon Kind="Cog"
                          VerticalAlignment="Center" />
             <TextBlock Margin="10,0,0,0"
@@ -46,13 +46,16 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Row="0"
+            <CheckBox Grid.Row="0"
                        Grid.Column="0"
-                       Text="{DynamicResource AttachToDistrib}"
+                      x:Name="CheckboxAttachToDistrib"
+                      md:CheckBoxAssist.CheckBoxSize="20"
+                      IsChecked="{Binding SpecifyWSLDistribution}"
+                      Content="{DynamicResource AttachToDistrib}"
                        VerticalAlignment="Center"
                        HorizontalAlignment="Left"
-                       Style="{StaticResource MaterialDesignLabelMediumTextBlock}"
-                       Margin="0,0,10,0" />
+                       Margin="0,0,10,0"
+                      Unchecked="CheckboxAttachToDistrib_Unchecked" />
             <TextBlock Grid.Row="0"
                        Grid.Column="1"
                        Text=":"
@@ -62,6 +65,7 @@
                        Margin="0,0,10,0" />
             <ComboBox Grid.Row="0"
                       Grid.Column="2"
+                      IsEnabled="{Binding ElementName=CheckboxAttachToDistrib, Path=IsChecked}"
                       ItemsSource="{Binding Distributions}"
                       md:HintAssist.Hint="{DynamicResource SelectDistrib}"
                       SelectedItem="{Binding SelectedDistribution}"
@@ -69,12 +73,14 @@
             
             <CheckBox Grid.Row="1"
                        Grid.Column="0"
-                       x:Name="CheclboxUseUSEWSL"
+                       x:Name="CheckboxUseWSLAttachCmd"
                        Content="{DynamicResource UseWSLAttach}"
                        VerticalAlignment="Center"
                        HorizontalAlignment="Left"
                         md:CheckBoxAssist.CheckBoxSize="20"
-                       Margin="0,0,10,0" />
+                       Margin="0,0,10,0"
+                      IsChecked="{Binding UseWSLAttach}"
+                      Unchecked="CheckboxUseWSLAttachCmd_Unchecked" />
             <TextBlock Grid.Row="1"
                        Grid.Column="1"
                        Text=":"
@@ -84,10 +90,10 @@
                        Margin="0,0,10,0" />
             <ComboBox Grid.Row="1"
                       Grid.Column="2"
-                      IsEnabled="{Binding ElementName=CheclboxUseUSEWSL, Path=IsChecked}"
+                      IsEnabled="{Binding ElementName=CheckboxUseWSLAttachCmd, Path=IsChecked}"
                       ItemsSource="{Binding NetworkCards}"
                       md:HintAssist.Hint="{DynamicResource SelectNetCart}"
-                      SelectedItem="{Binding ForwardNetCard}"
+                      SelectedItem="{Binding SelectedForwardNetCard}"
                       ToolTip="{DynamicResource ToolTipForwardNetCard}" />
             <CheckBox Grid.Row="2"
                       Grid.Column="0"
@@ -109,19 +115,23 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Button Grid.Column="0"
+                    Width="100"
                     Content="{DynamicResource Cancel}"
                     Command="{x:Static md:DialogHost.CloseDialogCommand}"
-                    Style="{StaticResource MaterialDesignFlatButton}">
+                    Style="{StaticResource MaterialDesignFlatButton}" >
                 <Button.CommandParameter>
                     <system:String>Cancel</system:String>
                 </Button.CommandParameter>
             </Button>
             <Button Grid.Column="1"
+                    Width="100"
+                    x:Name="ButtonOK"
                     Content="{DynamicResource OK}"
                     Command="{x:Static md:DialogHost.CloseDialogCommand}"
-                    Style="{StaticResource MaterialDesignFlatButton}">
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Click="ButtonOK_Click" >
                 <Button.CommandParameter>
-                    <system:String>Cancel</system:String>
+                    <system:String>OK</system:String>
                 </Button.CommandParameter>
             </Button>
         </Grid>

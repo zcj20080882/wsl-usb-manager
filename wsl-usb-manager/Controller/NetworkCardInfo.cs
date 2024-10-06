@@ -14,7 +14,7 @@ namespace wsl_usb_manager.Controller;
 
 public class NetworkCardInfo
 {
-    public static List<string>? GetAllNetworkCardName()
+    public static List<string> GetAllNetworkCardName()
     {
         List<string> netlist = [];
         NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();

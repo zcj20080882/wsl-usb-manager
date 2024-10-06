@@ -34,5 +34,35 @@ namespace wsl_usb_manager.Settings
         {
             InitializeComponent();
         }
+
+        public SettingsView(SettingViewModel dataContext)
+        {
+            InitializeComponent();
+            DataContext = dataContext;
+        }
+
+        private void ButtonOK_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is SettingViewModel viewModel)
+            {
+                viewModel.SaveConfig();
+            }
+        }
+
+        private void CheckboxAttachToDistrib_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.CheckBox checkBox && DataContext is SettingViewModel viewModel)
+            {
+                viewModel.SelectedDistribution = null;
+            }
+        }
+
+        private void CheckboxUseWSLAttachCmd_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.CheckBox checkBox && DataContext is SettingViewModel viewModel)
+            {
+                viewModel.SelectedForwardNetCard = null;
+            }
+        }
     }
 }

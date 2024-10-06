@@ -20,6 +20,7 @@ using MessageBox = System.Windows.MessageBox;
 using System.Xml;
 using Newtonsoft.Json;
 using System.IO;
+using wsl_usb_manager.Settings;
 
 namespace wsl_usb_manager;
 
@@ -29,9 +30,10 @@ public class MainWindowViewModel : ViewModelBase
     private int _selectedIndex;
     private readonly string? _windowTitle;
     private bool _windowEnabled;
-    private readonly string ConfigFilePath = Environment.CurrentDirectory + "/config.json";
     private bool _isDarkMode;
     private bool _isChinese = false;
+    private readonly SystemConfig Sysconfig = App.GetSysConfig();
+    private readonly ApplicationConfig AppConfig = App.GetAppConfig();
 
     public MainWindowViewModel(string? windowTitle)
     {
@@ -43,21 +45,8 @@ public class MainWindowViewModel : ViewModelBase
         _windowTitle = windowTitle;
         UpdateUSBDevicesAsync(0,0);
         SelectedItem = BodyItems.First();
-        WindowEnabled = true;
-
-        if (File.Exists(ConfigFilePath))
-        {
-            string json = File.ReadAllText(ConfigFilePath);
-            var cfg = JsonConvert.DeserializeObject<SystemConfig>(json);
-            if (cfg != null) Config = cfg;
-        }
-
-        if (Config == null)
-        {
-            Config ??= new SystemConfig();
-            SaveConfig();
-        }
-        IsDarkMode = Config.DarkMode;
+        WindowEnabled = true;        
+        IsDarkMode = AppConfig.DarkMode;
     }
 
     public string? WindowTitle { get => _windowTitle; }
@@ -66,10 +55,10 @@ public class MainWindowViewModel : ViewModelBase
         get => _isDarkMode;
         set { 
             SetProperty(ref _isDarkMode, value);
-            if (Config != null && value != Config.DarkMode)
+            if (Config != null && value != Config.AppConfig.DarkMode)
             {
-                Config.DarkMode = value;
-                SaveConfig();
+                Config.AppConfig.DarkMode = value;
+                App.SaveConfig();
             }
         }
     }
@@ -79,10 +68,10 @@ public class MainWindowViewModel : ViewModelBase
             SetProperty(ref _isChinese, value); 
             if (Config != null)
             {
-                if (value != Config.IsChinese)
+                if (value != Config.AppConfig.IsChinese)
                 {
-                    Config.IsChinese = value;
-                    SaveConfig();
+                    Config.AppConfig.IsChinese = value;
+                    App.SaveConfig();
                 }
             }
         } 
@@ -155,11 +144,5 @@ public class MainWindowViewModel : ViewModelBase
             CallReflectionMethod(obj2, "AfterRefresh", null);
         }
         WindowEnabled = true;
-    }
-
-    public void SaveConfig()
-    {
-        string json = JsonConvert.SerializeObject(Config, Newtonsoft.Json.Formatting.Indented);
-        File.WriteAllText(ConfigFilePath, json);
     }
 }

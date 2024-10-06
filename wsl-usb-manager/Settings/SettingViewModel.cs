@@ -8,74 +8,91 @@
 * Description:
 * Create Date: 2024/10/5 16:45
 ******************************************************************************/
+
+// Ignore Spelling: App
+
+using log4net;
+using System.Collections.ObjectModel;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 
 namespace wsl_usb_manager.Settings;
 
-public class SettingViewModel(SystemConfig syscfg) : ViewModelBase
+public class SettingViewModel : ViewModelBase
 {
     private string? _distribution;
     private string? _forwardNetCard;
     private bool _useWSLAttach;
     private bool _closeToTray;
+    private bool _specifyWSLDistribution;
+    private ObservableCollection<string>? _listDistribution;
+    private ObservableCollection<string>? _listNetworkCard;
+    private ApplicationConfig AppConfig { get; set; }
+    private static readonly ILog log = LogManager.GetLogger(typeof(SettingViewModel));
 
-    private readonly SystemConfig SysConfig = syscfg;
+    public SettingViewModel(ApplicationConfig appcfg)
+    {
+        Distributions = [];
+        foreach (var distrib in WSLHelper.GetAllWSLDistribution())
+        {
+            Distributions.Add(distrib);
+        }
+        NetworkCards = [];
+        foreach (var netcard in NetworkCardInfo.GetAllNetworkCardName())
+        {
+            NetworkCards.Add(netcard);
+        }
+        AppConfig = appcfg;
+        SelectedDistribution = appcfg.DefaultDistribution;
+        SelectedForwardNetCard = appcfg.ForwardNetCard;
+        UseWSLAttach = appcfg.UseWSLAttach;
+        CloseToTray = appcfg.CloseToTray;
+        SpecifyWSLDistribution = appcfg.SpecifyWSLDistribution;
+    }
 
-    public List<string> Distributions => WSLHelper.GetAllWSLDistribution();
+    
+    public ObservableCollection<string>? Distributions { get => _listDistribution; set => SetProperty(ref _listDistribution, value);}
 
-    public List<string> NetworkCards => NetworkCardInfo.GetAllNetworkCardName() ?? [];
+    public ObservableCollection<string>? NetworkCards { get => _listNetworkCard; set => SetProperty(ref _listNetworkCard, value);}
 
     public string? SelectedDistribution
     {
         get => _distribution;
-        set
-        {
-            SetProperty(ref _distribution, value);
-            if (SysConfig != null && value != null && value != SysConfig.DefaultDistribution)
-            {
-                SysConfig.DefaultDistribution = value;
-            }
-        }
+        set => SetProperty(ref _distribution, value);
     }
 
-    public string? ForwardNetCard
+    public string? SelectedForwardNetCard
     {
         get => _forwardNetCard;
-        set
-        {
-            SetProperty(ref _forwardNetCard, value);
-            if (SysConfig != null && value != null && value != SysConfig.ForwardNetCard)
-            {
-                SysConfig.ForwardNetCard = value;
-            }
-        }
+        set => SetProperty(ref _forwardNetCard, value);
     }
 
     public bool UseWSLAttach
     {
         get => _useWSLAttach;
-        set
-        {
-            SetProperty(ref _useWSLAttach, value);
-            if (SysConfig != null && value != SysConfig.UseWSLAttach)
-            {
-                SysConfig.UseWSLAttach = value;
-            }
-        }
+        set => SetProperty(ref _useWSLAttach, value);
     }
 
     public bool CloseToTray
     {
         get => _closeToTray;
-        set
-        {
-            SetProperty(ref _closeToTray, value);
-            if (SysConfig != null && value != SysConfig.CloseToTray)
-            {
-                SysConfig.CloseToTray = value;
-            }
-        }
+        set => SetProperty(ref _closeToTray, value);
+    }
+
+    public bool SpecifyWSLDistribution
+    {
+        get => _specifyWSLDistribution;
+        set => SetProperty(ref _specifyWSLDistribution, value);
+    }
+
+    public void SaveConfig()
+    {
+        AppConfig.CloseToTray = CloseToTray;
+        AppConfig.SpecifyWSLDistribution = SpecifyWSLDistribution;
+        AppConfig.UseWSLAttach = UseWSLAttach;
+        AppConfig.ForwardNetCard = SelectedForwardNetCard ?? "";
+        AppConfig.DefaultDistribution = SelectedDistribution ?? "";
+        log.Debug($"Selected distribution: {SelectedDistribution}");
     }
 }
 

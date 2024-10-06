@@ -11,6 +11,8 @@
 
 // Ignore Spelling: USBIPD hardwareid harwareid busid
 
+using wsl_usb_manager.Settings;
+
 namespace wsl_usb_manager.Controller;
 
 public class USBDevicesInfo
@@ -26,6 +28,44 @@ public class USBDevicesInfo
     public string? IsBound;
     public string? IsConnected;
     public string? IsAttached;
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is USBDevicesInfo other)
+        {
+            return (
+                    this.InstanceId == other.InstanceId &&
+                    this.HardwareId == other.HardwareId &&
+                    this.Description == other.Description &&
+                    this.IsForced == other.IsForced &&
+                    this.BusId == other.BusId &&
+                    this.PersistedGuid == other.PersistedGuid &&
+                    this.StubInstanceId == other.StubInstanceId &&
+                    this.ClientIPAddress == other.ClientIPAddress &&
+                    this.IsBound == other.IsBound &&
+                    this.IsConnected == other.IsConnected &&
+                    this.IsAttached == other.IsAttached
+                );
+        }
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        HashCode hash = new();
+        hash.Add(this.InstanceId);
+        hash.Add(this.HardwareId);
+        hash.Add(this.Description);
+        hash.Add(this.IsForced);
+        hash.Add(this.BusId);
+        hash.Add(this.PersistedGuid);
+        hash.Add(this.StubInstanceId);
+        hash.Add(this.ClientIPAddress);
+        hash.Add(this.IsBound);
+        hash.Add(this.IsConnected);
+        hash.Add(this.IsAttached);
+        return hash.ToHashCode();
+    }
 }
 
 public class USBIPD

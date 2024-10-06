@@ -24,7 +24,7 @@ public struct CommandResult
 public class PowerShellRunner(string commands)
 {
     private readonly string Commands = commands;
-    private static readonly ILog log = LogManager.GetLogger(typeof(PowerShellRunner));
+    private readonly ILog log = LogManager.GetLogger(typeof(PowerShellRunner));
     private (string, string) SpliteCommandString(string command)
     {
         string[] blocks = command.Split(" ");

@@ -34,6 +34,7 @@ namespace wsl_usb_manager
                 return;
             }
 
+            InitConfiguration();
             log4net.Config.XmlConfigurator.Configure();
             base.OnStartup(e);
         }

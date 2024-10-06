@@ -61,23 +61,20 @@ public partial class MainWindow : Window
         ChangeLanguage(LangToggleButton.IsChecked??false);
     }
 
-    private async void btnSetting_Click(object sender, RoutedEventArgs e)
+    private async void BtnSetting_Click(object sender, RoutedEventArgs e)
     {
-        SystemConfig old_cfg;
-        var view = new SettingsView();
-        if (DataContext is MainWindowViewModel vm && vm.Config != null)
-        {
-            old_cfg = vm.Config;
-        }
-        else
-            old_cfg = new SystemConfig();
-
-        view.DataContext = new SettingViewModel(old_cfg);
+        ApplicationConfig new_cfg = App.GetAppConfig().Clone();
+        var view = new SettingsView(new SettingViewModel(new_cfg));
 
         if (view != null)
         {
-            var result = await DialogHost.Show(view, "RootDialog");
-            //DebugOutput.WriteLine("接收到对话框结果: " + (result == null ? MessageResult.None : (MessageResult)result));
+            if (await DialogHost.Show(view, "RootDialog") is string result && result != null)
+            {
+                if (result == "OK")
+                {
+                    App.SetAppConfig(new_cfg);
+                }
+            }
         }
     }
 }

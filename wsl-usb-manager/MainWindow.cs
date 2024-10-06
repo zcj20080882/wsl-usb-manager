@@ -80,7 +80,9 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(CancelEventArgs e)
     {
-        if (DataContext is MainWindowViewModel vm && vm.Config != null && vm.Config.CloseToTray)
+        if (DataContext is MainWindowViewModel vm && vm.Config != null && 
+            vm.Config != null && vm.Config.AppConfig != null &&
+            vm.Config.AppConfig.CloseToTray)
         {
             e.Cancel = true;
             Hide();
