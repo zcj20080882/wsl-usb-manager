@@ -101,17 +101,10 @@ public partial class MainWindowViewModel : ViewModelBase
             if (Sysconfig.IsInAutoAttachDeviceList(changedDev))
             {
                 await AutoAttachDevices(changedDev);
-                //(err_msg, changedDev, new_list) = await GetAllDeviceAndFilter(hardwareid);
-                //if (new_list == null) { 
-                //    return;
-                //}
-                //if (changedDev == null) {
-                //    await UpdateUSBDevices(new_list);
-                //    return;
-                //}
             }
             msg = $"\"{name}({hardwareid})\" is connected to {(changedDev.IsAttached ? "WSL" : "Windows")}.";
             ShowNotification(msg);
+            await UpdateUSBDevices(new_list);
         }
         else
         {
@@ -196,7 +189,7 @@ public partial class MainWindowViewModel : ViewModelBase
         finally
         {
             (_, USBDevice? readback, List<USBDevice>? new_list) = await GetAllDeviceAndFilter(device.HardwareId);
-            if (readback != null && readback.IsBound)
+            if (readback != null && readback.IsAttached)
                 err_msg = "";
             await UpdateUSBDevices(new_list);
             EnableWindow();
