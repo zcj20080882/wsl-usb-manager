@@ -57,27 +57,11 @@ public partial class MainWindowViewModel : ViewModelBase
         
         log.Debug($"USB {hardwareid} {(e.IsConnected ? "connected" : "disconnected")}");
 
-        if (string.IsNullOrEmpty(hardwareid)) { 
-            log.Error("Invalid hardware id.");
-            return;
-        }
-
-        if (string.Equals(hardwareid, USBMonitor.VBOX_USB_HARDWARE_ID, StringComparison.OrdinalIgnoreCase) && e.IsConnected)
-        {
-            /**
-             * This event is triggered by VBOX USB, ignore it.
-             */
-            log.Debug("Received VBOX USB connection event, ignore it.");
-            return;
-        }
-
         if (Sysconfig.IsInFilterDeviceList(hardwareid))
         {
             log.Debug($"Device {e.Name}({hardwareid}) is in filter list, ignore it.");
             return;
         }
-
-        //await Task.Delay(200);
 
         (string err_msg, USBDevice ? changedDev, List<USBDevice>? new_list) = await GetAllDeviceAndFilter(hardwareid);
 
@@ -102,9 +86,12 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 await AutoAttachDevices(changedDev);
             }
+            else
+            {
+                await UpdateUSBDevices(new_list);
+            }
             msg = $"\"{name}({hardwareid})\" is connected to {(changedDev.IsAttached ? "WSL" : "Windows")}.";
             ShowNotification(msg);
-            await UpdateUSBDevices(new_list);
         }
         else
         {
@@ -125,10 +112,10 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 msg = $"\"{e.Name}({e.HardwareID})\" is disconnected from Windows.";
             }
+            log.Debug("Update USB devices list....");
+            await UpdateUSBDevices(new_list);
             ShowNotification(msg);
         }
-        log.Debug("Update USB devices list....");
-        await UpdateUSBDevices(new_list);
     }
 
     public async Task<bool> BindDevice(USBDevice device)

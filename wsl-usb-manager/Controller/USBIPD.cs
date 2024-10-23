@@ -14,12 +14,7 @@
 using log4net;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
-using System.Windows.Shapes;
-using wsl_usb_manager.Settings;
-using static wsl_usb_manager.Controller.Wsl;
 
 namespace wsl_usb_manager.Controller;
 
@@ -43,10 +38,45 @@ public partial class USBIPD
                     @"IsAttached\s*:\s*(?<IsAttached>.*?)\s*(?=\n\n|\Z)", RegexOptions.Singleline)]
     private static partial Regex DeviceInfoRegex();
 
+    private static string USBIPD_INSTALL_PATH = string.Empty;
     public USBIPD()
     {
 
     }
+
+    public static async Task<(ExitCode, string)> InitUSBIPD()
+    {
+        (bool IsInstalled, string InstallPath) = await CheckUsbipdWinInstallation();
+        if (!IsInstalled)
+        {
+            return (ExitCode.Failure, "usbipd-win is not installed.");
+        }
+        USBIPD_INSTALL_PATH = InstallPath;
+        return (ExitCode.Success, "");
+    }
+
+    public static string GetUSBIPDInstallPath() => USBIPD_INSTALL_PATH;
+    public static async Task<(bool IsInstalled, string InstallPath)> CheckUsbipdWinInstallation()
+    {
+        string script = @"
+            $usbipdPath = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' | Where-Object { $_.DisplayName -eq 'usbipd-win' }).InstallLocation
+            if ($usbipdPath) {
+                Write-Output $usbipdPath
+            } else {
+                Write-Output ''
+            }
+        ";
+
+        (int exitCode, string stdout, string stderr) = await RunPowerShellScripts(script, 5000);
+
+        if (exitCode == 0 && !string.IsNullOrWhiteSpace(stdout))
+        {
+            return (true, stdout.Trim());
+        }
+
+        return (false, string.Empty);
+    }
+
 
     private static async Task<(int ExitCode, string StandardOutput, string StandardError)> 
         RunPowerShellScripts(string script, int timeout_ms)
@@ -56,7 +86,7 @@ public partial class USBIPD
         var startInfo = new ProcessStartInfo
         {
             FileName = "powershell.exe",
-            Arguments = $"{script}",
+            Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command {script}",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,

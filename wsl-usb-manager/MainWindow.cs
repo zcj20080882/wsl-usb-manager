@@ -104,6 +104,21 @@ public partial class MainWindow : Window, INotifyIconService
 
     private void OnUSBEvent(object sender, USBEventArgs e)
     {
+        if (string.IsNullOrEmpty(e.HardwareID))
+        {
+            log.Error("Invalid hardware id.");
+            return;
+        }
+
+        if (string.Equals(e.HardwareID, USBMonitor.VBOX_USB_HARDWARE_ID, StringComparison.OrdinalIgnoreCase))
+        {
+            /**
+             * This event is triggered by VBOX USB, ignore it.
+             */
+            log.Debug("Received VBOX USB connection event, ignore it.");
+            return;
+        }
+
         Dispatcher.InvokeAsync(async () =>
         {
             if (DataContext is not MainWindowViewModel vm)

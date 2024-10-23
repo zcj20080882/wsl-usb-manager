@@ -30,7 +30,6 @@ static partial class Wsl
 {
     public const string AttachWslUrl = "https://learn.microsoft.com/windows/wsl/connect-usb#attach-a-usb-device";
     const string InstallWslUrl = "https://learn.microsoft.com/windows/wsl/install";
-    const string ListDistributionsUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#install";
     const string InstallDistributionUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#install";
     const string SetWslVersionUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
 
@@ -144,10 +143,10 @@ static partial class Wsl
     {
         var distribution = "";
         var err_msg = "";
-        var wslWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "WSL");
+        var wslWindowsPath = Path.Combine(USBIPD.GetUSBIPDInstallPath(), "WSL");
         if (!Path.Exists(wslWindowsPath))
         {
-            err_msg = $"WSL support was not installed; reinstall this application with the WSL feature enabled.";
+            err_msg = $"usbipd-win may be not installed; reinstall usbipd-win(version >= 4.3.0) then restart this program.";
             log.Error(err_msg);
             return (ExitCode.Failure, err_msg);
         }

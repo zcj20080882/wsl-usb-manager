@@ -80,10 +80,6 @@
     <None Update="Log4Net.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="WSL\auto-attach.sh">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <CustomToolNamespace>WSL</CustomToolNamespace>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -92,9 +88,5 @@
       <Generator></Generator>
     </Page>
   </ItemGroup>
-
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="xcopy /y /e /i &quot;WSL&quot; &quot;$(TargetDir)/WSL&quot;" />
-  </Target>
 
 </Project>

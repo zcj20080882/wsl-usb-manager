@@ -68,6 +68,7 @@ public partial class MainWindow : Window
     {
         if(DataContext is MainWindowViewModel vm)
         {
+            await USBIPD.InitUSBIPD();
             await vm.UpdateUSBDevices(null);
         }
     }
