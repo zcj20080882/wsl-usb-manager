@@ -30,6 +30,7 @@ public partial class MainWindow : Window, INotifyIconService
 {
     private static readonly NotifyIcon notifyIcon = new();
     private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
+    private bool USBEventProcessing { get; set; } = false;
 
     private void MenuExitButton_OnClick(object sender, RoutedEventArgs e)
     {
@@ -104,22 +105,27 @@ public partial class MainWindow : Window, INotifyIconService
 
     private void OnUSBEvent(object sender, USBEventArgs e)
     {
+        if (USBEventProcessing)
+        {
+            log.Debug("USB event is processing, ignore this event.");
+            return;
+        }
         if (string.IsNullOrEmpty(e.HardwareID))
         {
             log.Error("Invalid hardware id.");
             return;
         }
 
-        if (string.Equals(e.HardwareID, USBMonitor.VBOX_USB_HARDWARE_ID, StringComparison.OrdinalIgnoreCase))
-        {
+        if (e.Name != null && e.Name.Contains("USBIPD Shared")) {
             /**
              * This event is triggered by VBOX USB, ignore it.
              */
-            log.Debug("Received VBOX USB connection event, ignore it.");
+            log.Debug($"Received VBOX USB connection({e.Name}-{e.HardwareID}) event, ignore it.");
             return;
         }
-
-        Dispatcher.InvokeAsync(async () =>
+        
+        USBEventProcessing = true;
+        Dispatcher.Invoke(async () =>
         {
             if (DataContext is not MainWindowViewModel vm)
             {
@@ -128,6 +134,7 @@ public partial class MainWindow : Window, INotifyIconService
             }
             await vm.USBEventProcess(e);
         });
+        USBEventProcessing = false;
     }
 
     public void ShowNotification(string message)

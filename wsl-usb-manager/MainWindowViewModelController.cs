@@ -167,14 +167,19 @@ public partial class MainWindowViewModel : ViewModelBase
     public async Task<bool> AttachDevice(USBDevice device)
     {
         string err_msg = "";
+        ExitCode ret = ExitCode.Failure;
         ApplicationConfig cfg = App.GetAppConfig();
         try
         {
             DisableWindow();
-            (ExitCode _, err_msg) = await Wsl.Attach(device.BusId, NetworkCardInfo.GetIPAddress(cfg.ForwardNetCard));
+            (ret, err_msg) = await Wsl.Attach(device.BusId, NetworkCardInfo.GetIPAddress(cfg.ForwardNetCard));
         }
         finally
         {
+            if (ret != ExitCode.Success)
+            {
+                await Task.Delay(500);
+            }
             (_, USBDevice? readback, List<USBDevice>? new_list) = await GetAllDeviceAndFilter(device.HardwareId);
             if (readback != null && readback.IsAttached)
                 err_msg = "";
@@ -254,7 +259,6 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             return;
         }
-        dev = await USBIPD.GetDeviceInfo(dev.HardwareId);
         if(dev == null)
         {
             log.Error($"Cannot get device info for auto attach device");

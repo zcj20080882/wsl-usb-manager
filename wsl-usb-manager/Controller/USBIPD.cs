@@ -203,9 +203,9 @@ public partial class USBIPD
         {
             return (ExitCode.Success,"");
         }
-        await Task.Run(() => Thread.Sleep(500));
-        var dev_info = await GetDeviceInfo(hardwareid);
-        if(dev_info != null && dev_info.IsBound)
+        await Task.Run(() => Thread.Sleep(200));
+
+        if(await IsDeviceBound(hardwareid))
         {
             return (ExitCode.Success, "");
         }
@@ -282,7 +282,7 @@ public partial class USBIPD
         {
             if (DeviceInfoRegex().Match(block.Trim(['\r', '\n', ' ', '\t'])) is Match match)
             {
-
+                string busId = match.Groups["BusId"].Value.Trim();
                 if (!bool.TryParse(match.Groups["IsForced"].Value.Trim(), out bool isForced))
                 {
                     string t = match.Groups["IsForced"].Value.Trim();
@@ -296,10 +296,63 @@ public partial class USBIPD
                     log.Warn("Failed to parse IsBound");
                 }
 
-                if (!bool.TryParse(match.Groups["IsConnected"].Value.Trim(), out bool isConnected))
+                if (!bool.TryParse(match.Groups["IsAttached"].Value.Trim(), out bool isAttached))
                 {
-                    isConnected = false;
-                    log.Warn("Failed to parse IsConnected");
+                    isAttached = false;
+                    log.Warn("Failed to parse IsAttached");
+                }
+                USBDevice deviceInfo = new()
+                {
+                    InstanceId = match.Groups["InstanceId"].Value.Trim(),
+                    HardwareId = match.Groups["HardwareId"].Value.Trim(),
+                    Description = match.Groups["Description"].Value.Trim(),
+                    IsForced = isForced,
+                    BusId = busId,
+                    PersistedGuid = match.Groups["PersistedGuid"].Value.Trim(),
+                    StubInstanceId = match.Groups["StubInstanceId"].Value.Trim(),
+                    ClientIPAddress = match.Groups["ClientIPAddress"].Value.Trim(),
+                    IsBound = isBound,
+                    IsConnected = !string.IsNullOrWhiteSpace(busId),
+                    IsAttached = isAttached
+                };
+
+                deviceslist.Add(deviceInfo);
+            }
+        }
+        
+        return (ExitCode.Success, stdout, deviceslist);
+    }
+
+    public static async Task<(ExitCode, string, List<USBDevice>?)> GetAllConnectedDevices()
+    {
+        List<USBDevice> deviceslist = [];
+        string cmd = $"{CmdGetAllDevices} | Where-Object {{$_.IsConnected}}";
+        (int exitCode, string stdout, string stderr) = await RunPowerShellScripts(cmd, 2000);
+
+        if (exitCode != 0 || stdout.Length == 0)
+        {
+            return (ExitCode.Failure, stderr, deviceslist);
+        }
+
+        string pattern = @"\r?\n\s*\r?\n";
+        string[] blocks = Regex.Split(stdout.Trim(['\r', '\n', ' ', '\t']), pattern);
+
+        foreach (string block in blocks)
+        {
+            if (DeviceInfoRegex().Match(block.Trim(['\r', '\n', ' ', '\t'])) is Match match)
+            {
+
+                if (!bool.TryParse(match.Groups["IsForced"].Value.Trim(), out bool isForced))
+                {
+                    string t = match.Groups["IsForced"].Value.Trim();
+                    isForced = false;
+                    log.Warn("Failed to parse IsForced");
+                }
+
+                if (!bool.TryParse(match.Groups["IsBound"].Value.Trim(), out bool isBound))
+                {
+                    isBound = false;
+                    log.Warn("Failed to parse IsBound");
                 }
 
                 if (!bool.TryParse(match.Groups["IsAttached"].Value.Trim(), out bool isAttached))
@@ -318,24 +371,35 @@ public partial class USBIPD
                     StubInstanceId = match.Groups["StubInstanceId"].Value.Trim(),
                     ClientIPAddress = match.Groups["ClientIPAddress"].Value.Trim(),
                     IsBound = isBound,
-                    IsConnected = isConnected,
+                    IsConnected = true,
                     IsAttached = isAttached
                 };
 
                 deviceslist.Add(deviceInfo);
             }
         }
-        
+
         return (ExitCode.Success, stdout, deviceslist);
     }
 
-    public static async Task<USBDevice?> GetDeviceInfo(string? hardwareId)
+    public static async Task<bool> IsDeviceConnected(string? hardwareId)
     {
-        (ExitCode ret, _, List<USBDevice>? infolist) = await GetAllUSBDevices();
+        (ExitCode ret, _, List<USBDevice>? infolist) = await GetAllConnectedDevices();
         if(ret == 0 && infolist != null)
         {
-            return infolist.Find(x => string.Equals(x.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase));
+            return infolist.Any(x => string.Equals(x.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase));
         }
-        return null;
+        return false;
+    }
+
+    public static async Task<bool> IsDeviceBound(string? hardwareId)
+    {
+        (ExitCode _, _, List<USBDevice>? infolist) = await GetAllConnectedDevices();
+        USBDevice? dev = infolist?.Find(x => string.Equals(x.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase));
+        if (dev != null)
+        {
+            return dev.IsBound;
+        }
+        return false;
     }
 }
