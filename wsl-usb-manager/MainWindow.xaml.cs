@@ -34,7 +34,7 @@ public partial class MainWindow : Window
         USBMonitor m = new(OnUSBEvent);
         m.Start();
         InitNotifyIcon();
-        DataContext = new MainWindowViewModel(this.Title,this);
+        DataContext = new MainWindowViewModel(this);
         ModifyTheme(App.GetAppConfig().DarkMode == true);
         log.Info("Starting...");
     }

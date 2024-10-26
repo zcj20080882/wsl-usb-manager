@@ -31,7 +31,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly INotifyIconService _notifyIconService;
     private BodyItem? _selectedItem;
     private int _selectedIndex;
-    private readonly string? _windowTitle;
+    private string? _windowTitle;
     private bool _windowEnabled;
     private bool _isDarkMode;
     private bool _isChinese = App.GetAppConfig().Lang.Equals("zh",StringComparison.OrdinalIgnoreCase);
@@ -41,7 +41,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ApplicationConfig AppConfig = App.GetAppConfig();
     private static readonly ILog log = LogManager.GetLogger(typeof(MainWindowViewModel));
 
-    public string? WindowTitle { get => _windowTitle; }
+    public string? WindowTitle { get => _windowTitle; set => SetProperty(ref _windowTitle, value);}
     public bool WindowEnabled { get => _windowEnabled; set => SetProperty(ref _windowEnabled, value); }
     public bool IsDarkMode { 
         get => _isDarkMode;
@@ -83,7 +83,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool ShowRefreshProgress { get => _showRefreshProgresss; set => SetProperty(ref _showRefreshProgresss, value); }
     #endregion
 
-    public MainWindowViewModel(string? windowTitle, INotifyIconService notifyIconService)
+    public MainWindowViewModel(INotifyIconService notifyIconService)
     {
         _notifyIconService = notifyIconService;
         if (Lang.GetText("Device") is not string device_tilte)
@@ -107,7 +107,8 @@ public partial class MainWindowViewModel : ViewModelBase
             new BodyItem(persisted_tilte, typeof(PersistedDeviceView), PackIconKind.StoreCheck, PackIconKind.StoreCheckOutline, new PersistedDeviceViewModel(this)),
             new BodyItem(autoattach_tilte, typeof(AutoAttachView), PackIconKind.StarBoxMultiple, PackIconKind.StarBoxMultipleOutline, new AutoAttachViewModel(this)),
         ];
-        _windowTitle = windowTitle;
+        _windowTitle = Lang.GetText("WindowTitle") ?? "WSL USB Manager";
+        _windowTitle += " v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
         SelectedItem = BodyItems.First();
         WindowEnabled = true;
         IsDarkMode = AppConfig.DarkMode;
@@ -184,6 +185,8 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         }
         RefeshDevicesCommand(ConnectedDeviceList);
+        WindowTitle = Lang.GetText("WindowTitle") ?? "WSL USB Manager";
+        WindowTitle += " v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
     }
     public void ShowNotification(string message)
     {

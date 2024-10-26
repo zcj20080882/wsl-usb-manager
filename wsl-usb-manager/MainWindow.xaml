@@ -11,7 +11,7 @@
         AutomationProperties.Name="{Binding Title, RelativeSource={RelativeSource Self}}"
         IsEnabled="{Binding WindowEnabled}"
         mc:Ignorable="d"
-        Title="{DynamicResource WindowTitle}"
+        Title="{Binding WindowTitle}"
         Style="{StaticResource MaterialDesignWindow}"
         Height="600"
         Width="800"

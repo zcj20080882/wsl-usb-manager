@@ -1,16 +1,20 @@
 # wsl-usb-manager
 
 #### 介绍
-利用usbipd管理USB 设备，能够将USB设备附件到WSL中。
+利用usbipd-win管理USB 设备，能够将USB设备附件到WSL中。本软件通过调用usbipd来绑定、解绑、附加以及分离USB设备，因此本软件运行时会自动检测本机是否安装usbipd-win，并且版本需要>=4.3.0，若不符合条件，则会自动安装uwbsipd-win。
 
 #### 软件架构
 软件架构说明
 
 
-#### 安装教程
+#### 构建
 
-1.  xxxx
-2.  xxxx
+1.  安装Visual Studio 2022
+2.  安装Git Version
+
+    ```powershell
+    dotnet tool install --global GitVersion.Tool
+    ```
 3.  xxxx
 
 #### 使用说明
