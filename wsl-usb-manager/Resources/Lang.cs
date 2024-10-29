@@ -9,12 +9,6 @@
 * Create Date: 2024/10/19 11:55
 ******************************************************************************/
 using log4net;
-using Microsoft.VisualBasic.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace wsl_usb_manager.Resources;
 
@@ -43,7 +37,7 @@ public class Lang
                 System.Windows.Application.Current.Resources.MergedDictionaries[0].Source = new Uri(EnglishResource);
                 App.GetAppConfig().Lang = "en";
             }
-            
+
             App.SaveConfig();
         }
         catch (Exception e)

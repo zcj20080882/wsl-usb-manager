@@ -11,18 +11,16 @@
 
 // Ignore Spelling: Wsl
 
+using log4net;
+using Microsoft.Win32;
 using System.Diagnostics;
-using System.Drawing.Interop;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
-using log4net;
-using Microsoft.Win32;
 
 namespace wsl_usb_manager.Controller;
 
@@ -72,7 +70,7 @@ static partial class Wsl
     }
 
     static async Task<(int ExitCode, string StandardOutput, string StandardError)>
-        RunWslAsync((string distribution, string directory)? linux,int timeout_ms, params string[] arguments)
+        RunWslAsync((string distribution, string directory)? linux, int timeout_ms, params string[] arguments)
     {
         var stdout = string.Empty;
         var stderr = string.Empty;
@@ -102,10 +100,10 @@ static partial class Wsl
         }
 
         Process? process = null;
-        await Task.Run(()=> 
+        await Task.Run(() =>
         {
             process = Process.Start(startInfo);
-            if(process != null)
+            if (process != null)
             {
                 try
                 {
@@ -121,10 +119,11 @@ static partial class Wsl
             }
         });
 
-        if (process == null) { 
-            return new((int)ExitCode.Failure,"",$"Failed to start \"{WslPath}\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}." );
+        if (process == null)
+        {
+            return new((int)ExitCode.Failure, "", $"Failed to start \"{WslPath}\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}.");
         }
-        
+
         return new(process.ExitCode, stdout, stderr);
     }
 
@@ -138,7 +137,7 @@ static partial class Wsl
     /// <summary>
     /// BusId has already been checked, and the server is running.
     /// </summary>
-    public static async Task<(ExitCode, string error_msg)> 
+    public static async Task<(ExitCode, string error_msg)>
         Attach(string busId, string? hostIP)
     {
         var distribution = "";
@@ -217,7 +216,7 @@ static partial class Wsl
             // case (c4ii)
             distribution = distributions.First(d => d.Version == 2 && d.IsRunning).Name;
         }
-        
+
 
         log.Info($"Using WSL distribution '{distribution}' to attach; the device will be available in all WSL 2 distributions.");
 
@@ -320,7 +319,7 @@ static partial class Wsl
 
         // Now find out the IP address of the host.
         IPAddress hostAddress;
-        if(hostIP is null || hostIP.Length == 0)
+        if (hostIP is null || hostIP.Length == 0)
         {
             var wslResult = await RunWslAsync((distribution, "/"), 1000, "/bin/wslinfo", "--networking-mode");
             if (wslResult.ExitCode == 0 && wslResult.StandardOutput.Trim() == "mirrored")
@@ -417,7 +416,8 @@ static partial class Wsl
             {
                 hostAddress = IPAddress.Parse(hostIP);
             }
-            catch {
+            catch
+            {
                 err_msg = $"{hostIP} is an invalid IP address.";
                 log.Error(err_msg);
                 return (ExitCode.Failure, err_msg);
@@ -501,7 +501,7 @@ static partial class Wsl
             }
         }
 
-        return (ExitCode.Success,"");
+        return (ExitCode.Success, "");
     }
 
     internal static bool IsOnSameIPv4Network(IPAddress hostAddress, IPAddress hostMask, IPAddress clientAddress)

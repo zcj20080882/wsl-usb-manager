@@ -10,11 +10,8 @@
 ******************************************************************************/
 using MaterialDesignThemes.Wpf;
 using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Markup;
 using wsl_usb_manager.AutoAttach;
 using wsl_usb_manager.Controller;
-using wsl_usb_manager.Domain;
 using wsl_usb_manager.PersistedDevice;
 using wsl_usb_manager.Resources;
 using wsl_usb_manager.Settings;
@@ -41,8 +38,9 @@ public partial class MainWindow : Window
 
     private void LangToggleButton_Click(object sender, RoutedEventArgs e)
     {
-        Lang.ChangeLanguage(LangToggleButton.IsChecked??false);
-        if (DataContext is MainWindowViewModel viewModel) { 
+        Lang.ChangeLanguage(LangToggleButton.IsChecked ?? false);
+        if (DataContext is MainWindowViewModel viewModel)
+        {
             viewModel.UpdateUI();
         }
     }
@@ -66,7 +64,7 @@ public partial class MainWindow : Window
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        if(DataContext is MainWindowViewModel vm)
+        if (DataContext is MainWindowViewModel vm)
         {
             await USBIPD.InitUSBIPD();
             await vm.UpdateUSBDevices(null);
@@ -75,15 +73,15 @@ public partial class MainWindow : Window
 
     private void ListBoxNavigater_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if(DataContext is MainWindowViewModel vm)
+        if (DataContext is MainWindowViewModel vm)
         {
-            if(vm.SelectedItem != null)
+            if (vm.SelectedItem != null)
             {
-                if(vm.SelectedItem.DataContext is USBDevicesViewModel uvm)
+                if (vm.SelectedItem.DataContext is USBDevicesViewModel uvm)
                 {
                     uvm.UpdateDevices(vm.GetConnectedDeviceList());
                 }
-                else if(vm.SelectedItem.DataContext is PersistedDeviceViewModel pvm)
+                else if (vm.SelectedItem.DataContext is PersistedDeviceViewModel pvm)
                 {
                     pvm.UpdateDevices(vm.GetPersistedDeviceList());
                 }

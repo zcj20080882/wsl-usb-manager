@@ -10,13 +10,10 @@
 ******************************************************************************/
 using log4net;
 using MaterialDesignThemes.Wpf;
-using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Threading;
 using wsl_usb_manager.Controller;
-using wsl_usb_manager.USBDevices;
-using System.Windows.Forms;
 
 namespace wsl_usb_manager;
 
@@ -116,14 +113,15 @@ public partial class MainWindow : Window, INotifyIconService
             return;
         }
 
-        if (e.Name != null && e.Name.Contains("USBIPD Shared")) {
+        if (e.HardwareID.Equals(USBMonitor.VBOX_USB_HARDWARE_ID,StringComparison.OrdinalIgnoreCase) && e.IsConnected)
+        {
             /**
              * This event is triggered by VBOX USB, ignore it.
              */
             log.Debug($"Received VBOX USB connection({e.Name}-{e.HardwareID}) event, ignore it.");
             return;
         }
-        
+
         USBEventProcessing = true;
         Dispatcher.Invoke(async () =>
         {
@@ -144,7 +142,8 @@ public partial class MainWindow : Window, INotifyIconService
             notifyIcon.Visible = true;
             notifyIcon.ShowBalloonTip(5, Title, message, ToolTipIcon.Info);
         }
-        else {
+        else
+        {
             MainSnackbar.MessageQueue?.Clear();
             MainSnackbar.MessageQueue?.Enqueue(message);
         }

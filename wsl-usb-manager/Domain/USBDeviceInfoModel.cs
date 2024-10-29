@@ -84,7 +84,7 @@ public class USBDeviceInfoModel : ViewModelBase
             {
                 CBAttachEnabled = IsBound;
             }
-            
+
             CBForcedEnable = !IsBound;
         }
 

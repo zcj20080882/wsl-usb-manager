@@ -9,14 +9,11 @@
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using wsl_usb_manager.Domain;
-using System.Windows.Input;
 using MessageBox = System.Windows.MessageBox;
-using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace wsl_usb_manager.USBDevices;
 
@@ -44,7 +41,8 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
         {
             if (checkBox.DataContext is USBDeviceInfoModel device)
             {
-                if (device.IsBound) {
+                if (device.IsBound)
+                {
                     device.Bind();
                 }
                 else
@@ -65,7 +63,8 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
                 {
                     device.Attach();
                 }
-                else { 
+                else
+                {
                     device.Detach();
                 }
             }
@@ -92,9 +91,9 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
     private void MenuItem_Click(object sender, RoutedEventArgs e)
     {
 
-        if(sender is MenuItem item && DataContext is USBDevicesViewModel dm)
+        if (sender is MenuItem item && DataContext is USBDevicesViewModel dm)
         {
-            if(dm.SelectedDevice is USBDeviceInfoModel device)
+            if (dm.SelectedDevice is USBDeviceInfoModel device)
             {
                 ObservableCollection<USBDeviceInfoModel>? oldList = dm.USBDevicesItems;
                 switch (item.Name)
@@ -128,7 +127,7 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
                         dm.UpdateDevices(null);
                         break;
                     case "MenuItemShowHide":
-                        if(dm.USBDevicesItems == null)
+                        if (dm.USBDevicesItems == null)
                         {
                             break;
                         }
@@ -153,7 +152,7 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
         int listCount = 0;
         while (obj != null && obj is not System.Windows.Controls.ListViewItem)
         {
-            if(obj is ItemsControl ic)
+            if (obj is ItemsControl ic)
             {
                 listCount = ic.Items.Count;
             }
@@ -175,7 +174,7 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
             dm.MenuUnhiddenEnabled = false;
             dm.MenuAddToAutoEnabled = false;
             dm.MenuRemoveFromAutoEnabled = false;
-            return ;
+            return;
         }
         e.Handled = true;
     }

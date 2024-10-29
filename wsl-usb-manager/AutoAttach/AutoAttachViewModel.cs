@@ -9,15 +9,13 @@
 * Create Date: 2024/10/17 20:31
 ******************************************************************************/
 using System.Collections.ObjectModel;
-using System.Security.Cryptography.X509Certificates;
-using System.Windows.Input;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 using wsl_usb_manager.Settings;
 
 namespace wsl_usb_manager.AutoAttach;
 
-public class AutoAttachViewModel: ViewModelBase
+public class AutoAttachViewModel : ViewModelBase
 {
     public ObservableCollection<USBDeviceInfoModel> DevicesItems { get => _devicesItems; set => SetProperty(ref _devicesItems, value); }
     public USBDeviceInfoModel? SelectedDevice { get => _selectedDevice; set => SetProperty(ref _selectedDevice, value); }
@@ -41,8 +39,8 @@ public class AutoAttachViewModel: ViewModelBase
                 App.SaveConfig();
                 MainDataContext.ShowNotification($"{device.Description} is removed from auto attach list.");
             }
-            
-            if(DevicesItems != null && DevicesItems.Contains(device))
+
+            if (DevicesItems != null && DevicesItems.Contains(device))
             {
                 DevicesItems.Remove(device);
             }

@@ -9,11 +9,8 @@
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
 using System.Collections.ObjectModel;
-using System.Windows;
-using System.Windows.Input;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
-using MessageBox = System.Windows.MessageBox;
 
 namespace wsl_usb_manager.PersistedDevice;
 

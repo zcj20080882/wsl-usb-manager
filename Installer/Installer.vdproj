@@ -15,12 +15,6 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_07862A2847F840CAAF6113C4D0D451B3"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_1DE300179FF84453ADC909CA45D215A2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -28,6 +22,12 @@
         "Entry"
         {
         "MsmKey" = "8:_7EE1B59F96FB4203B533C39BC25A137C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F9FC334E920C467C88B5D18882D778F3"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -49,6 +49,22 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                }
+            }
         }
         "Release"
         {
@@ -65,6 +81,22 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                }
+            }
         }
     }
     "Deployable"
@@ -204,7 +236,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:WSL USB Manager"
         "ProductCode" = "8:{6EC49929-7BD0-45CB-B692-D118DF28BE34}"
-        "PackageCode" = "8:{51FE3943-1CFA-4EA9-B637-EEB4AEE87885}"
+        "PackageCode" = "8:{4578F7BC-0E8E-4AA4-AF10-C8B68637E379}"
         "UpgradeCode" = "8:{E25B9175-97B9-4342-A1E3-81A09A0398E2}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -324,7 +356,7 @@
         }
         "Shortcut"
         {
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_78F2BB9702E94C0D87F7EE0AC9E03743"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_21EDDBD819ED49F9BA58F89CC555CD82"
             {
             "Name" = "8:WSL USB Manager"
             "Arguments" = "8:"
@@ -332,21 +364,21 @@
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_07862A2847F840CAAF6113C4D0D451B3"
+            "Target" = "8:_F9FC334E920C467C88B5D18882D778F3"
             "Folder" = "8:_C15885501A6040C4AE5E4151B82860B1"
             "WorkingFolder" = "8:_546281D513074E4CBF20D08C889CB6AC"
             "Icon" = "8:_7EE1B59F96FB4203B533C39BC25A137C"
             "Feature" = "8:"
             }
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_C884CFD93BA44099B53250FA01051D7A"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_DC837661DB1D492389857A18C1DAAEA0"
             {
             "Name" = "8:WSL USB Manager"
             "Arguments" = "8:"
-            "Description" = "8:"
+            "Description" = "8:WSL USB Manager"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_07862A2847F840CAAF6113C4D0D451B3"
+            "Target" = "8:_F9FC334E920C467C88B5D18882D778F3"
             "Folder" = "8:_3114252861CD4A3B86F945703CF40058"
             "WorkingFolder" = "8:_546281D513074E4CBF20D08C889CB6AC"
             "Icon" = "8:_7EE1B59F96FB4203B533C39BC25A137C"
@@ -365,7 +397,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_F38C35AB4E8647FB87FBA16D01CE9695"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:已完成"
+                    "DisplayName" = "8:Finished"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminFinishedDlg.wid"
@@ -408,7 +440,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_2A05676EBFA947C7A9168BBE045BD75D"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:进度"
+                    "DisplayName" = "8:Progress"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdProgressDlg.wid"
@@ -452,7 +484,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_97FF427BA04D446A801E458963E05E29"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:已完成"
+                    "DisplayName" = "8:Finished"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdFinishedDlg.wid"
@@ -496,7 +528,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_CCF4B32D042A46DD83E5EB4FFFC48655"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:进度"
+                    "DisplayName" = "8:Progress"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminProgressDlg.wid"
@@ -540,7 +572,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_6556FBB5C9D14D18A234C7F54A1478CA"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:欢迎使用"
+                    "DisplayName" = "8:Welcome"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdWelcomeDlg.wid"
@@ -588,7 +620,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_AE0368657C164CDCB355620FA9FF3A1C"
                     {
                     "Sequence" = "3:200"
-                    "DisplayName" = "8:安装文件夹"
+                    "DisplayName" = "8:Installation Folder"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdFolderDlg.wid"
@@ -623,7 +655,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_BCEB404FF93B4990A6B055DF306E4501"
                     {
                     "Sequence" = "3:300"
-                    "DisplayName" = "8:确认安装"
+                    "DisplayName" = "8:Confirm Installation"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdConfirmDlg.wid"
@@ -654,7 +686,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_8D3A7F7052774662B58A57C351620A72"
                     {
                     "Sequence" = "3:200"
-                    "DisplayName" = "8:安装文件夹"
+                    "DisplayName" = "8:Installation Folder"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminFolderDlg.wid"
@@ -676,7 +708,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_9E1329983938497C9E3BBCE7136AC779"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:欢迎使用"
+                    "DisplayName" = "8:Welcome"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminWelcomeDlg.wid"
@@ -724,7 +756,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_DB9A1029999140B2B94BA611FD8ABB4B"
                     {
                     "Sequence" = "3:300"
-                    "DisplayName" = "8:确认安装"
+                    "DisplayName" = "8:Confirm Installation"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminConfirmDlg.wid"
@@ -751,9 +783,9 @@
         }
         "ProjectOutput"
         {
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_07862A2847F840CAAF6113C4D0D451B3"
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_F9FC334E920C467C88B5D18882D778F3"
             {
-            "SourcePath" = "8:..\\wsl-usb-manager\\obj\\Release\\net8.0-windows\\apphost.exe"
+            "SourcePath" = "8:..\\wsl-usb-manager\\obj\\x64\\Release\\net8.0-windows\\win-x64\\apphost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
@@ -771,7 +803,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:Release|Any CPU"
+            "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:PublishItems"
             "OutputProjectGuid" = "8:{B4AFF067-F61C-4FDD-9BFD-AA85FCF2BEC8}"
             "ShowKeyOutput" = "11:TRUE"

@@ -11,14 +11,7 @@
 
 // Ignore Spelling: App
 
-using Microsoft.VisualBasic.Logging;
-using Newtonsoft.Json;
-using System;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Xml.Linq;
 using wsl_usb_manager.Controller;
-using wsl_usb_manager.USBDevices;
 
 namespace wsl_usb_manager.Settings;
 

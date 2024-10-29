@@ -78,7 +78,7 @@ public partial class USBIPD
     }
 
 
-    private static async Task<(int ExitCode, string StandardOutput, string StandardError)> 
+    private static async Task<(int ExitCode, string StandardOutput, string StandardError)>
         RunPowerShellScripts(string script, int timeout_ms)
     {
         var stdout = string.Empty;
@@ -127,7 +127,7 @@ public partial class USBIPD
                 {
                     // Kill the entire Windows process tree, just in case it hasn't exited already.
                     process.Kill(true);
-                    
+
                 }
             }
         });
@@ -136,7 +136,7 @@ public partial class USBIPD
         {
             return new((int)ExitCode.Failure, "", $"Failed to start \"usbipd\" with arguments {script}.");
         }
-        
+
         return new(process.ExitCode, stdout, stderr);
     }
 
@@ -179,7 +179,7 @@ public partial class USBIPD
                     stdout = process.StandardOutput.ReadToEnd();
                     stderr = process.StandardError.ReadToEnd();
                     using StringReader reader = new(stderr);
-                    stderr = reader.ReadLine()?.Replace("Start-Process","").Trim(':',' ');
+                    stderr = reader.ReadLine()?.Replace("Start-Process", "").Trim(':', ' ');
                 }
             }
         });
@@ -188,24 +188,24 @@ public partial class USBIPD
         {
             return new((int)ExitCode.Failure, "", $"Failed to start \"usbipd\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}.");
         }
-        
+
         return new(process.ExitCode, stdout, stderr);
     }
 
     /**
      * Bind a device with a hardware ID.
      */
-    public static async Task<(ExitCode, string)> 
+    public static async Task<(ExitCode, string)>
         BindDevice(string hardwareid, bool force)
     {
         (int exitCode, string stdout, string stderr) = await RunUSBIPD(true, ["bind", "--hardware-id", hardwareid, (force ? "--force" : "")]);
-        if(exitCode == 0)
+        if (exitCode == 0)
         {
-            return (ExitCode.Success,"");
+            return (ExitCode.Success, "");
         }
         await Task.Run(() => Thread.Sleep(200));
 
-        if(await IsDeviceBound(hardwareid))
+        if (await IsDeviceBound(hardwareid))
         {
             return (ExitCode.Success, "");
         }
@@ -213,10 +213,10 @@ public partial class USBIPD
     }
 
 
-    public static async Task<(ExitCode, string)> BindDevice(string hardwareid) => await BindDevice(hardwareid,false);
+    public static async Task<(ExitCode, string)> BindDevice(string hardwareid) => await BindDevice(hardwareid, false);
 
 
-    public static async Task<(ExitCode, string)> 
+    public static async Task<(ExitCode, string)>
         UnbindDevice(string? hardwareid)
     {
         int exitCode;
@@ -234,7 +234,7 @@ public partial class USBIPD
         {
             return (ExitCode.Success, "");
         }
-        
+
         return (ExitCode.Failure, stderr);
     }
 
@@ -265,10 +265,10 @@ public partial class USBIPD
     public static async Task<(ExitCode, string)> DetachAllDevice() => await DetachDevice(null);
 
 
-    public static async Task<(ExitCode,string, List<USBDevice>?)> GetAllUSBDevices()
+    public static async Task<(ExitCode, string, List<USBDevice>?)> GetAllUSBDevices()
     {
         List<USBDevice> deviceslist = [];
-        (int exitCode,string stdout,string stderr) = await RunPowerShellScripts(CmdGetAllDevices,2000);
+        (int exitCode, string stdout, string stderr) = await RunPowerShellScripts(CmdGetAllDevices, 2000);
 
         if (exitCode != 0 || stdout.Length == 0)
         {
@@ -319,7 +319,7 @@ public partial class USBIPD
                 deviceslist.Add(deviceInfo);
             }
         }
-        
+
         return (ExitCode.Success, stdout, deviceslist);
     }
 
@@ -385,7 +385,7 @@ public partial class USBIPD
     public static async Task<bool> IsDeviceConnected(string? hardwareId)
     {
         (ExitCode ret, _, List<USBDevice>? infolist) = await GetAllConnectedDevices();
-        if(ret == 0 && infolist != null)
+        if (ret == 0 && infolist != null)
         {
             return infolist.Any(x => string.Equals(x.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase));
         }

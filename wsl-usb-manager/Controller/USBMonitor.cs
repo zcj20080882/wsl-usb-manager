@@ -18,10 +18,10 @@ public class USBEventArgs : EventArgs
     public string? Name { get; set; }
     public string? HardwareID { get; set; }
     public string? Description { get; set; }
-    public string? ClassGuid { get; set; } 
+    public string? ClassGuid { get; set; }
     public string? PNPDeviceID { get; set; }
     public string? Service { get; set; }
-    public string? Status { get; set; } 
+    public string? Status { get; set; }
     public bool IsConnected { get; set; }
 }
 
@@ -62,12 +62,14 @@ public partial class USBMonitor
         this.usbInsertWatcher = new ManagementEventWatcher(scope, insertQuery);
         this.usbRemoveWatcher = new ManagementEventWatcher(scope, removeQuery);
 
-        this.usbInsertWatcher.EventArrived += (sender, e) => {
+        this.usbInsertWatcher.EventArrived += (sender, e) =>
+        {
             this.usbInsertWatcher.Stop();
             this.UsbChangeEvent?.Invoke(this, ConvertToUSBEventArgs(e));
             this.usbInsertWatcher.Start();
         };
-        this.usbRemoveWatcher.EventArrived += (sender, e) => {
+        this.usbRemoveWatcher.EventArrived += (sender, e) =>
+        {
             this.usbRemoveWatcher.Stop();
             this.UsbChangeEvent?.Invoke(this, ConvertToUSBEventArgs(e));
             this.usbRemoveWatcher.Start();
@@ -78,7 +80,7 @@ public partial class USBMonitor
     private static USBEventArgs ConvertToUSBEventArgs(EventArrivedEventArgs e)
     {
         USBEventArgs usbEventArgs = new();
-        if(e.NewEvent.ClassPath.ClassName == "__InstanceCreationEvent")
+        if (e.NewEvent.ClassPath.ClassName == "__InstanceCreationEvent")
         {
             usbEventArgs.IsConnected = true;
         }

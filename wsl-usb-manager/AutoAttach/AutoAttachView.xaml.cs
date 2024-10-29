@@ -12,7 +12,6 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using wsl_usb_manager.Domain;
-using wsl_usb_manager.PersistedDevice;
 using MessageBox = System.Windows.MessageBox;
 using UserControl = System.Windows.Controls.UserControl;
 

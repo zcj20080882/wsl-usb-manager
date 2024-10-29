@@ -8,23 +8,12 @@
 * Description:
 * Create Date: 2024/10/17 20:28
 ******************************************************************************/
-using Newtonsoft.Json.Bson;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Documents;
-using System.Windows.Threading;
 using wsl_usb_manager.AutoAttach;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 using wsl_usb_manager.PersistedDevice;
 using wsl_usb_manager.Settings;
 using wsl_usb_manager.USBDevices;
-using MessageBox = System.Windows.MessageBox;
 
 namespace wsl_usb_manager;
 
@@ -35,15 +24,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool IsDeviceInConnectedList(string hardwareID) => ConnectedDeviceList.Any(d => d.HardwareId.Equals(hardwareID, StringComparison.OrdinalIgnoreCase));
     public bool IsDeviceInPersistedList(string hardwareID) => PersistedDeviceList.Any(d => d.HardwareId.Equals(hardwareID, StringComparison.OrdinalIgnoreCase));
-   
+
     public List<USBDevice> GetConnectedDeviceList() => ConnectedDeviceList;
     public List<USBDevice> GetPersistedDeviceList() => PersistedDeviceList;
 
-    public async Task<(string, USBDevice?,List<USBDevice>?)> GetAllDeviceAndFilter(string hardwareID)
+    public async Task<(string, USBDevice?, List<USBDevice>?)> GetAllDeviceAndFilter(string hardwareID)
     {
         (ExitCode _, string err_msg, List<USBDevice>? new_list) = await USBIPD.GetAllUSBDevices();
         USBDevice? changedDev = new_list?.FirstOrDefault(d => d.HardwareId.Equals(hardwareID, StringComparison.OrdinalIgnoreCase));
-        if (changedDev == null && new_list != null) {
+        if (changedDev == null && new_list != null)
+        {
             err_msg = $"Cannot get the device with hardware ID \"{hardwareID}\"";
         }
         return (err_msg, changedDev, new_list);
@@ -54,7 +44,7 @@ public partial class MainWindowViewModel : ViewModelBase
         string hardwareid = e.HardwareID ?? "";
         string? name = e.Name;
         string msg = "";
-        
+
         log.Debug($"USB {hardwareid} {(e.IsConnected ? "connected" : "disconnected")}");
 
         if (Sysconfig.IsInFilterDeviceList(hardwareid))
@@ -63,7 +53,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        (string err_msg, USBDevice ? changedDev, List<USBDevice>? new_list) = await GetAllDeviceAndFilter(hardwareid);
+        (string err_msg, USBDevice? changedDev, List<USBDevice>? new_list) = await GetAllDeviceAndFilter(hardwareid);
 
         List<USBDevice> curConnectedList = ConnectedDeviceList.Where(d => !Sysconfig.IsInFilterDeviceList(d.HardwareId)).ToList();
         if (new_list == null)
@@ -76,7 +66,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             if (changedDev == null)
             {
-                log.Error($"Cannot get info from USBIPD for device {e.Name}({e.HardwareID})"); 
+                log.Error($"Cannot get info from USBIPD for device {e.Name}({e.HardwareID})");
                 return;
             }
 
@@ -125,7 +115,7 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             DisableWindow();
-            (ExitCode _, err_msg) = await USBIPD.BindDevice(device.HardwareId, device.IsForced);            
+            (ExitCode _, err_msg) = await USBIPD.BindDevice(device.HardwareId, device.IsForced);
         }
         finally
         {
@@ -195,7 +185,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return true;
     }
 
-    public async Task DetachDevice(USBDevice ?device)
+    public async Task DetachDevice(USBDevice? device)
     {
         string err_msg = "";
         try
@@ -220,7 +210,7 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             DisableWindow();
-            if(updateList == null || updateList.Count == 0)
+            if (updateList == null || updateList.Count == 0)
                 (_, errormsg, updateList) = await USBIPD.GetAllUSBDevices();
             if (updateList == null)
             {
@@ -240,7 +230,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 {
                     persistedDT.UpdateDevices(PersistedDeviceList);
                 }
-                else if(item.Content is AutoAttachView autoAttachView &&
+                else if (item.Content is AutoAttachView autoAttachView &&
                     autoAttachView.DataContext is AutoAttachViewModel autoAttachDT)
                 {
                     autoAttachDT.UpdateDevices(App.GetSysConfig().AutoAttachDeviceList);
@@ -255,21 +245,21 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public async Task AutoAttachDevices(USBDevice? dev)
     {
-        if(dev == null || !Sysconfig.IsInAutoAttachDeviceList(dev))
+        if (dev == null || !Sysconfig.IsInAutoAttachDeviceList(dev))
         {
             return;
         }
-        if(dev == null)
+        if (dev == null)
         {
             log.Error($"Cannot get device info for auto attach device");
             return;
         }
-        if (!dev.IsConnected)
+        if (!dev.IsConnected && !dev.IsBound)
         {
             log.Error($"The device {dev.HardwareId} is not connected!");
             return;
         }
-            
+
         if (!dev.IsBound)
         {
             if (!await BindDevice(dev))

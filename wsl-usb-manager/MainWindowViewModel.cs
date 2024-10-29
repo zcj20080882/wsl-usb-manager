@@ -11,17 +11,17 @@
 
 // Ignore Spelling: Snackbar
 
+using log4net;
 using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
+using wsl_usb_manager.AutoAttach;
+using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 using wsl_usb_manager.PersistedDevice;
-using wsl_usb_manager.USBDevices;
-using wsl_usb_manager.Controller;
-using wsl_usb_manager.Settings;
-using log4net;
-using wsl_usb_manager.AutoAttach;
-using System.Windows.Input;
 using wsl_usb_manager.Resources;
+using wsl_usb_manager.Settings;
+using wsl_usb_manager.USBDevices;
 
 namespace wsl_usb_manager;
 
@@ -34,18 +34,20 @@ public partial class MainWindowViewModel : ViewModelBase
     private string? _windowTitle;
     private bool _windowEnabled;
     private bool _isDarkMode;
-    private bool _isChinese = App.GetAppConfig().Lang.Equals("zh",StringComparison.OrdinalIgnoreCase);
+    private bool _isChinese = App.GetAppConfig().Lang.Equals("zh", StringComparison.OrdinalIgnoreCase);
     private bool _showRefreshProgresss;
     private SnackbarMessageQueue _snackbarMessageQueue = new();
     private readonly SystemConfig Sysconfig = App.GetSysConfig();
     private readonly ApplicationConfig AppConfig = App.GetAppConfig();
     private static readonly ILog log = LogManager.GetLogger(typeof(MainWindowViewModel));
 
-    public string? WindowTitle { get => _windowTitle; set => SetProperty(ref _windowTitle, value);}
+    public string? WindowTitle { get => _windowTitle; set => SetProperty(ref _windowTitle, value); }
     public bool WindowEnabled { get => _windowEnabled; set => SetProperty(ref _windowEnabled, value); }
-    public bool IsDarkMode { 
+    public bool IsDarkMode
+    {
         get => _isDarkMode;
-        set { 
+        set
+        {
             SetProperty(ref _isDarkMode, value);
             if (value != AppConfig.DarkMode)
             {
@@ -54,15 +56,17 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         }
     }
-    public bool IsChinese { 
-        get => _isChinese; 
-        set { 
+    public bool IsChinese
+    {
+        get => _isChinese;
+        set
+        {
             SetProperty(ref _isChinese, value);
             AppConfig.Lang = value ? "zh" : "en";
             App.SaveConfig();
-        } 
+        }
     }
-    
+
     public ObservableCollection<BodyItem> BodyItems { get; }
 
     public BodyItem? SelectedItem
@@ -124,9 +128,10 @@ public partial class MainWindowViewModel : ViewModelBase
     private async void RefeshDevicesCommand(object? obj)
     {
         log.Info("Refresh device...");
-        if(SelectedItem?.Content is USBDevicesView || SelectedItem?.Content is PersistedDeviceView)
+        if (SelectedItem?.Content is USBDevicesView || SelectedItem?.Content is PersistedDeviceView)
         {
-            if (obj is List<USBDevice> list) {
+            if (obj is List<USBDevice> list)
+            {
                 await UpdateUSBDevices(list);
             }
             else
@@ -134,7 +139,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 await UpdateUSBDevices(null);
             }
         }
-        else if(SelectedItem?.DataContext is AutoAttachViewModel avm)
+        else if (SelectedItem?.DataContext is AutoAttachViewModel avm)
         {
             avm.UpdateDevices(Sysconfig.AutoAttachDeviceList);
         }
@@ -196,7 +201,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public void ShowErrorMessage(string message) 
+    public void ShowErrorMessage(string message)
     {
         if (OperatingSystem.IsWindowsVersionAtLeast(7))
         {

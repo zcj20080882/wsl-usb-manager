@@ -25,7 +25,6 @@ public partial class App : System.Windows.Application
     private static readonly string ConfigFileDir = Path.Combine(UserAppRomingPath, "WSL USB Manager");
     private static readonly string ConfigFile = ConfigFileDir + "/config.json";
     private static SystemConfig SysConfig = new();
-    private static readonly ILog log = LogManager.GetLogger(typeof(App));
 
     private static void InitConfiguration()
     {
@@ -33,7 +32,7 @@ public partial class App : System.Windows.Application
         {
             Directory.CreateDirectory(ConfigFileDir);
         }
-        
+
         if (File.Exists(ConfigFile))
         {
             string json = File.ReadAllText(ConfigFile);
@@ -43,7 +42,6 @@ public partial class App : System.Windows.Application
 
         if (SysConfig == null)
         {
-            log.Warn("Config file not found or invalid, using default config.");
             SysConfig ??= new SystemConfig();
             SaveConfig();
         }
@@ -78,7 +76,6 @@ public partial class App : System.Windows.Application
 
     public static void SaveConfig()
     {
-        log.Info("Saving config file...");
         var json = JsonConvert.SerializeObject(SysConfig, Formatting.Indented);
         File.WriteAllText(ConfigFile, json);
     }
