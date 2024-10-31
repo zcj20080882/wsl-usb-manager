@@ -21,6 +21,18 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_334FD5CE90AC47448060CB6286D5A05D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5A53E35EC67C4D648E05032B8E6FE056"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_7EE1B59F96FB4203B533C39BC25A137C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -148,6 +160,46 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_334FD5CE90AC47448060CB6286D5A05D"
+            {
+            "SourcePath" = "8:..\\Disclaimer_en.rtf"
+            "TargetName" = "8:Disclaimer_en.rtf"
+            "Tag" = "8:"
+            "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5A53E35EC67C4D648E05032B8E6FE056"
+            {
+            "SourcePath" = "8:..\\Disclaimer_zh.rtf"
+            "TargetName" = "8:Disclaimer_zh.rtf"
+            "Tag" = "8:"
+            "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7EE1B59F96FB4203B533C39BC25A137C"
             {
             "SourcePath" = "8:..\\wsl-usb-manager\\images\\appicon.ico"
@@ -236,7 +288,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:WSL USB Manager"
         "ProductCode" = "8:{6EC49929-7BD0-45CB-B692-D118DF28BE34}"
-        "PackageCode" = "8:{4578F7BC-0E8E-4AA4-AF10-C8B68637E379}"
+        "PackageCode" = "8:{7D04A1AB-BDF7-49BF-A861-E6E5B605B8E3}"
         "UpgradeCode" = "8:{E25B9175-97B9-4342-A1E3-81A09A0398E2}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -397,7 +449,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_F38C35AB4E8647FB87FBA16D01CE9695"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Finished"
+                    "DisplayName" = "8:已完成"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminFinishedDlg.wid"
@@ -440,7 +492,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_2A05676EBFA947C7A9168BBE045BD75D"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Progress"
+                    "DisplayName" = "8:进度"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdProgressDlg.wid"
@@ -484,7 +536,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_97FF427BA04D446A801E458963E05E29"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Finished"
+                    "DisplayName" = "8:已完成"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdFinishedDlg.wid"
@@ -528,7 +580,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_CCF4B32D042A46DD83E5EB4FFFC48655"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Progress"
+                    "DisplayName" = "8:进度"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminProgressDlg.wid"
@@ -571,8 +623,8 @@
                 {
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_6556FBB5C9D14D18A234C7F54A1478CA"
                     {
-                    "Sequence" = "3:100"
-                    "DisplayName" = "8:Welcome"
+                    "Sequence" = "3:110"
+                    "DisplayName" = "8:欢迎使用"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdWelcomeDlg.wid"
@@ -597,8 +649,8 @@
                             "Type" = "3:3"
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
-                            "Setting" = "3:1"
-                            "Value" = "8:#1202"
+                            "Setting" = "3:2"
+                            "Value" = "8:"
                             "DefaultValue" = "8:#1202"
                             "UsePlugInResources" = "11:TRUE"
                             }
@@ -620,7 +672,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_AE0368657C164CDCB355620FA9FF3A1C"
                     {
                     "Sequence" = "3:200"
-                    "DisplayName" = "8:Installation Folder"
+                    "DisplayName" = "8:安装文件夹"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdFolderDlg.wid"
@@ -655,7 +707,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_BCEB404FF93B4990A6B055DF306E4501"
                     {
                     "Sequence" = "3:300"
-                    "DisplayName" = "8:Confirm Installation"
+                    "DisplayName" = "8:确认安装"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdConfirmDlg.wid"
@@ -674,6 +726,53 @@
                             }
                         }
                     }
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_E5B664DC6EFB4B069A1977F4AF3E397F"
+                    {
+                    "Sequence" = "3:120"
+                    "DisplayName" = "8:许可协议"
+                    "UseDynamicProperties" = "11:TRUE"
+                    "IsDependency" = "11:FALSE"
+                    "SourcePath" = "8:<VsdDialogDir>\\VsdLicenseDlg.wid"
+                        "Properties"
+                        {
+                            "BannerBitmap"
+                            {
+                            "Name" = "8:BannerBitmap"
+                            "DisplayName" = "8:#1001"
+                            "Description" = "8:#1101"
+                            "Type" = "3:8"
+                            "ContextData" = "8:Bitmap"
+                            "Attributes" = "3:4"
+                            "Setting" = "3:1"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                            "EulaText"
+                            {
+                            "Name" = "8:EulaText"
+                            "DisplayName" = "8:#1008"
+                            "Description" = "8:#1108"
+                            "Type" = "3:6"
+                            "ContextData" = "8:"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:2"
+                            "Value" = "8:_5A53E35EC67C4D648E05032B8E6FE056"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                            "Sunken"
+                            {
+                            "Name" = "8:Sunken"
+                            "DisplayName" = "8:#1007"
+                            "Description" = "8:#1107"
+                            "Type" = "3:5"
+                            "ContextData" = "8:4;True=4;False=0"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:0"
+                            "Value" = "3:4"
+                            "DefaultValue" = "3:4"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                        }
+                    }
                 }
             }
             "{DF760B10-853B-4699-99F2-AFF7185B4A62}:_D0EA488C830547A79E260AFA7C8143BC"
@@ -686,7 +785,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_8D3A7F7052774662B58A57C351620A72"
                     {
                     "Sequence" = "3:200"
-                    "DisplayName" = "8:Installation Folder"
+                    "DisplayName" = "8:安装文件夹"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminFolderDlg.wid"
@@ -708,7 +807,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_9E1329983938497C9E3BBCE7136AC779"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Welcome"
+                    "DisplayName" = "8:欢迎使用"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminWelcomeDlg.wid"
@@ -756,7 +855,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_DB9A1029999140B2B94BA611FD8ABB4B"
                     {
                     "Sequence" = "3:300"
-                    "DisplayName" = "8:Confirm Installation"
+                    "DisplayName" = "8:确认安装"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminConfirmDlg.wid"
