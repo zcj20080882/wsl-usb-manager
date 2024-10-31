@@ -24,7 +24,6 @@ namespace wsl_usb_manager
     public partial class App : System.Windows.Application
     {
         private static readonly Mutex mutex = new(true, "WSL-USB-Manager-1ddc73e5-c499-484f-b663-87edaee7bfdc");
-        private static readonly ILog log = LogManager.GetLogger(typeof(App));
         protected override void OnStartup(StartupEventArgs e)
         {
             if (!mutex.WaitOne(TimeSpan.Zero, true))
@@ -33,8 +32,7 @@ namespace wsl_usb_manager
                 Shutdown();
                 return;
             }
-            log4net.Config.XmlConfigurator.Configure();
-            log.Info("Application started.");
+            ConfigureLog4Net();
             InitConfiguration();
             base.OnStartup(e);
         }

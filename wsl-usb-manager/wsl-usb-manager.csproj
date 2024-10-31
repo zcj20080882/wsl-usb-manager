@@ -16,8 +16,8 @@
     <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
     <PlatformTarget>x64</PlatformTarget>
     <UseWPF>True</UseWPF>
-	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-	<Platforms>AnyCPU;x64</Platforms>
+	  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	  <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win-x64'">
@@ -47,11 +47,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Page Remove="Resources\LangChinese.xaml" />
-    <Page Remove="Resources\LangEnglish.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="images\appicon.ico" />
   </ItemGroup>
 
@@ -70,9 +65,6 @@
     <EmbeddedResource Include="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
-    <Content Include="Log4Net.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>

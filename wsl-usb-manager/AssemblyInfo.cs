@@ -21,6 +21,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // 如果此项目向 COM 公开，则下列 GUID 用于 typelib 的 ID。
+[assembly: log4net.Config.XmlConfigurator(ConfigFile = "Log4Net.config", Watch = true)]
 [assembly: AssemblyCompany("WSL USB Manager")]
 [assembly: AssemblyConfiguration("Debug")]
 [assembly: AssemblyCopyright("Copyright (c) Chuckie, 2024")]
@@ -31,4 +32,4 @@ using System.Runtime.InteropServices;
 [assembly: Guid("9a938903-6944-40f6-8498-45ebc76f768f")]
 [assembly: AssemblyVersion("1.1.0.0")]
 [assembly: AssemblyFileVersion("1.1.0")]
-[assembly: AssemblyInformationalVersion("1.1.0-fix-bugs.1+6.Branch.fix-bugs.Sha.8e2e5d22e32f039f80814f2771e6315190f00af4")]
+[assembly: AssemblyInformationalVersion("1.1.0-fix-bugs.1+6.Branch.fix-bugs.Sha.f0447a5811c3147a00c9ac03c509dd47b285f2d1")]
