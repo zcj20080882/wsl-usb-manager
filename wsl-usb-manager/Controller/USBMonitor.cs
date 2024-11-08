@@ -47,14 +47,14 @@ public partial class USBMonitor
         var insertQuery = new WqlEventQuery
         {
             EventClassName = "__InstanceCreationEvent",
-            WithinInterval = TimeSpan.FromMilliseconds(200),
+            WithinInterval = TimeSpan.FromMilliseconds(50),
             Condition = WqlEventQueryCondition
         };
 
         var removeQuery = new WqlEventQuery
         {
             EventClassName = "__InstanceDeletionEvent",
-            WithinInterval = TimeSpan.FromMilliseconds(200),
+            WithinInterval = TimeSpan.FromMilliseconds(50),
             Condition = WqlEventQueryCondition
         };
 

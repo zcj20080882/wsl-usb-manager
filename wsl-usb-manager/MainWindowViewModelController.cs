@@ -45,13 +45,13 @@ public partial class MainWindowViewModel : ViewModelBase
         string? name = e.Name;
         string msg = "";
 
-        log.Debug($"USB {hardwareid} {(e.IsConnected ? "connected" : "disconnected")}");
-
         if (Sysconfig.IsInFilterDeviceList(hardwareid))
         {
             log.Debug($"Device {e.Name}({hardwareid}) is in filter list, ignore it.");
             return;
         }
+
+        log.Debug($"USB {hardwareid} {(e.IsConnected ? "connected" : "disconnected")}");
 
         (string err_msg, USBDevice? changedDev, List<USBDevice>? new_list) = await GetAllDeviceAndFilter(hardwareid);
 
@@ -62,16 +62,30 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        if (e.IsConnected)
-        {
-            if (changedDev == null)
-            {
-                log.Error($"Cannot get info from USBIPD for device {e.Name}({e.HardwareID})");
-                return;
-            }
+        if (changedDev == null) {
+            /**
+             * The device is in the filter list, ignore it and only update device list.
+             */
+            log.Debug($"The device {e.Name}({e.HardwareID}) is in the filter list, ignore it.");
+            await UpdateUSBDevices(new_list);
+            return;
+        }
 
-            name ??= changedDev.Description;
-            hardwareid = changedDev.HardwareId;
+        if (!changedDev.IsConnected && e.IsConnected)
+        {
+            /**
+             * The device is not connected, but the event is connected.
+             * That means the USBIPD server haven't update the device info.
+             */
+            log.Debug($"The device {e.Name}({e.HardwareID}) is not connected, but the event is connected.");
+            changedDev.IsConnected = true;
+        }
+
+        name ??= changedDev.Description;
+        hardwareid = changedDev.HardwareId;
+
+        if (changedDev.IsConnected)
+        {
             if (Sysconfig.IsInAutoAttachDeviceList(changedDev))
             {
                 await AutoAttachDevices(changedDev);
@@ -81,31 +95,13 @@ public partial class MainWindowViewModel : ViewModelBase
                 await UpdateUSBDevices(new_list);
             }
             msg = $"\"{name}({hardwareid})\" is connected to {(changedDev.IsAttached ? "WSL" : "Windows")}.";
-            ShowNotification(msg);
         }
         else
         {
-            if (changedDev != null)
-            {
-                name ??= changedDev.Description;
-                hardwareid = changedDev.HardwareId;
-                if (changedDev.IsConnected)
-                {
-                    msg = $"\"{name}({hardwareid})\" is connected to {(changedDev.IsAttached ? "WSL" : "Windows")}.";
-                }
-                else
-                {
-                    msg = $"\"{name}({hardwareid})\" is disconnected from Windows.";
-                }
-            }
-            else
-            {
-                msg = $"\"{e.Name}({e.HardwareID})\" is disconnected from Windows.";
-            }
-            log.Debug("Update USB devices list....");
+            msg = $"\"{name}({hardwareid})\" is disconnected.";
             await UpdateUSBDevices(new_list);
-            ShowNotification(msg);
         }
+        ShowNotification(msg);
     }
 
     public async Task<bool> BindDevice(USBDevice device)
@@ -249,14 +245,11 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             return;
         }
-        if (dev == null)
-        {
-            log.Error($"Cannot get device info for auto attach device");
-            return;
-        }
-        if (!dev.IsConnected && !dev.IsBound)
+        
+        if (!dev.IsConnected)
         {
             log.Error($"The device {dev.HardwareId} is not connected!");
+            ShowErrorMessage($"The device {dev.HardwareId} is not connected!");
             return;
         }
 

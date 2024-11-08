@@ -32,4 +32,4 @@ using System.Runtime.InteropServices;
 [assembly: Guid("9a938903-6944-40f6-8498-45ebc76f768f")]
 [assembly: AssemblyVersion("1.1.0.0")]
 [assembly: AssemblyFileVersion("1.1.0")]
-[assembly: AssemblyInformationalVersion("1.1.0-fix-bugs.1+6.Branch.fix-bugs.Sha.f0447a5811c3147a00c9ac03c509dd47b285f2d1")]
+[assembly: AssemblyInformationalVersion("1.1.0-fix-bugs.1+8.Branch.fix-bugs.Sha.fa46dc2ecfd362693c3171af88a4eb515210c7bb")]

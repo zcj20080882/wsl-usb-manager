@@ -113,15 +113,6 @@ public partial class MainWindow : Window, INotifyIconService
             return;
         }
 
-        if (e.HardwareID.Equals(USBMonitor.VBOX_USB_HARDWARE_ID,StringComparison.OrdinalIgnoreCase) && e.IsConnected)
-        {
-            /**
-             * This event is triggered by VBOX USB, ignore it.
-             */
-            log.Debug($"Received VBOX USB connection({e.Name}-{e.HardwareID}) event, ignore it.");
-            return;
-        }
-
         USBEventProcessing = true;
         Dispatcher.Invoke(async () =>
         {
