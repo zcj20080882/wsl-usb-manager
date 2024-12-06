@@ -13,8 +13,10 @@
 
 using log4net;
 using MaterialDesignThemes.Wpf;
+using Microsoft.VisualBasic;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows.Interop;
 using wsl_usb_manager.AutoAttach;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
@@ -28,7 +30,6 @@ namespace wsl_usb_manager;
 public partial class MainWindowViewModel : ViewModelBase
 {
     #region Properties and Fields
-    private readonly INotifyIconService _notifyIconService;
     private BodyItem? _selectedItem;
     private int _selectedIndex;
     private string? _windowTitle;
@@ -37,10 +38,10 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _isChinese = App.GetAppConfig().Lang.Equals("zh", StringComparison.OrdinalIgnoreCase);
     private bool _showRefreshProgresss;
     private SnackbarMessageQueue _snackbarMessageQueue = new();
-    private readonly SystemConfig Sysconfig = App.GetSysConfig();
     private readonly ApplicationConfig AppConfig = App.GetAppConfig();
     private static readonly ILog log = LogManager.GetLogger(typeof(MainWindowViewModel));
 
+    
     public string? WindowTitle { get => _windowTitle; set => SetProperty(ref _windowTitle, value); }
     public bool WindowEnabled { get => _windowEnabled; set => SetProperty(ref _windowEnabled, value); }
     public bool IsDarkMode
@@ -87,9 +88,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool ShowRefreshProgress { get => _showRefreshProgresss; set => SetProperty(ref _showRefreshProgresss, value); }
     #endregion
 
-    public MainWindowViewModel(INotifyIconService notifyIconService)
+    public MainWindowViewModel()
     {
-        _notifyIconService = notifyIconService;
         if (Lang.GetText("Device") is not string device_tilte)
         {
             device_tilte = "Device";
@@ -107,9 +107,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         this.BodyItems =
         [
-            new BodyItem(device_tilte, typeof(USBDevicesView), PackIconKind.UsbFlashDrive, PackIconKind.UsbFlashDriveOutline, new USBDevicesViewModel(this)),
-            new BodyItem(persisted_tilte, typeof(PersistedDeviceView), PackIconKind.StoreCheck, PackIconKind.StoreCheckOutline, new PersistedDeviceViewModel(this)),
-            new BodyItem(autoattach_tilte, typeof(AutoAttachView), PackIconKind.StarBoxMultiple, PackIconKind.StarBoxMultipleOutline, new AutoAttachViewModel(this)),
+            new BodyItem(device_tilte, typeof(USBDevicesView), PackIconKind.UsbFlashDrive, PackIconKind.UsbFlashDriveOutline, new USBDevicesViewModel()),
+            new BodyItem(persisted_tilte, typeof(PersistedDeviceView), PackIconKind.StoreCheck, PackIconKind.StoreCheckOutline, new PersistedDeviceViewModel()),
+            new BodyItem(autoattach_tilte, typeof(AutoAttachView), PackIconKind.StarBoxMultiple, PackIconKind.StarBoxMultipleOutline, new AutoAttachViewModel()),
         ];
         _windowTitle = Lang.GetText("WindowTitle") ?? "WSL USB Manager";
         _windowTitle += " v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
@@ -128,36 +128,67 @@ public partial class MainWindowViewModel : ViewModelBase
     private async void RefeshDevicesCommand(object? obj)
     {
         log.Info("Refresh device...");
-        if (SelectedItem?.Content is USBDevicesView || SelectedItem?.Content is PersistedDeviceView)
+        DisableWindow();
+        if (SelectedItem?.DataContext is USBDevicesViewModel uvm)
         {
-            if (obj is List<USBDevice> list)
-            {
-                await UpdateUSBDevices(list);
-            }
-            else
-            {
-                await UpdateUSBDevices(null);
-            }
+            await uvm.UpdateDevices();
+        }
+        else if (SelectedItem?.DataContext is PersistedDeviceViewModel pvm)
+        {
+            await pvm.UpdateDevices();
         }
         else if (SelectedItem?.DataContext is AutoAttachViewModel avm)
         {
-            avm.UpdateDevices(Sysconfig.AutoAttachDeviceList);
+            avm.UpdateDevices();
         }
+        EnableWindow();
     }
 
-    private void DisableWindow()
+    public void DisableWindow() => (ShowRefreshProgress, WindowEnabled) = (true, false);
+
+    public void EnableWindow() => (ShowRefreshProgress, WindowEnabled) = (false, true);
+
+    public async void UpdateWindow()
     {
-        ShowRefreshProgress = true;
-        WindowEnabled = false;
+        DisableWindow();
+        if (SelectedItem != null)
+        {
+            if (SelectedItem.DataContext is USBDevicesViewModel uvm)
+            {
+                await uvm.UpdateDevices();
+            }
+            else if (SelectedItem.DataContext is PersistedDeviceViewModel pvm)
+            {
+                await pvm.UpdateDevices();
+            }
+            else if (SelectedItem.DataContext is AutoAttachViewModel avm)
+            {
+                avm.UpdateDevices();
+            }
+        }
+        else
+        {
+            foreach (var item in BodyItems)
+            {
+                if (item.Content is USBDevicesView usbView && usbView.DataContext is USBDevicesViewModel uvm)
+                {
+                    await uvm.UpdateDevices();
+                }
+                else if (item.Content is PersistedDeviceView persistedView &&
+                    persistedView.DataContext is PersistedDeviceViewModel pvm)
+                {
+                    await pvm.UpdateDevices();
+                }
+                else if (item.Content is AutoAttachView autoAttachView &&
+                    autoAttachView.DataContext is AutoAttachViewModel avm)
+                {
+                    avm.UpdateDevices();
+                }
+            }
+        }
+        EnableWindow();
     }
-
-    private void EnableWindow()
-    {
-        WindowEnabled = true;
-        ShowRefreshProgress = false;
-    }
-
-    public void UpdateUI()
+    public void UpdateLanguage()
     {
         if (Lang.GetText("Device") is not string device_tilte)
         {
@@ -189,23 +220,28 @@ public partial class MainWindowViewModel : ViewModelBase
                 item.Name = autoattach_tilte;
             }
         }
-        RefeshDevicesCommand(ConnectedDeviceList);
+
         WindowTitle = Lang.GetText("WindowTitle") ?? "WSL USB Manager";
         WindowTitle += " v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
     }
-    public void ShowNotification(string message)
-    {
-        if (OperatingSystem.IsWindowsVersionAtLeast(7))
-        {
-            _notifyIconService.ShowNotification(message);
-        }
-    }
 
-    public void ShowErrorMessage(string message)
+    public async Task USBEventProcess(USBEventArgs e)
     {
-        if (OperatingSystem.IsWindowsVersionAtLeast(7))
+        string hardwareid = e.HardwareID ?? "";
+        string? name = e.Name;
+
+        UpdateWindow();
+        string msg;
+        (_, _, USBDevice? changedDev) = await USBIPD.GetUSBDeviceByHardwareID(hardwareid);
+        if (changedDev != null && changedDev.IsConnected)
         {
-            _notifyIconService.ShowErrorMessage(message);
+            msg = $"\"{name}({hardwareid})\" is connected to {(changedDev.IsAttached ? "WSL" : "Windows")}.";
+            NotifyService.ShowNotification(msg);
+        }
+        else if(!e.IsConnected)
+        {
+            msg = $"\"{name}({hardwareid})\" is disconnected.";
+            NotifyService.ShowNotification(msg);
         }
     }
 }

@@ -8,6 +8,8 @@
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
+using log4net;
+using System.Diagnostics;
 using System.Management;
 using System.Text.RegularExpressions;
 
@@ -15,6 +17,7 @@ namespace wsl_usb_manager.Controller;
 
 public class USBEventArgs : EventArgs
 {
+    public string? Caption { get; set; }
     public string? Name { get; set; }
     public string? HardwareID { get; set; }
     public string? Description { get; set; }
@@ -23,16 +26,18 @@ public class USBEventArgs : EventArgs
     public string? Service { get; set; }
     public string? Status { get; set; }
     public bool IsConnected { get; set; }
+    public string? Manufacturer { get; set; }       
 }
 
 public delegate void USBEventHandler(object sender, USBEventArgs e);
 
 public partial class USBMonitor
 {
+    private static readonly ILog log = LogManager.GetLogger(typeof(USBMonitor));
     private readonly ManagementEventWatcher usbInsertWatcher;
     private readonly ManagementEventWatcher usbRemoveWatcher;
     public const string VBOX_USB_HARDWARE_ID = "80EE:CAFE";
-    private const string WqlEventQueryCondition = @"TargetInstance ISA 'Win32_USBControllerDevice' AND NOT TargetInstance.Dependent LIKE '%HUB%'";
+    private const string WqlEventQueryCondition = @"TargetInstance ISA 'Win32_PnPEntity'";
     private USBEventHandler? UsbChangeEvent { set; get; }
 
     [GeneratedRegex(@"VID_([0-9a-fA-F]{4})(.*?)PID_([0-9a-fA-F]{4})")]
@@ -47,14 +52,14 @@ public partial class USBMonitor
         var insertQuery = new WqlEventQuery
         {
             EventClassName = "__InstanceCreationEvent",
-            WithinInterval = TimeSpan.FromMilliseconds(50),
+            WithinInterval = TimeSpan.FromMilliseconds(20),
             Condition = WqlEventQueryCondition
         };
 
         var removeQuery = new WqlEventQuery
         {
             EventClassName = "__InstanceDeletionEvent",
-            WithinInterval = TimeSpan.FromMilliseconds(50),
+            WithinInterval = TimeSpan.FromMilliseconds(20),
             Condition = WqlEventQueryCondition
         };
 
@@ -88,29 +93,35 @@ public partial class USBMonitor
         {
             usbEventArgs.IsConnected = false;
         }
-        if (e.NewEvent["TargetInstance"] is ManagementBaseObject mbo && mbo.ClassPath.ClassName == "Win32_USBControllerDevice")
+        
+        if (e.NewEvent["TargetInstance"] is ManagementBaseObject mbo && mbo.ClassPath.ClassName == "Win32_PnPEntity")
         {
-            string Dependent = ((string)mbo["Dependent"]).Split(['='])[1];
-            Match match = USBVIDPIDRegex().Match(Dependent);
+            Dictionary<string, object> devInfoDic = [];
+            foreach (PropertyData property in mbo.Properties)
+            {
+                devInfoDic[property.Name] = property.Value;
+            }
+            
+            usbEventArgs.Caption = (string)devInfoDic["Caption"] ?? "";
+            usbEventArgs.IsConnected = (bool)devInfoDic["Present"];
+            usbEventArgs.Manufacturer = (string)devInfoDic["Manufacturer"] ?? ""; 
+            usbEventArgs.PNPDeviceID = (string)devInfoDic["PNPDeviceID"] ?? "";
+            usbEventArgs.ClassGuid = (string)devInfoDic["ClassGuid"] ?? "";
+            usbEventArgs.ClassGuid = usbEventArgs.ClassGuid.Replace("{", "").Replace("}", "");
+            usbEventArgs.Description = (string)devInfoDic["Description"] ?? "";
+            usbEventArgs.Name = (string)devInfoDic["Name"] ?? "";
+            usbEventArgs.Service = (string)devInfoDic["Service"] ?? "";
+            usbEventArgs.Status = (string)devInfoDic["Status"] ?? "";
+            Match match = USBVIDPIDRegex().Match(usbEventArgs.PNPDeviceID);
             if (match.Success)
             {
                 usbEventArgs.HardwareID = $"{match.Groups[1].Value}:{match.Groups[3].Value}";
-
-                ManagementObjectCollection PnPEntityCollection = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE DeviceID=" + Dependent).Get();
-                if (PnPEntityCollection != null)
-                {
-                    foreach (ManagementObject Entity in PnPEntityCollection.Cast<ManagementObject>())
-                    {
-                        usbEventArgs.ClassGuid = (string)Entity["ClassGuid"];
-                        usbEventArgs.Description = (string)Entity["Description"];
-                        usbEventArgs.Name = (string)Entity["Name"];
-
-                        usbEventArgs.PNPDeviceID = (string)Entity["PNPDeviceID"];
-                        usbEventArgs.Service = (string)Entity["Service"];
-                        usbEventArgs.Status = (string)Entity["Status"];
-                    }
-                }
             }
+            else
+            {
+                log.Error($"Failed to get device id from {usbEventArgs.PNPDeviceID}");
+            }
+            log.Info($"{usbEventArgs.Name}({usbEventArgs.HardwareID}) is {(usbEventArgs.IsConnected ? "connected" : "disconnected")}");
         }
 
         return usbEventArgs;

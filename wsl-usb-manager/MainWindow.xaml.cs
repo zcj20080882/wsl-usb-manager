@@ -10,12 +10,9 @@
 ******************************************************************************/
 using MaterialDesignThemes.Wpf;
 using System.Windows;
-using wsl_usb_manager.AutoAttach;
 using wsl_usb_manager.Controller;
-using wsl_usb_manager.PersistedDevice;
 using wsl_usb_manager.Resources;
 using wsl_usb_manager.Settings;
-using wsl_usb_manager.USBDevices;
 
 namespace wsl_usb_manager;
 
@@ -30,8 +27,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         USBMonitor m = new(OnUSBEvent);
         m.Start();
-        InitNotifyIcon();
-        DataContext = new MainWindowViewModel(this);
+        InitNotifition();
+        DataContext = new MainWindowViewModel();
         ModifyTheme(App.GetAppConfig().DarkMode == true);
         log.Info("Starting...");
     }
@@ -41,7 +38,7 @@ public partial class MainWindow : Window
         Lang.ChangeLanguage(LangToggleButton.IsChecked ?? false);
         if (DataContext is MainWindowViewModel viewModel)
         {
-            viewModel.UpdateUI();
+            viewModel.UpdateLanguage();
         }
     }
 
@@ -67,7 +64,7 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel vm)
         {
             await USBIPD.InitUSBIPD();
-            await vm.UpdateUSBDevices(null);
+            //vm.UpdateWindow();
         }
     }
 
@@ -75,21 +72,7 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainWindowViewModel vm)
         {
-            if (vm.SelectedItem != null)
-            {
-                if (vm.SelectedItem.DataContext is USBDevicesViewModel uvm)
-                {
-                    uvm.UpdateDevices(vm.GetConnectedDeviceList());
-                }
-                else if (vm.SelectedItem.DataContext is PersistedDeviceViewModel pvm)
-                {
-                    pvm.UpdateDevices(vm.GetPersistedDeviceList());
-                }
-                else if (vm.SelectedItem.DataContext is AutoAttachViewModel avm)
-                {
-                    avm.UpdateDevices(App.GetSysConfig().AutoAttachDeviceList);
-                }
-            }
+            vm.UpdateWindow();
         }
     }
 }

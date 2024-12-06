@@ -24,25 +24,22 @@ using System.Text.RegularExpressions;
 
 namespace wsl_usb_manager.Controller;
 
-static partial class Wsl
+public partial class USBIPD
 {
-    public const string AttachWslUrl = "https://learn.microsoft.com/windows/wsl/connect-usb#attach-a-usb-device";
-    const string InstallWslUrl = "https://learn.microsoft.com/windows/wsl/install";
-    const string InstallDistributionUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#install";
-    const string SetWslVersionUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
+    private const string InstallWslUrl = "https://learn.microsoft.com/windows/wsl/install";
+    private const string InstallDistributionUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#install";
+    private const string SetWslVersionUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
 
-    static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
+    private static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
 
-    const string WslMountPoint = "/var/run/usbipd-win";
-
-    private static readonly ILog log = LogManager.GetLogger(typeof(Wsl));
+    private const string WslMountPoint = "/var/run/usbipd-win";
 
     public sealed record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning);
 
     private const ushort USBIP_PORT = 3240;
 
 
-    static string? GetPossibleBlockReason()
+    private static string? GetPossibleBlockReason()
     {
         using var policy = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile");
         if (policy is not null)
@@ -69,7 +66,7 @@ static partial class Wsl
         return null;
     }
 
-    static async Task<(int ExitCode, string StandardOutput, string StandardError)>
+    private static async Task<(int ExitCode, string StandardOutput, string StandardError)>
         RunWslAsync((string distribution, string directory)? linux, int timeout_ms, params string[] arguments)
     {
         var stdout = string.Empty;
@@ -137,23 +134,24 @@ static partial class Wsl
     /// <summary>
     /// BusId has already been checked, and the server is running.
     /// </summary>
-    public static async Task<(ExitCode, string error_msg)>
+    public static async Task<(ExitCode, string error_msg, USBDevice? newDev)>
         Attach(string busId, string? hostIP)
     {
         var distribution = "";
         var err_msg = "";
         var wslWindowsPath = Path.Combine(USBIPD.GetUSBIPDInstallPath(), "WSL");
+        USBDevice? devinfo = null;
         if (!Path.Exists(wslWindowsPath))
         {
             err_msg = $"usbipd-win may be not installed; reinstall usbipd-win(version >= 4.3.0) then restart this program.";
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg);
+            return (ExitCode.Failure, err_msg, devinfo);
         }
         if ((Path.GetPathRoot(wslWindowsPath) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
         {
             err_msg = $"This software should be installed on a local drive.";
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg);
+            return (ExitCode.Failure, err_msg, devinfo);
         }
 
         // Figure out which distribution to use. WSL can be in many states:
@@ -179,7 +177,7 @@ static partial class Wsl
             // check (a) failed
             err_msg = $"Windows Subsystem for Linux version 2 is not available. See {InstallWslUrl}.";
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg);
+            return (ExitCode.Failure, err_msg, devinfo);
         }
 
         // check (c1)
@@ -187,7 +185,7 @@ static partial class Wsl
         {
             err_msg = $"There are no WSL distributions installed. Learn how to install one at {InstallDistributionUrl}.";
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg);
+            return (ExitCode.Failure, err_msg, devinfo);
         }
 
         // check (c2)
@@ -195,7 +193,7 @@ static partial class Wsl
         {
             err_msg = $"This program only works with WSL 2 distributions. Learn how to upgrade at {SetWslVersionUrl}.";
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg);
+            return (ExitCode.Failure, err_msg, devinfo);
         }
 
         // check (c3)
@@ -203,7 +201,7 @@ static partial class Wsl
         {
             err_msg = $"There is no WSL 2 distribution running; keep a command prompt to a WSL 2 distribution open to leave it running.";
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg);
+            return (ExitCode.Failure, err_msg, devinfo);
         }
 
         if (distributions.FirstOrDefault(d => d.IsDefault && d.Version == 2 && d.IsRunning) is Distribution defaultDistribution)
@@ -228,7 +226,7 @@ static partial class Wsl
             if (wslResult.ExitCode != 0)
             {
                 log.Error($"Unable to get WSL kernel configuration.");
-                return (ExitCode.Failure, $"Unable to get WSL kernel configuration: {wslResult.StandardError}");
+                return (ExitCode.Failure, $"Unable to get WSL kernel configuration: {wslResult.StandardError}", devinfo);
             }
 
             var config = wslResult.StandardOutput;
@@ -249,7 +247,7 @@ static partial class Wsl
                 if (wslResult.ExitCode != 0)
                 {
                     log.Error($"Unable to get WSL kernel modules: {wslResult.StandardError}");
-                    return (ExitCode.Failure, $"Unable to get WSL kernel modules: {wslResult.StandardError}");
+                    return (ExitCode.Failure, $"Unable to get WSL kernel modules: {wslResult.StandardError}", devinfo);
                 }
 
                 if (!wslResult.StandardOutput.Contains("vhci_hcd"))
@@ -259,7 +257,7 @@ static partial class Wsl
                     if (wslResult.ExitCode != 0)
                     {
                         log.Error($"Loading vhci_hcd failed: {wslResult.StandardError}");
-                        return (ExitCode.Failure, $"Loading vhci_hcd failed.");
+                        return (ExitCode.Failure, $"Loading vhci_hcd failed.", devinfo);
                     }
                     // Expected output:
                     //
@@ -270,19 +268,19 @@ static partial class Wsl
                     if (wslResult.ExitCode != 0)
                     {
                         log.Error($"Unable to get WSL kernel modules: {wslResult.StandardError}");
-                        return (ExitCode.Failure, $"Unable to get WSL kernel modules.");
+                        return (ExitCode.Failure, $"Unable to get WSL kernel modules.", devinfo);
                     }
                     if (!wslResult.StandardOutput.Contains("vhci_hcd"))
                     {
                         log.Error($"Module vhci_hcd not loaded.");
-                        return (ExitCode.Failure, $"Module vhci_hcd not loaded.");
+                        return (ExitCode.Failure, $"Module vhci_hcd not loaded.", devinfo);
                     }
                 }
             }
             else
             {
                 log.Error($"WSL kernel is not USBIP capable; update with 'wsl --update'.");
-                return (ExitCode.Failure, $"WSL kernel is not USBIP capable; update with 'wsl --update'.");
+                return (ExitCode.Failure, $"WSL kernel is not USBIP capable; update with 'wsl --update'.", devinfo);
             }
         }
 
@@ -303,7 +301,7 @@ static partial class Wsl
             if (wslResult.ExitCode != 0)
             {
                 log.Error($"Mounting '{wslWindowsPath}' within WSL failed: {wslResult.StandardError}");
-                return (ExitCode.Failure, $"Mounting '{wslWindowsPath}' within WSL failed.");
+                return (ExitCode.Failure, $"Mounting '{wslWindowsPath}' within WSL failed.", devinfo);
             }
         }
 
@@ -313,7 +311,7 @@ static partial class Wsl
             if (wslResult.ExitCode != 0 || wslResult.StandardOutput.Trim() != "usbip (usbip-utils 2.0)")
             {
                 log.Error($"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.");
-                return (ExitCode.Failure, $"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.");
+                return (ExitCode.Failure, $"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.", devinfo);
             }
         }
 
@@ -388,7 +386,7 @@ static partial class Wsl
                 {
                     err_msg = $"WSL does not appear to have network connectivity; try `wsl --shutdown` and then restart WSL.";
                     log.Error(err_msg);
-                    return (ExitCode.Failure, err_msg);
+                    return (ExitCode.Failure, err_msg, devinfo);
                 }
 
                 // Get all non-loopback unicast IPv4 addresses (with their mask) for the host.
@@ -404,7 +402,7 @@ static partial class Wsl
                 {
                     err_msg = "The host IP address for the WSL virtual switch could not be found.";
                     log.Error(err_msg);
-                    return (ExitCode.Failure, err_msg);
+                    return (ExitCode.Failure, err_msg, devinfo);
                 }
 
                 hostAddress = matchHost.Address;
@@ -420,11 +418,11 @@ static partial class Wsl
             {
                 err_msg = $"{hostIP} is an invalid IP address.";
                 log.Error(err_msg);
-                return (ExitCode.Failure, err_msg);
+                return (ExitCode.Failure, err_msg, devinfo);
             }
         }
 
-        log.Info($"Using IP address {hostAddress} to reach the host.");
+        log.Info($"Using IP address {hostAddress} to reach the host to attach device({busId}).");
 
         // Heuristic firewall check
         {
@@ -460,7 +458,7 @@ static partial class Wsl
                         {
                             // We found a possible blocker.
                             log.Error(blockReason);
-                            return (ExitCode.Failure, blockReason);
+                            return (ExitCode.Failure, blockReason, devinfo);
                         }
                     }
                     break;
@@ -475,7 +473,7 @@ static partial class Wsl
                         // In any case, it isn't working...
                         err_msg = $"A firewall appears to be blocking the connection; ensure TCP port {USBIP_PORT} is allowed.";
                         log.Error(err_msg);
-                        return (ExitCode.Failure, err_msg);
+                        return (ExitCode.Failure, err_msg, devinfo  );
                     }
                 case FirewallCheckResult.Pass:
                     // All is well.
@@ -485,23 +483,41 @@ static partial class Wsl
 
         // Finally, call 'usbip attach', or run the auto-attach.sh script.
         {
-            var wslResult = await RunWslAsync((distribution, WslMountPoint), 5000, "./usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}");
-            if (wslResult.ExitCode != 0)
+            string[] wslAttachCmd = ["./usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}"];
+            int attachTimeout = 5000;
+            var wslResult = await RunWslAsync((distribution, WslMountPoint), attachTimeout, wslAttachCmd);
+            for (int i = 0; i < 3; i++)
             {
-                err_msg = "";
-                if (wslResult.StandardError.Contains("Device busy"))
+                (_, _, devinfo) = await GetUSBDeviceByBusID(busId);
+                if (wslResult.ExitCode != 0)
                 {
-                    err_msg = "The device appears to be used by Windows; stop the software using the device, or bind the device with force enabled.";
-                    err_msg += "\r\n";
+                    log.Warn($"Failed to attach device with busid '{busId}': {wslResult.StandardError}");
+                    if (devinfo != null && devinfo.IsAttached)
+                    {
+                        return (ExitCode.Success, "", devinfo);
+                    }
+                    
+                    if (wslResult.StandardError.Contains("Device busy"))
+                    {
+                        err_msg = "The device appears to be used by Windows; stop the software using the device, or bind the device with force enabled.";
 
+                    }
+                    else
+                    {
+                        err_msg = wslResult.StandardError;
+                    }
+                    
+                    Thread.Sleep(500);
+                    wslResult = await RunWslAsync((distribution, WslMountPoint), attachTimeout, wslAttachCmd);
                 }
-                err_msg += $"Failed to attach device with busid '{busId}'.";
-                log.Error(err_msg);
-                return (ExitCode.Failure, err_msg);
+                else
+                {
+                    return (ExitCode.Success, "", devinfo);
+                }
             }
         }
 
-        return (ExitCode.Success, "");
+        return (ExitCode.Failure, err_msg, devinfo);
     }
 
     internal static bool IsOnSameIPv4Network(IPAddress hostAddress, IPAddress hostMask, IPAddress clientAddress)

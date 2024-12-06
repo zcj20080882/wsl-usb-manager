@@ -14,16 +14,11 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Threading;
 using wsl_usb_manager.Controller;
+using wsl_usb_manager.Domain;
 
 namespace wsl_usb_manager;
 
-public interface INotifyIconService
-{
-    void ShowNotification(string message);
-    void ShowErrorMessage(string message);
-}
-
-public partial class MainWindow : Window, INotifyIconService
+public partial class MainWindow : Window, INotifyService
 {
     private static readonly NotifyIcon notifyIcon = new();
     private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
@@ -48,7 +43,7 @@ public partial class MainWindow : Window, INotifyIconService
         paletteHelper.SetTheme(theme);
     }
 
-    private void InitNotifyIcon()
+    private void InitNotifition()
     {
         notifyIcon.Visible = true;
         notifyIcon.Icon = Properties.Resources.NotifyIcon;
@@ -64,6 +59,7 @@ public partial class MainWindow : Window, INotifyIconService
         var exitItem = new ToolStripMenuItem("Exit");
         exitItem.Click += new EventHandler(Exit_Click);
         notifyIcon.ContextMenuStrip.Items.Add(exitItem);
+        NotifyService.RegisterNotifyService(this);
     }
 
     private void Exit_Click(object? sender, EventArgs e)
@@ -104,7 +100,7 @@ public partial class MainWindow : Window, INotifyIconService
     {
         if (USBEventProcessing)
         {
-            log.Debug("USB event is processing, ignore this event.");
+            log.Warn("USB event is processing, ignore this event.");
             return;
         }
         if (string.IsNullOrEmpty(e.HardwareID))
@@ -128,6 +124,7 @@ public partial class MainWindow : Window, INotifyIconService
 
     public void ShowNotification(string message)
     {
+        log.Info(message);
         if (!IsVisible)
         {
             notifyIcon.Visible = true;
@@ -142,6 +139,7 @@ public partial class MainWindow : Window, INotifyIconService
 
     public void ShowErrorMessage(string message)
     {
+        log.Error(message);
         if (!IsVisible)
         {
             notifyIcon.Visible = true;
@@ -150,6 +148,22 @@ public partial class MainWindow : Window, INotifyIconService
         else
         {
             System.Windows.MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    public void DisableWindow()
+    {
+        if(DataContext is MainWindowViewModel vm)
+        {
+            vm.DisableWindow();
+        }
+    }
+    
+    public void EnableWindow()
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.EnableWindow();
         }
     }
 }

@@ -8,6 +8,7 @@
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
+using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,104 +28,146 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
         InitializeComponent();
     }
 
-    private void AutoAttachCheckBox_Click(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is USBDevicesViewModel vm)
-        {
-            vm.UpdateDevices(null);
-        }
-    }
-
-    private void BoundCheckBox_Click(object sender, RoutedEventArgs e)
+    private async void AutoAttachCheckBox_Click(object sender, RoutedEventArgs e)
     {
         if (sender is System.Windows.Controls.CheckBox checkBox)
         {
             if (checkBox.DataContext is USBDeviceInfoModel device)
             {
-                if (device.IsBound)
+                if (device.IsAutoAttach)
                 {
-                    device.Bind();
+                    if (!device.IsInFilterDeviceList())
+                    {
+                        NotifyService.DisableWindow();
+                        await device.AddToAutoAttach();
+                        NotifyService.EnableWindow();
+                    }
                 }
                 else
                 {
-                    device.Unbind();
+                    if (device.IsInAutoAttachList())
+                    {
+                        device.RemoveFromAutoAttach();
+                    }
                 }
             }
         }
     }
 
-    private void AttachCheckBox_Click(object sender, RoutedEventArgs e)
+    private async void BoundCheckBox_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.CheckBox checkBox)
+        {
+            if(checkBox.DataContext is USBDeviceInfoModel device)
+            {
+                NotifyService.DisableWindow();
+                if (device.IsBound)
+                {
+                    await device.Bind();
+                }
+                else
+                {
+                    await device.Unbind();
+                }
+                NotifyService.EnableWindow();
+            }          
+        }
+    }
+
+    private async void AttachCheckBox_Click(object sender, RoutedEventArgs e)
     {
         if (sender is System.Windows.Controls.CheckBox checkBox)
         {
             if (checkBox.DataContext is USBDeviceInfoModel device)
             {
+                NotifyService.DisableWindow();
                 if (device.IsAttached)
                 {
-                    device.Attach();
+                    await device.Attach();
                 }
                 else
                 {
-                    device.Detach();
+                    await device.Detach();
                 }
+                NotifyService.EnableWindow();
+            }
+        }
+    }
+
+    private void UpdateContextMenu()
+    {
+        if (DataContext is USBDevicesViewModel dm)
+        {
+            if(dm.SelectedDevice is USBDeviceInfoModel device)
+            {
+                dm.MenuBindEnabled = !device.IsBound && !device.IsInAutoAttachList() && !device.IsInFilterDeviceList();
+                dm.MenuAttachEnabled = device.IsBound && !device.IsAttached && !device.IsInAutoAttachList();
+                dm.MenuDetachEnabled = device.IsAttached && !device.IsInAutoAttachList();
+                dm.MenuUnbindEnabled = device.IsBound && !device.IsInAutoAttachList();
+                dm.MenuHideEnabled = !device.IsInFilterDeviceList() && !device.IsInAutoAttachList();
+                dm.MenuUnhiddenEnabled = device.IsInFilterDeviceList();
+                dm.MenuAddToAutoEnabled = !device.IsInAutoAttachList() && !device.IsInFilterDeviceList();
+                dm.MenuRemoveFromAutoEnabled = device.IsInAutoAttachList() && !device.IsInFilterDeviceList();
+            }
+            else
+            {
+                dm.MenuBindEnabled = false;
+                dm.MenuAttachEnabled = false;
+                dm.MenuDetachEnabled = false;
+                dm.MenuUnbindEnabled = false;
+                dm.MenuHideEnabled = false;
+                dm.MenuUnhiddenEnabled = false;
+                dm.MenuAddToAutoEnabled = false;
+                dm.MenuRemoveFromAutoEnabled = false;
             }
         }
     }
 
     private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (DataContext is USBDevicesViewModel dm && dm.SelectedDevice is USBDeviceInfoModel device)
-        {
-            bool isInFilterList = App.GetSysConfig().IsInFilterDeviceList(device.Device);
-            bool isInAutoAttachList = App.GetSysConfig().IsInAutoAttachDeviceList(device.Device);
-            dm.MenuBindEnabled = !device.IsBound && !isInAutoAttachList && !isInFilterList;
-            dm.MenuAttachEnabled = device.IsBound && !device.IsAttached && !isInAutoAttachList;
-            dm.MenuDetachEnabled = device.IsAttached && !isInAutoAttachList;
-            dm.MenuUnbindEnabled = device.IsBound && !isInAutoAttachList;
-            dm.MenuHideEnabled = !isInFilterList && !isInAutoAttachList;
-            dm.MenuUnhiddenEnabled = isInFilterList;
-            dm.MenuAddToAutoEnabled = !isInAutoAttachList && !isInFilterList;
-            dm.MenuRemoveFromAutoEnabled = isInAutoAttachList && !isInFilterList;
-        }
+        UpdateContextMenu();
     }
 
-    private void MenuItem_Click(object sender, RoutedEventArgs e)
+    private async void MenuItem_Click(object sender, RoutedEventArgs e)
     {
 
         if (sender is MenuItem item && DataContext is USBDevicesViewModel dm)
         {
             if (dm.SelectedDevice is USBDeviceInfoModel device)
             {
+                NotifyService.DisableWindow();
                 ObservableCollection<USBDeviceInfoModel>? oldList = dm.USBDevicesItems;
                 switch (item.Name)
                 {
                     case "MenuItemBind":
-                        device.Bind();
+                        await device.Bind();
                         break;
-
                     case "MenuItemUnbind":
-                        device.Unbind();
+                        await device.Unbind();
                         break;
                     case "MenuItemAttach":
-                        device.AutoAttach();
+                        await device.Attach();
                         break;
                     case "MenuItemDetach":
-                        device.Detach();
+                        await device.Detach();
                         break;
                     case "MenuItemAddToAutoAttach":
-                        device.AddToAutoAttach();
+                        if (!device.IsInFilterDeviceList())
+                        {
+                            await device.AddToAutoAttach();
+                        }
                         break;
                     case "MenuItemRemoveFromAutoAttach":
-                        device.RemoveFromAutoAttach();
-                        dm.UpdateDevices(null);
+                        if (device.IsInAutoAttachList())
+                        {
+                            device.RemoveFromAutoAttach();
+                        }
                         break;
                     case "MenuItemHide":
                         device.AddToFilter();
-                        dm.UpdateDevices(null);
                         break;
                     case "MenuItemUnhiden":
                         device.RemoveFromFilter();
-                        dm.UpdateDevices(null);
                         break;
                     case "MenuItemShowHide":
                         if (dm.USBDevicesItems == null)
@@ -140,9 +183,10 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
                     default:
                         break;
                 }
+                NotifyService.EnableWindow();
             }
             else
-                MessageBox.Show("No device is selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                NotifyService.ShowErrorMessage("No device is selected.");
         }
     }
 
@@ -161,21 +205,16 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
 
         if (obj is System.Windows.Controls.ListViewItem listViewItem)
         {
+            UpdateContextMenu();
             listViewItem.Focus();
             return;
         }
-        if (DataContext is USBDevicesViewModel dm && listCount > 0)
+        if (listCount > 0)
         {
-            dm.MenuBindEnabled = false;
-            dm.MenuAttachEnabled = false;
-            dm.MenuDetachEnabled = false;
-            dm.MenuUnbindEnabled = false;
-            dm.MenuHideEnabled = false;
-            dm.MenuUnhiddenEnabled = false;
-            dm.MenuAddToAutoEnabled = false;
-            dm.MenuRemoveFromAutoEnabled = false;
+            UpdateContextMenu();
             return;
         }
         e.Handled = true;
     }
+
 }

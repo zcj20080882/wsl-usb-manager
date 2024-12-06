@@ -27,7 +27,7 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
         InitializeComponent();
     }
 
-    private void MenuItem_Click(object sender, RoutedEventArgs e)
+    private async void MenuItem_Click(object sender, RoutedEventArgs e)
     {
         if (sender is MenuItem item && DataContext is PersistedDeviceViewModel dm)
         {
@@ -36,7 +36,7 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
                 case "MenuItemDeleteOne":
                     if (dm.SelectedDevice is USBDeviceInfoModel device)
                     {
-                        device.Unbind();
+                        await device.Unbind();
                     }
                     else
                         MessageBox.Show("No device is selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -46,7 +46,7 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
                     {
                         foreach (var d in dm.DevicesItems)
                         {
-                            d.Unbind();
+                            await d.Unbind();
                         }
                     }
                     break;

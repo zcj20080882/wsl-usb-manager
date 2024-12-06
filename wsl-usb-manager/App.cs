@@ -15,13 +15,44 @@ using log4net;
 using log4net.Appender;
 using log4net.Core;
 using log4net.Layout;
+using log4net.Layout.Pattern;
 using log4net.Repository.Hierarchy;
 using Newtonsoft.Json;
 using System.IO;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using wsl_usb_manager.Resources;
 using wsl_usb_manager.Settings;
-
 namespace wsl_usb_manager;
+
+public class MethodLocationPatternConverter : PatternLayoutConverter
+{
+    protected override void Convert(TextWriter writer, LoggingEvent loggingEvent)
+    {
+        var method = loggingEvent.LocationInformation?.MethodName;
+        if (method == "MoveNext")
+        {
+            var declaringType = loggingEvent.LocationInformation?.ClassName;
+            if (declaringType != null)
+            {
+                var type = Type.GetType(declaringType);
+                if (type != null)
+                {
+                    var methodInfo = type.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (methodInfo != null)
+                    {
+                        var stateMachineAttribute = methodInfo.GetCustomAttribute<AsyncStateMachineAttribute>();
+                        if (stateMachineAttribute != null)
+                        {
+                            method = stateMachineAttribute?.StateMachineType?.DeclaringType?.Name ?? method;
+                        }
+                    }
+                }
+            }
+        }
+        writer.Write(method);
+    }
+}
 
 public partial class App : System.Windows.Application
 {
@@ -31,9 +62,8 @@ public partial class App : System.Windows.Application
     private static readonly string ConfigFile = AppTempPath + "/config.json";
     private static SystemConfig SysConfig = new();
     private static readonly ILog log = LogManager.GetLogger(typeof(App));
-    private static readonly string LogConversionPattern = "%date [%thread]" +"" +
-        " %-5level %logger %method (%file:%line) - %message%newline";
-
+    private static readonly string LogConversionPattern = "%date [%thread] %-5level %logger:%line - %message%newline";
+    private const string LogDivider = "\r\n-----------------------------------------------------------------------------------------------------------------------------------------";
     private static void ConfigureLog4Net()
     {
         string logDirectory = Path.Combine(AppTempPath, "Logs/");
@@ -50,8 +80,9 @@ public partial class App : System.Windows.Application
         {
             ConversionPattern = LogConversionPattern
         };
+        patternLayout.AddConverter("method", typeof(MethodLocationPatternConverter));
         patternLayout.ActivateOptions();
-
+        
         // 创建 RollingFileAppender
         RollingFileAppender rollingFileAppender = new()
         {
@@ -84,7 +115,8 @@ public partial class App : System.Windows.Application
 
         // 应用配置
         hierarchy.Configured = true;
-        log.Info("Start debug level log server...");
+        log.Info(LogDivider);
+        log.Info("Start log server...");
     }
 
 

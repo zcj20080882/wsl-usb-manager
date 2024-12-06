@@ -11,6 +11,7 @@
 
 // Ignore Spelling: usb
 
+using log4net;
 using wsl_usb_manager.Controller;
 
 namespace wsl_usb_manager.Domain;
@@ -18,16 +19,8 @@ namespace wsl_usb_manager.Domain;
 
 public class USBDeviceInfoModel : ViewModelBase
 {
-    private string? _busID;
-    private string? _hardwareId;
-    private bool _isConnected;
     private bool _isBound;
     private bool _isForced;
-    private string? _clientIPAddress;
-    private string? _description;
-    private string? _persistedGuid;
-    private string? _instanceId;
-    private string? _stubInstanceId;
     private bool _isAttached;
     private bool _isVisible = true;
     private bool _isAutoAttach = false;
@@ -35,35 +28,17 @@ public class USBDeviceInfoModel : ViewModelBase
     private bool _isCBBindEnabled = true;
     private bool _isCBAttachEnabled = true;
     private bool _isCBForceEnabled = true;
-    private readonly MainWindowViewModel MainVM;
     private readonly USBDevice _device = new();
+    private static readonly ILog log = LogManager.GetLogger(typeof(USBDeviceInfoModel));
 
-    private bool IsInFilterDeviceList() => App.GetSysConfig().IsInFilterDeviceList(_device);
-    private bool IsInAutoAttachList() => App.GetSysConfig().IsInAutoAttachDeviceList(_device);
-    public USBDeviceInfoModel(USBDevice? usbDeviceInfo, MainWindowViewModel mainVM)
+    private void UpdateDeviceInfo()
     {
-        MainVM = mainVM;
-        InstanceId = usbDeviceInfo?.InstanceId;
-        HardwareId = usbDeviceInfo?.HardwareId;
-        Description = usbDeviceInfo?.Description;
+        IsForced = _device.IsForced;
+        IsBound = _device.IsBound;
+        IsAttached = _device.IsAttached;
+        IsVisible = !IsInFilterDeviceList();
 
-        BusID = usbDeviceInfo?.BusId;
-        PersistedGuid = usbDeviceInfo?.PersistedGuid;
-        StubInstanceId = usbDeviceInfo?.StubInstanceId;
-        ClientIPAddress = usbDeviceInfo?.ClientIPAddress;
-
-        IsForced = usbDeviceInfo?.IsForced ?? false;
-        IsBound = usbDeviceInfo?.IsBound ?? false;
-        IsConnected = usbDeviceInfo?.IsConnected ?? false;
-        IsAttached = usbDeviceInfo?.IsAttached ?? false;
-        if (usbDeviceInfo != null)
-            IsVisible = !IsInFilterDeviceList();
-        else
-            IsVisible = false;
-
-        _device = usbDeviceInfo ?? new USBDevice();
-
-        if (IsInFilterDeviceList())
+        if (!IsVisible)
         {
             IsAutoAttach = false;
             CBAutoAttachEnabled = false;
@@ -87,108 +62,44 @@ public class USBDeviceInfoModel : ViewModelBase
 
             CBForcedEnable = !IsBound;
         }
+    }
+    public bool IsInFilterDeviceList() => App.GetSysConfig().IsInFilterDeviceList(_device);
+    public bool IsInAutoAttachList() => App.GetSysConfig().IsInAutoAttachDeviceList(_device);
 
+    public USBDeviceInfoModel(USBDevice dev)
+    {
+        _device = dev;
+        UpdateDeviceInfo();
     }
 
-    public string? BusID
-    {
-        get => _busID;
-        set
-        {
-            SetProperty(ref _busID, value);
-            _device.BusId = value ?? "";
-        }
-    }
-    public string? HardwareId
-    {
-        get => _hardwareId;
-        set
-        {
-            SetProperty(ref _hardwareId, value);
-            _device.HardwareId = value ?? "";
-        }
-    }
-    public bool IsConnected
-    {
-        get => _isConnected;
-        set
-        {
-            SetProperty(ref _isConnected, value);
-            _device.IsConnected = value;
-        }
-    }
+    public string BusID { get => _device.BusId ?? ""; }
+
+    public string HardwareId { get => _device.HardwareId ?? ""; }
+    public bool IsConnected { get => _device.IsConnected; }
     public bool IsBound
     {
         get => _isBound;
-        set
-        {
-            SetProperty(ref _isBound, value);
-            _device.IsBound = value;
-        }
+        set => SetProperty(ref _isBound, value);
     }
     public bool IsForced
     {
         get => _isForced;
-        set
-        {
-            SetProperty(ref _isForced, value);
-            _device.IsForced = value;
-        }
+        set => SetProperty(ref _isForced, value);
     }
     public bool IsAttached
     {
         get => _isAttached;
-        set
-        {
+        set { 
             SetProperty(ref _isAttached, value);
-            _device.IsAttached = value;
+            
         }
     }
-    public string? ClientIPAddress
-    {
-        get => _clientIPAddress;
-        set
-        {
-            SetProperty(ref _clientIPAddress, value);
-            _device.ClientIPAddress = value ?? "";
-        }
-    }
-    public string? Description
-    {
-        get => _description;
-        set
-        {
-            SetProperty(ref _description, value);
-            _device.Description = value ?? "";
-        }
-    }
-    public string? PersistedGuid
-    {
-        get => _persistedGuid;
-        set
-        {
-            SetProperty(ref _persistedGuid, value);
-            _device.PersistedGuid = value ?? "";
-        }
-    }
-    public string? InstanceId
-    {
-        get => _instanceId;
-        set
-        {
-            SetProperty(ref _instanceId, value);
-            _device.InstanceId = value ?? "";
-        }
-    }
-    public string? StubInstanceId
-    {
-        get => _stubInstanceId;
-        set
-        {
-            SetProperty(ref _stubInstanceId, value);
-            _device.StubInstanceId = value ?? "";
-        }
-    }
+
+    public string ClientIPAddress { get => _device.ClientIPAddress ?? ""; }
+    public string Description { get => _device.Description ?? ""; }
+    public string PersistedGuid { get => _device.PersistedGuid ?? ""; }
+    public string InstanceId { get => _device.InstanceId ?? ""; }
+    public string StubInstanceId { get => _device.StubInstanceId ?? ""; }
 
     public bool CBAutoAttachEnabled
     {
@@ -219,67 +130,139 @@ public class USBDeviceInfoModel : ViewModelBase
     public bool IsAutoAttach
     {
         get => _isAutoAttach;
-        set
-        {
-            SetProperty(ref _isAutoAttach, value);
-            if (value)
-            {
-                if (!App.GetSysConfig().IsInAutoAttachDeviceList(Device))
-                {
-                    App.GetSysConfig().AddToAutoAttachDeviceList(Device);
-                    App.SaveConfig();
-                    MainVM.ShowNotification($"{Device.Description} is added to auto attach list.");
-                    AutoAttach();
-                }
-            }
-            else
-            {
-                if (App.GetSysConfig().IsInAutoAttachDeviceList(Device))
-                {
-                    App.GetSysConfig().RemoveFromAutoAttachDeviceList(Device);
-                    App.SaveConfig();
-                    MainVM.ShowNotification($"{Device.Description} is removed from auto attach list.");
-                }
-            }
+        set 
+        { 
+            SetProperty(ref _isAutoAttach, value); 
+            CBBindEnabled = ((!IsInFilterDeviceList()) && (!value || !IsBound));
+            CBAttachEnabled = ((!IsInFilterDeviceList()) && (IsBound && ((value && !IsAttached) || !value)));
+            CBForcedEnable = ((!IsInFilterDeviceList()) && (!IsBound && !value));
         }
     }
 
     public USBDevice Device { get => _device; }
 
-    public async void Bind() => await MainVM.BindDevice(Device);
-    public async void Unbind() => await MainVM.UnbindDevice(Device);
-    public async void Attach() => await MainVM.AttachDevice(Device);
-    public async void Detach() => await MainVM.DetachDevice(Device);
-    public async void AutoAttach() => await MainVM.AutoAttachDevices(Device);
-
-    public void AddToAutoAttach()
+    public async Task<bool> Bind()
     {
+        string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",",StringSplitOptions.RemoveEmptyEntries)[0];
+        Device.IsForced = IsForced;
+        (ExitCode ret, string err) = await Device.Bind();
+        if(ret != ExitCode.Success)
+        {
+            NotifyService.ShowErrorMessage($"Failed to bind '{name}': {err}");
+        }
+        UpdateDeviceInfo();
+        return IsBound;
+    }
+    public async Task<bool> Unbind()
+    {
+        string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
+        (ExitCode ret, string err) = await Device.Unbind();
+        if (ret != ExitCode.Success) {
+            NotifyService.ShowErrorMessage($"Failed to unbind '{name}': {err}");
+        }
+        UpdateDeviceInfo();
+        return (!IsBound);
+    }
+    public async Task<bool> Attach()
+    {
+        string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
+        (ExitCode ret, string err) = await Device.Attach(NetworkCardInfo.GetIPAddress(App.GetAppConfig().ForwardNetCard));
+        if (ret != ExitCode.Success)
+        {
+            NotifyService.ShowErrorMessage($"Failed to attach '{name}': {err}");
+        }
+        UpdateDeviceInfo();
+        return IsAttached;
+    }
+    public async Task<bool> Detach()
+    {
+        string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
+        (ExitCode ret, string err) = await Device.Detach();
+        if (ret != ExitCode.Success)
+        {
+            NotifyService.ShowErrorMessage($"Failed to detach '{name}': {err}");
+        }
+        UpdateDeviceInfo();
+        return (!IsAttached);
+    }
+
+    public async Task<bool> AutoAttach()
+    {
+        string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
+        if (!IsInAutoAttachList())
+        {
+            return false;
+        }
+
+        if (!Device.IsConnected)
+        {
+            NotifyService.ShowErrorMessage($"The device '{name}' is not connected!");
+            return false;
+        }
+
+        if (!Device.IsBound)
+        {
+            if (!await Bind())
+            {
+                return false;
+            }
+        }
+
+        if (!Device.IsAttached)
+        {
+            return await Attach();
+        }
+        return true;    
+    }
+
+    public async Task AddToAutoAttach()
+    {
+        string? name = string.IsNullOrWhiteSpace(Description) ? HardwareId :
+                        Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
         IsAutoAttach = true;
+        if (IsInAutoAttachList())
+        {
+            return;
+        }
+        
+        App.GetSysConfig().AddToAutoAttachDeviceList(Device);
+        App.SaveConfig();
+        NotifyService.ShowNotification($"'{name}' is added to auto attach list.");
+        await AutoAttach();
     }
 
     public void RemoveFromAutoAttach()
     {
+        string? name = string.IsNullOrWhiteSpace(Description) ? HardwareId :
+                        Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
         IsAutoAttach = false;
+        if (!IsInAutoAttachList())
+        {
+            return;
+        }
+        App.GetSysConfig().RemoveFromAutoAttachDeviceList(Device);
+        App.SaveConfig();
+        NotifyService.ShowNotification($"'{name}' is removed from auto attach list.");
     }
 
     public void AddToFilter()
     {
-        if (!App.GetSysConfig().IsInFilterDeviceList(Device))
+        if (!IsInFilterDeviceList())
         {
             App.GetSysConfig().AddToFilteredDeviceList(Device);
             App.SaveConfig();
             IsVisible = false;
-            MainVM.ShowNotification($"{Device.Description} is added to filter list.");
+            NotifyService.ShowNotification($"{Device.Description} is added to filter list.");
         }
     }
 
     public void RemoveFromFilter()
     {
-        if (App.GetSysConfig().IsInFilterDeviceList(Device))
+        if (IsInFilterDeviceList())
         {
             App.GetSysConfig().RemoveFromFilteredDevice(Device);
             App.SaveConfig();
-            MainVM.ShowNotification($"{Device.Description} is removed from filter list.");
+            NotifyService.ShowNotification($"{Device.Description} is removed from filter list.");
             IsVisible = true;
         }
     }
