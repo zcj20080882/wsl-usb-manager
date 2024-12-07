@@ -14,6 +14,7 @@
 using log4net;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Principal;
 using System.Text.RegularExpressions;
 
 namespace wsl_usb_manager.Controller;
@@ -21,8 +22,6 @@ namespace wsl_usb_manager.Controller;
 public partial class USBIPD
 {
     private static readonly string CmdGetAllDevices = @"Import-Module $env:ProgramW6432'\usbipd-win\PowerShell\Usbipd.Powershell.dll';Get-UsbipdDevice";
-    private static readonly string[] separator = [""];
-    private static readonly char[] separatorOfDictionary = [':'];
     private static readonly ILog log = LogManager.GetLogger(typeof(USBIPD));
 
     [GeneratedRegex(@"InstanceId\s*:\s*(?<InstanceId>.*?)\s*" +
@@ -39,12 +38,22 @@ public partial class USBIPD
     private static partial Regex DeviceInfoRegex();
 
     private static string USBIPD_INSTALL_PATH = string.Empty;
+
+    public const string USBIPSharedDeviceID = "80EE:CAFE";
+
     public USBIPD()
     {
 
     }
 
-    public static async Task<(ExitCode, string)> InitUSBIPD()
+    public static bool IsRunningAsAdministrator()
+    {
+        using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+        WindowsPrincipal principal = new(identity);
+        return principal.IsInRole(WindowsBuiltInRole.Administrator);
+    }
+
+    public static async Task<(ExitCode exitCode, string errMsg)> InitUSBIPD()
     {
         (bool IsInstalled, string InstallPath) = await CheckUsbipdWinInstallation();
         if (!IsInstalled)
@@ -67,7 +76,7 @@ public partial class USBIPD
             }
         ";
 
-        (int exitCode, string stdout, string stderr) = await RunPowerShellScripts(script, 5000);
+        (int exitCode, string stdout, _) = await RunPowerShellScripts(script, 5000);
 
         if (exitCode == 0 && !string.IsNullOrWhiteSpace(stdout))
         {
@@ -78,7 +87,7 @@ public partial class USBIPD
     }
 
 
-    private static async Task<(int ExitCode, string StandardOutput, string StandardError)> 
+    private static async Task<(int ExitCode, string StandardOutput, string StandardError)>
         RunPowerShellScripts(string script, int timeout_ms)
     {
         var stdout = string.Empty;
@@ -127,7 +136,7 @@ public partial class USBIPD
                 {
                     // Kill the entire Windows process tree, just in case it hasn't exited already.
                     process.Kill(true);
-                    
+
                 }
             }
         });
@@ -136,7 +145,7 @@ public partial class USBIPD
         {
             return new((int)ExitCode.Failure, "", $"Failed to start \"usbipd\" with arguments {script}.");
         }
-        
+
         return new(process.ExitCode, stdout, stderr);
     }
 
@@ -145,21 +154,32 @@ public partial class USBIPD
     {
         var stdout = string.Empty;
         var stderr = string.Empty;
-        //Run as administrator example:
-        //Start-Process <process> -ArgumentList '<ArgumentList>' -Verb runAs -WindowStyle Hidden
-        var startInfo = new ProcessStartInfo
+        ProcessStartInfo startInfo;
+        if (privilege && !IsRunningAsAdministrator())
         {
-            FileName = "powershell.exe",
-            Arguments = $"Start-Process usbipd -ArgumentList '{arguments.Aggregate((s1, s2) => s1 + " " + s2)}' -WindowStyle Hidden",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-        };
-
-        if (privilege)
+            //Run as administrator example:
+            //Start-Process <process> -ArgumentList '<ArgumentList>' -Verb runAs -WindowStyle Hidden
+            startInfo = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"Start-Process usbipd -ArgumentList '{arguments.Aggregate((s1, s2) => s1 + " " + s2)}' -WindowStyle Hidden -Verb RunAs",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            };
+        }
+        else
         {
-            startInfo.Arguments += " -Verb RunAs";
+            startInfo = new ProcessStartInfo
+            {
+                FileName = "usbipd",
+                Arguments = $"{arguments.Aggregate((s1, s2) => s1 + " " + s2)}",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            };
         }
 
         Process? process = null;
@@ -179,7 +199,7 @@ public partial class USBIPD
                     stdout = process.StandardOutput.ReadToEnd();
                     stderr = process.StandardError.ReadToEnd();
                     using StringReader reader = new(stderr);
-                    stderr = reader.ReadLine()?.Replace("Start-Process","").Trim(':',' ');
+                    stderr = reader.ReadLine()?.Replace("Start-Process", "").Trim(':', ' ');
                 }
             }
         });
@@ -188,104 +208,23 @@ public partial class USBIPD
         {
             return new((int)ExitCode.Failure, "", $"Failed to start \"usbipd\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}.");
         }
-        
+
         return new(process.ExitCode, stdout, stderr);
     }
 
-    /**
-     * Bind a device with a hardware ID.
-     */
-    public static async Task<(ExitCode, string)> 
-        BindDevice(string hardwareid, bool force)
+    private static List<USBDevice>? ParseStringDevInfoToUSBDeviceList(string stringDeviceInfo)
     {
-        (int exitCode, string stdout, string stderr) = await RunUSBIPD(true, ["bind", "--hardware-id", hardwareid, (force ? "--force" : "")]);
-        if(exitCode == 0)
-        {
-            return (ExitCode.Success,"");
-        }
-        await Task.Run(() => Thread.Sleep(500));
-        var dev_info = await GetDeviceInfo(hardwareid);
-        if(dev_info != null && dev_info.IsBound)
-        {
-            return (ExitCode.Success, "");
-        }
-        return (ExitCode.Failure, stderr);
-    }
-
-
-    public static async Task<(ExitCode, string)> BindDevice(string hardwareid) => await BindDevice(hardwareid,false);
-
-
-    public static async Task<(ExitCode, string)> 
-        UnbindDevice(string? hardwareid)
-    {
-        int exitCode;
-        string stderr;
-        if (string.IsNullOrEmpty(hardwareid))
-        {
-            (exitCode, _, stderr) = await RunUSBIPD(true, ["unbind", "--all"]);
-        }
-        else
-        {
-            (exitCode, _, stderr) = await RunUSBIPD(true, ["unbind", "--hardware-id", hardwareid]);
-        }
-
-        if (exitCode == 0)
-        {
-            return (ExitCode.Success, "");
-        }
-        
-        return (ExitCode.Failure, stderr);
-    }
-
-    public static async Task<(ExitCode, string)> UnbindAllDevice() => await UnbindDevice(null);
-
-    public static async Task<(ExitCode, string)>
-        DetachDevice(string? hardwareid)
-    {
-        int exitCode;
-        string stderr;
-        if (string.IsNullOrEmpty(hardwareid))
-        {
-            (exitCode, _, stderr) = await RunUSBIPD(false, ["detach", "--all"]);
-        }
-        else
-        {
-            (exitCode, _, stderr) = await RunUSBIPD(false, ["detach", "--hardware-id", hardwareid]);
-        }
-
-        if (exitCode == 0)
-        {
-            return (ExitCode.Success, "");
-        }
-
-        return (ExitCode.Failure, stderr);
-    }
-
-    public static async Task<(ExitCode, string)> DetachAllDevice() => await DetachDevice(null);
-
-
-    public static async Task<(ExitCode,string, List<USBDevice>?)> GetAllUSBDevices()
-    {
-        List<USBDevice> deviceslist = [];
-        (int exitCode,string stdout,string stderr) = await RunPowerShellScripts(CmdGetAllDevices,2000);
-
-        if (exitCode != 0 || stdout.Length == 0)
-        {
-            return (ExitCode.Failure, stderr, deviceslist);
-        }
-
+        List<USBDevice> devList = [];
         string pattern = @"\r?\n\s*\r?\n";
-        string[] blocks = Regex.Split(stdout.Trim(['\r', '\n', ' ', '\t']), pattern);
+        string[] blocks = Regex.Split(stringDeviceInfo.Trim(['\r', '\n', ' ', '\t']), pattern);
 
         foreach (string block in blocks)
         {
             if (DeviceInfoRegex().Match(block.Trim(['\r', '\n', ' ', '\t'])) is Match match)
             {
-
+                string busId = match.Groups["BusId"].Value.Trim();
                 if (!bool.TryParse(match.Groups["IsForced"].Value.Trim(), out bool isForced))
                 {
-                    string t = match.Groups["IsForced"].Value.Trim();
                     isForced = false;
                     log.Warn("Failed to parse IsForced");
                 }
@@ -294,12 +233,6 @@ public partial class USBIPD
                 {
                     isBound = false;
                     log.Warn("Failed to parse IsBound");
-                }
-
-                if (!bool.TryParse(match.Groups["IsConnected"].Value.Trim(), out bool isConnected))
-                {
-                    isConnected = false;
-                    log.Warn("Failed to parse IsConnected");
                 }
 
                 if (!bool.TryParse(match.Groups["IsAttached"].Value.Trim(), out bool isAttached))
@@ -313,29 +246,248 @@ public partial class USBIPD
                     HardwareId = match.Groups["HardwareId"].Value.Trim(),
                     Description = match.Groups["Description"].Value.Trim(),
                     IsForced = isForced,
-                    BusId = match.Groups["BusId"].Value.Trim(),
+                    BusId = busId,
                     PersistedGuid = match.Groups["PersistedGuid"].Value.Trim(),
                     StubInstanceId = match.Groups["StubInstanceId"].Value.Trim(),
                     ClientIPAddress = match.Groups["ClientIPAddress"].Value.Trim(),
                     IsBound = isBound,
-                    IsConnected = isConnected,
+                    IsConnected = !string.IsNullOrWhiteSpace(busId),
                     IsAttached = isAttached
                 };
 
-                deviceslist.Add(deviceInfo);
+                devList.Add(deviceInfo);
+            }
+        }
+        return devList;
+    }
+
+    /**
+     * Bind a device with a hardware ID.
+     */
+    public static async Task<(ExitCode exitCode, string errMsg, USBDevice? newDev)>
+        BindDevice(string hardwareid, bool force)
+    {
+        string stderr = "";
+        USBDevice? dev = null;
+        for (int i= 0; i < 3; i++){
+            (int exitCode, string stdout, stderr) = 
+                await RunUSBIPD(true, ["bind", "--hardware-id", hardwareid, (force ? "--force" : "")]);
+            if (exitCode == 0)
+            {
+                (_, _, dev) = await GetUSBDeviceByHardwareID(hardwareid, true);
+                return (ExitCode.Success, "", dev);
+            }
+            else
+            {
+                log.Warn($"Failed to bind device '{hardwareid}': {stderr}");
+            }
+            await Task.Run(() => Thread.Sleep(200));
+            (_, _, dev) = await GetUSBDeviceByHardwareID(hardwareid, true);
+            if (dev != null && dev.IsBound)
+            {
+                return (ExitCode.Success, "", dev);
             }
         }
         
-        return (ExitCode.Success, stdout, deviceslist);
+        return (ExitCode.Failure, stderr,dev);
     }
 
-    public static async Task<USBDevice?> GetDeviceInfo(string? hardwareId)
+
+    public static async Task<(ExitCode exitCode, string errMsg, USBDevice? newDev)> 
+        BindDevice(string hardwareid) => await BindDevice(hardwareid, false);
+
+
+    public static async Task<(ExitCode exitCode, string errMsg, USBDevice? newDev)>
+        UnbindDevice(string? hardwareid)
     {
-        (ExitCode ret, _, List<USBDevice>? infolist) = await GetAllUSBDevices();
-        if(ret == 0 && infolist != null)
+        int exitCode;
+        string stderr = "";
+        USBDevice? dev = null;
+        for (int i= 0; i < 3; i++)
         {
-            return infolist.Find(x => string.Equals(x.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrEmpty(hardwareid))
+            {
+                (exitCode, _, stderr) = await RunUSBIPD(true, ["unbind", "--all"]);
+            }
+            else
+            {
+                (exitCode, _, stderr) = await RunUSBIPD(true, ["unbind", "--hardware-id", hardwareid]);
+                (_, _, dev) = await GetUSBDeviceByHardwareID(hardwareid, true);
+            }
+
+            if (exitCode == 0)
+            {
+                return (ExitCode.Success, "",dev);
+            }
+            else
+            {
+                log.Warn($"Failed to unbind device '{hardwareid}': {stderr}");
+            }
         }
-        return null;
+
+        return (ExitCode.Failure, stderr, dev);
+    }
+
+    public static async Task<(ExitCode exitCode, string errMsg)> 
+        UnbindAllDevice()
+    {
+        (ExitCode ret, string err, _) = await UnbindDevice(null);
+        return (ret, err);
+    }
+
+    public static async Task<(ExitCode exitCode, string errMsg, USBDevice? newDev)>
+        DetachDevice(string? hardwareid)
+    {
+        int exitCode;
+        string stderr = "";
+        USBDevice? dev = null;
+        for (int i= 0; i< 3; i++)
+        {
+            if (string.IsNullOrEmpty(hardwareid))
+            {
+                (exitCode, _, stderr) = await RunUSBIPD(false, ["detach", "--all"]);
+            }
+            else
+            {
+                log.Warn($"Failed to detach device '{hardwareid}': {stderr}");
+                (exitCode, _, stderr) = await RunUSBIPD(false, ["detach", "--hardware-id", hardwareid]);
+                (_, _, dev) = await GetUSBDeviceByHardwareID(hardwareid, true);
+            }
+
+            if (exitCode == 0)
+            {
+                return (ExitCode.Success, "", dev);
+            }
+        }
+        
+        return  (ExitCode.Failure, stderr, dev);
+    }
+
+    public static async Task<(ExitCode exitCode, string errMsg)> 
+        DetachAllDevice()
+    {
+        (ExitCode ret, string err, _) = await DetachDevice(null);
+        return (ret, err);
+    }
+
+
+    public static async Task<(ExitCode exitCode, string errMsg, List<USBDevice>? devList)> 
+        ListAllUSBDevices()
+    {
+        (int exitCode, string stdout, string stderr) = await RunPowerShellScripts(CmdGetAllDevices, 2000);
+
+        if (exitCode != 0 || stdout.Length == 0)
+        {
+            log.Warn($"Failed to fetch USB device list: {stderr}");
+            return (ExitCode.Failure, stderr, []);
+        }
+
+        return (ExitCode.Success, "", ParseStringDevInfoToUSBDeviceList(stdout));
+    }
+
+    public static async Task<(ExitCode exitCode, string errMsg, List<USBDevice>? devList)> 
+        ListConnectedDevices()
+    {
+        string cmd = $"{CmdGetAllDevices} | Where-Object {{$_.IsConnected}}";
+        (int exitCode, string stdout, string stderr) = await RunPowerShellScripts(cmd, 2000);
+
+        if (exitCode != 0 || stdout.Length == 0)
+        {
+            log.Warn($"Failed to fetch connected devices: {stderr}");
+            return (ExitCode.Failure, stderr, []);
+        }
+
+        return (ExitCode.Success, "", ParseStringDevInfoToUSBDeviceList(stdout));
+    }
+
+    public static async Task<(ExitCode exitCode, string errMsg, List<USBDevice>? devList)> 
+        ListPersistedDevices()
+    {
+        string cmd = $"{CmdGetAllDevices} | Where-Object {{-not $_.IsConnected -and $_.IsBound}}";
+        (int exitCode, string stdout, string stderr) = await RunPowerShellScripts(cmd, 2000);
+
+        if (exitCode != 0 || stdout.Length == 0)
+        {
+            log.Warn($"Failed to fetch persisted devices: {stderr}");
+            return (ExitCode.Failure, stderr, []);
+        }
+
+        return (ExitCode.Success, "", ParseStringDevInfoToUSBDeviceList(stdout));
+    }
+
+    public static async Task<(ExitCode exitCode, string errMsg, USBDevice? dev)> 
+        GetUSBDeviceByHardwareID(string hardwareId)
+    {
+        USBDevice? dev = null;
+
+        (ExitCode exitCode, string err, List<USBDevice>? devList) = await ListAllUSBDevices();
+
+        if (exitCode == ExitCode.Success)
+        {
+            dev = devList?.Find(x => string.Equals(x.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return (exitCode, err, dev);
+    }
+
+    public static async Task<(ExitCode exitCode, string errMsg, USBDevice? dev)> 
+        GetUSBDeviceByHardwareID(string hardwareId, bool connectedOnly)
+    {
+        USBDevice? dev = null;
+        ExitCode exitCode = ExitCode.Failure;
+        string err = "";
+        List<USBDevice>? devList;
+        if (connectedOnly)
+        {
+            (exitCode, err, devList) = await ListConnectedDevices();
+        }
+        else
+        {
+            (exitCode, err, devList) = await ListAllUSBDevices();
+        }
+
+
+        if (exitCode == ExitCode.Success)
+        {
+            dev = devList?.Find(x => string.Equals(x.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return (exitCode, err, dev);
+    }
+
+    public static async Task<(ExitCode exitCode, string errMsg, USBDevice? dev)> 
+        GetUSBDeviceByBusID(string busID)
+    {
+        USBDevice? dev = null;
+
+        (ExitCode exitCode, string err, List<USBDevice>? devList) = await ListAllUSBDevices();
+
+        if (exitCode == ExitCode.Success)
+        {
+            dev = devList?.Find(x => string.Equals(x.BusId, busID, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return (exitCode, err, dev);
+    }
+
+    public static async Task<bool> IsDeviceConnected(string hardwareId)
+    {
+        (_, _, USBDevice? dev) = await GetUSBDeviceByHardwareID(hardwareId,true);
+        if (dev != null)
+        {
+            
+            return dev.IsConnected;
+        }
+        return false;
+    }
+
+    public static async Task<bool> IsDeviceBound(string hardwareId)
+    {
+        (_, _, USBDevice? dev) = await GetUSBDeviceByHardwareID(hardwareId, true);
+        if (dev != null)
+        {
+            return dev.IsBound;
+        }
+        return false;
     }
 }

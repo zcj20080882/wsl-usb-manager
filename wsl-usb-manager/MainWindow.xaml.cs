@@ -10,15 +10,9 @@
 ******************************************************************************/
 using MaterialDesignThemes.Wpf;
 using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Markup;
-using wsl_usb_manager.AutoAttach;
 using wsl_usb_manager.Controller;
-using wsl_usb_manager.Domain;
-using wsl_usb_manager.PersistedDevice;
 using wsl_usb_manager.Resources;
 using wsl_usb_manager.Settings;
-using wsl_usb_manager.USBDevices;
 
 namespace wsl_usb_manager;
 
@@ -33,17 +27,18 @@ public partial class MainWindow : Window
         InitializeComponent();
         USBMonitor m = new(OnUSBEvent);
         m.Start();
-        InitNotifyIcon();
-        DataContext = new MainWindowViewModel(this.Title,this);
+        InitNotifition();
+        DataContext = new MainWindowViewModel();
         ModifyTheme(App.GetAppConfig().DarkMode == true);
         log.Info("Starting...");
     }
 
     private void LangToggleButton_Click(object sender, RoutedEventArgs e)
     {
-        Lang.ChangeLanguage(LangToggleButton.IsChecked??false);
-        if (DataContext is MainWindowViewModel viewModel) { 
-            viewModel.UpdateUI();
+        Lang.ChangeLanguage(LangToggleButton.IsChecked ?? false);
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.UpdateLanguage();
         }
     }
 
@@ -66,32 +61,18 @@ public partial class MainWindow : Window
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        if(DataContext is MainWindowViewModel vm)
+        if (DataContext is MainWindowViewModel vm)
         {
             await USBIPD.InitUSBIPD();
-            await vm.UpdateUSBDevices(null);
+            //vm.UpdateWindow();
         }
     }
 
     private void ListBoxNavigater_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if(DataContext is MainWindowViewModel vm)
+        if (DataContext is MainWindowViewModel vm)
         {
-            if(vm.SelectedItem != null)
-            {
-                if(vm.SelectedItem.DataContext is USBDevicesViewModel uvm)
-                {
-                    uvm.UpdateDevices(vm.GetConnectedDeviceList());
-                }
-                else if(vm.SelectedItem.DataContext is PersistedDeviceViewModel pvm)
-                {
-                    pvm.UpdateDevices(vm.GetPersistedDeviceList());
-                }
-                else if (vm.SelectedItem.DataContext is AutoAttachViewModel avm)
-                {
-                    avm.UpdateDevices(App.GetSysConfig().AutoAttachDeviceList);
-                }
-            }
+            vm.UpdateWindow();
         }
     }
 }

@@ -23,7 +23,7 @@ public class BodyItem(string name, Type contentType,
     private Thickness _marginRequirement = new(5);
     private string _name = name;
 
-    public string Name { get => _name; set => SetProperty(ref _name,value) ; }
+    public string Name { get => _name; set => SetProperty(ref _name, value); }
     public PackIconKind SelectedIcon { get; set; } = selectedIcon;
     public PackIconKind UnselectedIcon { get; set; } = unselectedIcon;
 

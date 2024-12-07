@@ -40,9 +40,9 @@ public class SettingViewModel : ViewModelBase
         CloseToTray = appcfg.CloseToTray;
     }
 
-    
 
-    public ObservableCollection<string>? NetworkCards { get => _listNetworkCard; set => SetProperty(ref _listNetworkCard, value);}
+
+    public ObservableCollection<string>? NetworkCards { get => _listNetworkCard; set => SetProperty(ref _listNetworkCard, value); }
 
 
     public string? SelectedForwardNetCard

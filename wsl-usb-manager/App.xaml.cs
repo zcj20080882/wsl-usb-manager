@@ -11,8 +11,7 @@
 
 // Ignore Spelling: App
 
-using System.Diagnostics.Metrics;
-using System.Threading;
+using log4net;
 using System.Windows;
 
 //[assembly: XmlConfigurator(ConfigFile = "Log4Net.config", Watch = true)]
@@ -33,9 +32,8 @@ namespace wsl_usb_manager
                 Shutdown();
                 return;
             }
-
+            ConfigureLog4Net();
             InitConfiguration();
-            log4net.Config.XmlConfigurator.Configure();
             base.OnStartup(e);
         }
 

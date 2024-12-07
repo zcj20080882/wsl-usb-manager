@@ -1,0 +1,16 @@
+next-version: v1.1.0
+assembly-versioning-scheme: MajorMinorPatch
+assembly-file-versioning-scheme: MajorMinorPatchTag
+assembly-file-versioning-format: '{Major}.{Minor}.{Patch}'
+tag-prefix: '[vV]'
+major-version-bump-message: '\+semver:\s?(breaking|major)'
+minor-version-bump-message: '\+semver:\s?(feature|minor)'
+patch-version-bump-message: '\+semver:\s?(fix|patch)'
+no-bump-message: '\+semver:\s?(none|skip)'
+commit-message-incrementing: Disabled
+commit-date-format: 'yyyy-MM-ddTHH:mm:ss'
+
+ignore:
+  sha: []
+  commits-before: 2015-10-23T12:23:15
+merge-message-formats: {}

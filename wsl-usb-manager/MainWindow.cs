@@ -10,26 +10,19 @@
 ******************************************************************************/
 using log4net;
 using MaterialDesignThemes.Wpf;
-using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Threading;
 using wsl_usb_manager.Controller;
-using wsl_usb_manager.USBDevices;
-using System.Windows.Forms;
+using wsl_usb_manager.Domain;
 
 namespace wsl_usb_manager;
 
-public interface INotifyIconService
-{
-    void ShowNotification(string message);
-    void ShowErrorMessage(string message);
-}
-
-public partial class MainWindow : Window, INotifyIconService
+public partial class MainWindow : Window, INotifyService
 {
     private static readonly NotifyIcon notifyIcon = new();
     private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
+    private bool USBEventProcessing { get; set; } = false;
 
     private void MenuExitButton_OnClick(object sender, RoutedEventArgs e)
     {
@@ -50,7 +43,7 @@ public partial class MainWindow : Window, INotifyIconService
         paletteHelper.SetTheme(theme);
     }
 
-    private void InitNotifyIcon()
+    private void InitNotifition()
     {
         notifyIcon.Visible = true;
         notifyIcon.Icon = Properties.Resources.NotifyIcon;
@@ -66,6 +59,7 @@ public partial class MainWindow : Window, INotifyIconService
         var exitItem = new ToolStripMenuItem("Exit");
         exitItem.Click += new EventHandler(Exit_Click);
         notifyIcon.ContextMenuStrip.Items.Add(exitItem);
+        NotifyService.RegisterNotifyService(this);
     }
 
     private void Exit_Click(object? sender, EventArgs e)
@@ -104,22 +98,19 @@ public partial class MainWindow : Window, INotifyIconService
 
     private void OnUSBEvent(object sender, USBEventArgs e)
     {
+        if (USBEventProcessing)
+        {
+            log.Warn("USB event is processing, ignore this event.");
+            return;
+        }
         if (string.IsNullOrEmpty(e.HardwareID))
         {
             log.Error("Invalid hardware id.");
             return;
         }
 
-        if (string.Equals(e.HardwareID, USBMonitor.VBOX_USB_HARDWARE_ID, StringComparison.OrdinalIgnoreCase))
-        {
-            /**
-             * This event is triggered by VBOX USB, ignore it.
-             */
-            log.Debug("Received VBOX USB connection event, ignore it.");
-            return;
-        }
-
-        Dispatcher.InvokeAsync(async () =>
+        USBEventProcessing = true;
+        Dispatcher.Invoke(async () =>
         {
             if (DataContext is not MainWindowViewModel vm)
             {
@@ -128,16 +119,19 @@ public partial class MainWindow : Window, INotifyIconService
             }
             await vm.USBEventProcess(e);
         });
+        USBEventProcessing = false;
     }
 
     public void ShowNotification(string message)
     {
+        log.Info(message);
         if (!IsVisible)
         {
             notifyIcon.Visible = true;
             notifyIcon.ShowBalloonTip(5, Title, message, ToolTipIcon.Info);
         }
-        else {
+        else
+        {
             MainSnackbar.MessageQueue?.Clear();
             MainSnackbar.MessageQueue?.Enqueue(message);
         }
@@ -145,6 +139,7 @@ public partial class MainWindow : Window, INotifyIconService
 
     public void ShowErrorMessage(string message)
     {
+        log.Error(message);
         if (!IsVisible)
         {
             notifyIcon.Visible = true;
@@ -153,6 +148,22 @@ public partial class MainWindow : Window, INotifyIconService
         else
         {
             System.Windows.MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    public void DisableWindow()
+    {
+        if(DataContext is MainWindowViewModel vm)
+        {
+            vm.DisableWindow();
+        }
+    }
+    
+    public void EnableWindow()
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.EnableWindow();
         }
     }
 }

@@ -39,7 +39,8 @@ internal class NetworkCardInfo
 
     public static string? GetIPAddress(string networkCardName)
     {
-        if (string.IsNullOrEmpty(networkCardName)) { 
+        if (string.IsNullOrEmpty(networkCardName))
+        {
             return null;
         }
         NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
@@ -59,6 +60,6 @@ internal class NetworkCardInfo
             }
         }
 
-        return null; 
+        return null;
     }
 }

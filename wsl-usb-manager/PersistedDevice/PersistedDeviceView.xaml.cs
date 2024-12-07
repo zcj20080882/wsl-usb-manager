@@ -8,21 +8,10 @@
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 using MessageBox = System.Windows.MessageBox;
 
@@ -38,7 +27,7 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
         InitializeComponent();
     }
 
-    private void MenuItem_Click(object sender, RoutedEventArgs e)
+    private async void MenuItem_Click(object sender, RoutedEventArgs e)
     {
         if (sender is MenuItem item && DataContext is PersistedDeviceViewModel dm)
         {
@@ -47,7 +36,7 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
                 case "MenuItemDeleteOne":
                     if (dm.SelectedDevice is USBDeviceInfoModel device)
                     {
-                        device.Unbind();
+                        await device.Unbind();
                     }
                     else
                         MessageBox.Show("No device is selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -57,7 +46,7 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
                     {
                         foreach (var d in dm.DevicesItems)
                         {
-                            d.Unbind();
+                            await d.Unbind();
                         }
                     }
                     break;
