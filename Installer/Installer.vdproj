@@ -15,25 +15,31 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_1372AF0BB92045CA9BC3A98A700D02D1"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_1DE300179FF84453ADC909CA45D215A2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_334FD5CE90AC47448060CB6286D5A05D"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_5A53E35EC67C4D648E05032B8E6FE056"
+        "MsmKey" = "8:_3F2B40FC050441919D1F1108EECE1204"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_7EE1B59F96FB4203B533C39BC25A137C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_833E284A9AEF4B30B9D8285F775B405A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -104,8 +110,13 @@
                 {
                     "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
                     {
-                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 和 x64)"
                     "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.8"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.8 (x86 和 x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.8"
                     }
                 }
             }
@@ -140,6 +151,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1372AF0BB92045CA9BC3A98A700D02D1"
+            {
+            "SourcePath" = "8:..\\Disclaimer_zh.rtf"
+            "TargetName" = "8:Disclaimer_zh.rtf"
+            "Tag" = "8:"
+            "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1DE300179FF84453ADC909CA45D215A2"
             {
             "SourcePath" = "8:..\\wsl-usb-manager\\images\\appicon.png"
@@ -160,7 +191,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_334FD5CE90AC47448060CB6286D5A05D"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3F2B40FC050441919D1F1108EECE1204"
             {
             "SourcePath" = "8:..\\Disclaimer_en.rtf"
             "TargetName" = "8:Disclaimer_en.rtf"
@@ -180,12 +211,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5A53E35EC67C4D648E05032B8E6FE056"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7EE1B59F96FB4203B533C39BC25A137C"
             {
-            "SourcePath" = "8:..\\Disclaimer_zh.rtf"
-            "TargetName" = "8:Disclaimer_zh.rtf"
+            "SourcePath" = "8:..\\wsl-usb-manager\\images\\appicon.ico"
+            "TargetName" = "8:appicon.ico"
             "Tag" = "8:"
-            "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
+            "Folder" = "8:_A88D4619E0A742B18BC12EF3663A1119"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -196,16 +227,16 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:TRUE"
+            "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7EE1B59F96FB4203B533C39BC25A137C"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_833E284A9AEF4B30B9D8285F775B405A"
             {
-            "SourcePath" = "8:..\\wsl-usb-manager\\images\\appicon.ico"
-            "TargetName" = "8:appicon.ico"
+            "SourcePath" = "8:..\\wsl-usb-manager\\bin\\x64\\Release\\net8.0-windows\\win-x64\\wsl-usb-manager.deps.json"
+            "TargetName" = "8:wsl-usb-manager.deps.json"
             "Tag" = "8:"
-            "Folder" = "8:_A88D4619E0A742B18BC12EF3663A1119"
+            "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -239,7 +270,7 @@
             }
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_546281D513074E4CBF20D08C889CB6AC"
             {
-            "DefaultLocation" = "8:[ProgramFiles64Folder][Manufacturer]\\[ProductName]"
+            "DefaultLocation" = "8:[ProgramFiles64Folder]\\[ProductName]"
             "Name" = "8:#1925"
             "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
@@ -288,7 +319,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:WSL USB Manager"
         "ProductCode" = "8:{6EC49929-7BD0-45CB-B692-D118DF28BE34}"
-        "PackageCode" = "8:{7D04A1AB-BDF7-49BF-A861-E6E5B605B8E3}"
+        "PackageCode" = "8:{0481E7AC-BE2C-47A3-90B1-A8370AA93434}"
         "UpgradeCode" = "8:{E25B9175-97B9-4342-A1E3-81A09A0398E2}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -755,7 +786,7 @@
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
                             "Setting" = "3:2"
-                            "Value" = "8:_5A53E35EC67C4D648E05032B8E6FE056"
+                            "Value" = "8:_3F2B40FC050441919D1F1108EECE1204"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "Sunken"
@@ -852,6 +883,53 @@
                             }
                         }
                     }
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_D497E6CC950E4527990261693DEE5FE3"
+                    {
+                    "Sequence" = "3:110"
+                    "DisplayName" = "8:许可协议"
+                    "UseDynamicProperties" = "11:TRUE"
+                    "IsDependency" = "11:FALSE"
+                    "SourcePath" = "8:<VsdDialogDir>\\VsdAdminLicenseDlg.wid"
+                        "Properties"
+                        {
+                            "BannerBitmap"
+                            {
+                            "Name" = "8:BannerBitmap"
+                            "DisplayName" = "8:#1001"
+                            "Description" = "8:#1101"
+                            "Type" = "3:8"
+                            "ContextData" = "8:Bitmap"
+                            "Attributes" = "3:4"
+                            "Setting" = "3:1"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                            "EulaText"
+                            {
+                            "Name" = "8:EulaText"
+                            "DisplayName" = "8:#1008"
+                            "Description" = "8:#1108"
+                            "Type" = "3:6"
+                            "ContextData" = "8:"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:2"
+                            "Value" = "8:_3F2B40FC050441919D1F1108EECE1204"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                            "Sunken"
+                            {
+                            "Name" = "8:Sunken"
+                            "DisplayName" = "8:#1007"
+                            "Description" = "8:#1107"
+                            "Type" = "3:5"
+                            "ContextData" = "8:4;True=4;False=0"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:0"
+                            "Value" = "3:4"
+                            "DefaultValue" = "3:4"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                        }
+                    }
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_DB9A1029999140B2B94BA611FD8ABB4B"
                     {
                     "Sequence" = "3:300"
@@ -894,7 +972,7 @@
             "ReadOnly" = "11:FALSE"
             "Hidden" = "11:FALSE"
             "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
+            "Permanent" = "11:TRUE"
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
