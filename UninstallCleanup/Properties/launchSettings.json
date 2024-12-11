@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "UninstallCleanup": {
+      "commandName": "Project",
+      "commandLineArgs": "E:\\win-x64\r\n\"WSL USB Manager\""
+    }
+  }
+}

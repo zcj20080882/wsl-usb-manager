@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "wsl-usb-manager": {
+      "commandName": "Project"
+    }
+  }
+}

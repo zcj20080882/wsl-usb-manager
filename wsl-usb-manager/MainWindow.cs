@@ -12,6 +12,7 @@ using log4net;
 using MaterialDesignThemes.Wpf;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Threading;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
@@ -24,6 +25,70 @@ public partial class MainWindow : Window, INotifyService
     private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
     private bool USBEventProcessing { get; set; } = false;
 
+    protected override void OnStateChanged(EventArgs e)
+    {
+        if (WindowState == WindowState.Minimized) Hide();
+
+        base.OnStateChanged(e);
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        if (App.GetAppConfig().CloseToTray)
+        {
+            e.Cancel = true;
+            Hide();
+            base.OnClosing(e);
+        }
+    }
+    #region unused 
+    //private readonly UsbDeviceNotification usbDeviceNotification = new();
+
+    //protected override void OnSourceInitialized(EventArgs e)
+    //{
+    //    base.OnSourceInitialized(e);
+    //    var hwndSource = (HwndSource)PresentationSource.FromVisual(this);
+    //    hwndSource.AddHook(WndProc);
+    //    usbDeviceNotification.RegisterDeviceNotification(hwndSource.Handle);
+    //}
+
+    //protected override void OnClosed(EventArgs e)
+    //{
+    //    usbDeviceNotification.UnregisterDeviceNotification();
+    //    base.OnClosed(e);
+    //}
+    //private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    //{
+    //    var message = new Message { HWnd = hwnd, Msg = msg, WParam = wParam, LParam = lParam };
+    //    usbDeviceNotification.WndProc(ref message);
+    //    return IntPtr.Zero;
+    //}
+    //private void USBDeviceChanged(object? sender, UsbDeviceEventArgs e)
+
+    //{
+    //    if (USBEventProcessing)
+    //    {
+    //        log.Warn("USB event is processing, ignore this event.");
+    //        return;
+    //    }
+    //    if (string.IsNullOrEmpty(e.HardwareID))
+    //    {
+    //        log.Error("Invalid hardware id.");
+    //        return;
+    //    }
+    //    USBEventProcessing = true;
+    //    Dispatcher.Invoke(async () =>
+    //    {
+    //        if (DataContext is not MainWindowViewModel vm)
+    //        {
+    //            log.Error("Cannot get MainWindowViewModel");
+    //            return;
+    //        }
+    //        await vm.USBEventProcess(e);
+    //    });
+    //    USBEventProcessing = false;
+    //}
+    #endregion
     private void MenuExitButton_OnClick(object sender, RoutedEventArgs e)
     {
         Environment.Exit(0);
@@ -33,6 +98,30 @@ public partial class MainWindow : Window, INotifyService
     private void MenuDarkModeButton_Click(object sender, RoutedEventArgs e)
         => ModifyTheme(DarkModeToggleButton.IsChecked == true);
 
+
+    private void Exit_Click(object? sender, EventArgs e)
+    {
+        Environment.Exit(0);
+    }
+
+    private void Show_Click(object? Sender, EventArgs e)
+    {
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
+
+        Show();
+        Activate();
+    }
+
+    private void OnSelectedItemChanged(object sender, DependencyPropertyChangedEventArgs e)
+        => MainScrollViewer.ScrollToHome();
+
+    private void InitializeUSBEvent()
+    {
+        //usbDeviceNotification.DeviceChanged += USBDeviceChanged;
+        USBMonitor m = new(OnUSBEvent);
+        m.Start();
+    }
 
     private static void ModifyTheme(bool isDarkTheme)
     {
@@ -61,41 +150,7 @@ public partial class MainWindow : Window, INotifyService
         notifyIcon.ContextMenuStrip.Items.Add(exitItem);
         NotifyService.RegisterNotifyService(this);
     }
-
-    private void Exit_Click(object? sender, EventArgs e)
-    {
-        Environment.Exit(0);
-    }
-
-    private void Show_Click(object? Sender, EventArgs e)
-    {
-        if (WindowState == WindowState.Minimized)
-            WindowState = WindowState.Normal;
-
-        Show();
-        Activate();
-    }
-
-    protected override void OnStateChanged(EventArgs e)
-    {
-        if (WindowState == WindowState.Minimized) Hide();
-
-        base.OnStateChanged(e);
-    }
-
-    protected override void OnClosing(CancelEventArgs e)
-    {
-        if (App.GetAppConfig().CloseToTray)
-        {
-            e.Cancel = true;
-            Hide();
-            base.OnClosing(e);
-        }
-    }
-
-    private void OnSelectedItemChanged(object sender, DependencyPropertyChangedEventArgs e)
-        => MainScrollViewer.ScrollToHome();
-
+    
     private void OnUSBEvent(object sender, USBEventArgs e)
     {
         if (USBEventProcessing)

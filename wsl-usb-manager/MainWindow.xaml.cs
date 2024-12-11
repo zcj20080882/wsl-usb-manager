@@ -25,12 +25,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        USBMonitor m = new(OnUSBEvent);
-        m.Start();
+        InitializeUSBEvent();
         InitNotifition();
         DataContext = new MainWindowViewModel();
         ModifyTheme(App.GetAppConfig().DarkMode == true);
-        log.Info("Starting...");
     }
 
     private void LangToggleButton_Click(object sender, RoutedEventArgs e)

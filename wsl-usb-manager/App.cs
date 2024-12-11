@@ -18,44 +18,18 @@ using log4net.Layout;
 using log4net.Layout.Pattern;
 using log4net.Repository.Hierarchy;
 using Newtonsoft.Json;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using wsl_usb_manager.Resources;
 using wsl_usb_manager.Settings;
 namespace wsl_usb_manager;
 
-public class MethodLocationPatternConverter : PatternLayoutConverter
-{
-    protected override void Convert(TextWriter writer, LoggingEvent loggingEvent)
-    {
-        var method = loggingEvent.LocationInformation?.MethodName;
-        if (method == "MoveNext")
-        {
-            var declaringType = loggingEvent.LocationInformation?.ClassName;
-            if (declaringType != null)
-            {
-                var type = Type.GetType(declaringType);
-                if (type != null)
-                {
-                    var methodInfo = type.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
-                    if (methodInfo != null)
-                    {
-                        var stateMachineAttribute = methodInfo.GetCustomAttribute<AsyncStateMachineAttribute>();
-                        if (stateMachineAttribute != null)
-                        {
-                            method = stateMachineAttribute?.StateMachineType?.DeclaringType?.Name ?? method;
-                        }
-                    }
-                }
-            }
-        }
-        writer.Write(method);
-    }
-}
-
 public partial class App : System.Windows.Application
 {
+    private static readonly Mutex mutex = new(true, "WSL-USB-Manager-1ddc73e5-c499-484f-b663-87edaee7bfdc");
     private static readonly string AppTempPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
             "WSL USB Manager");
@@ -64,6 +38,25 @@ public partial class App : System.Windows.Application
     private static readonly ILog log = LogManager.GetLogger(typeof(App));
     private static readonly string LogConversionPattern = "%date [%thread] %-5level %logger:%line - %message%newline";
     private const string LogDivider = "\r\n-----------------------------------------------------------------------------------------------------------------------------------------";
+
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        if (!mutex.WaitOne(TimeSpan.Zero, true))
+        {
+            System.Windows.MessageBox.Show("Another instance of the app is already running,\r\ncheck system tray icon to restore instance.");
+            Shutdown();
+            return;
+        }
+        Initialize(e.Args);
+        base.OnStartup(e);
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        mutex.ReleaseMutex();
+        base.OnExit(e);
+    }
+
     private static void ConfigureLog4Net()
     {
         string logDirectory = Path.Combine(AppTempPath, "Logs/");
@@ -72,18 +65,16 @@ public partial class App : System.Windows.Application
             Directory.CreateDirectory(logDirectory);
         }
 
-        // 获取日志仓库
+        // Get logger repository
         Hierarchy hierarchy = (Hierarchy)LogManager.GetRepository();
 
-        // 创建 PatternLayout
+        // Create PatternLayout
         PatternLayout patternLayout = new()
         {
             ConversionPattern = LogConversionPattern
         };
-        patternLayout.AddConverter("method", typeof(MethodLocationPatternConverter));
         patternLayout.ActivateOptions();
         
-        // 创建 RollingFileAppender
         RollingFileAppender rollingFileAppender = new()
         {
             File = logDirectory,
@@ -95,28 +86,27 @@ public partial class App : System.Windows.Application
         };
         rollingFileAppender.ActivateOptions();
 
-        // 将 Appender 添加到 Root
         hierarchy.Root.AddAppender(rollingFileAppender);
 
 #if DEBUG
-        // 创建 DebugAppender
+        // Create DebugAppender
         DebugAppender debugAppender = new DebugAppender
         {
             Layout = patternLayout
         };
         debugAppender.ActivateOptions();
 
-        // 将 DebugAppender 添加到 Root
+        // Add DebugAppender to Root
         hierarchy.Root.AddAppender(debugAppender);
 #endif
 
-        // 设置日志级别
+        // Set log level
         hierarchy.Root.Level = Level.Debug;
 
-        // 应用配置
+        // Apply config
         hierarchy.Configured = true;
         log.Info(LogDivider);
-        log.Info("Start log server...");
+        log.Info("Starting WSL USB Manager");
     }
 
 
@@ -156,6 +146,12 @@ public partial class App : System.Windows.Application
         log.Info("Application started.");
     }
 
+    private void Initialize(string[]? Args)
+    {
+        ConfigureLog4Net();
+        InitConfiguration();
+    }
+
     public static SystemConfig GetSysConfig() => SysConfig;
 
     public static ApplicationConfig GetAppConfig() => SysConfig.AppConfig;
@@ -174,4 +170,21 @@ public partial class App : System.Windows.Application
         var json = JsonConvert.SerializeObject(SysConfig, Formatting.Indented);
         File.WriteAllText(ConfigFile, json);
     }
+    static void CopyDirectory(string sourceDir, string destinationDir)
+    {
+        Directory.CreateDirectory(destinationDir);
+
+        foreach (string file in Directory.GetFiles(sourceDir))
+        {
+            string destFile = Path.Combine(destinationDir, Path.GetFileName(file));
+            File.Copy(file, destFile, true);
+        }
+
+        foreach (string dir in Directory.GetDirectories(sourceDir))
+        {
+            string destDir = Path.Combine(destinationDir, Path.GetFileName(dir));
+            CopyDirectory(dir, destDir);
+        }
+    }
+
 }
