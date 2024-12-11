@@ -11,6 +11,7 @@
 using log4net;
 using MaterialDesignThemes.Wpf;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
@@ -106,11 +107,12 @@ public partial class MainWindow : Window, INotifyService
 
     private void Show_Click(object? Sender, EventArgs e)
     {
-        if (WindowState == WindowState.Minimized)
-            WindowState = WindowState.Normal;
-
         Show();
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;        
+        Topmost = true;  // Ensure the window is on top
         Activate();
+        Topmost = false; // Reset the Topmost property
     }
 
     private void OnSelectedItemChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -139,6 +141,7 @@ public partial class MainWindow : Window, INotifyService
         notifyIcon.Text = this.Title;
 
         notifyIcon.MouseDoubleClick += new MouseEventHandler(Show_Click);
+        notifyIcon.BalloonTipClicked += Show_Click;
         notifyIcon.ContextMenuStrip = new ContextMenuStrip();
 
         var showItem = new ToolStripMenuItem("Show");
