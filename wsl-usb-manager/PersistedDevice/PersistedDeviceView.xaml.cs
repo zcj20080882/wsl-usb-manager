@@ -39,7 +39,7 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
                         await device.Unbind();
                     }
                     else
-                        MessageBox.Show("No device is selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        NotifyService.ShowErrorMessage("No device is selected.");
                     break;
                 case "MenuItemDeleteAll":
                     if (dm.DevicesItems != null && dm.DevicesItems.Count > 0)

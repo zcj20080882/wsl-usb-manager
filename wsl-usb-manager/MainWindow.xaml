@@ -15,7 +15,7 @@
         Style="{StaticResource MaterialDesignWindow}"
         Height="600"
         Width="800"
-        WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" FontFamily="Microsoft YaHei UI">
+        WindowStartupLocation="CenterScreen" FontFamily="Microsoft YaHei UI">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

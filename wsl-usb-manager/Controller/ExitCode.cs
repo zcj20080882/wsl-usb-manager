@@ -18,4 +18,5 @@ public enum ExitCode
     AccessDenied = 3,
     Timeout = 4,
     NotFound = 5,
+    LowVersion = 6,
 };

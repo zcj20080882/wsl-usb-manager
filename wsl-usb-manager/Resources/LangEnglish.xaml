@@ -72,4 +72,7 @@
     <sys:String x:Key="ErrMsgAttachFail">Failed to attach device</sys:String>
     <sys:String x:Key="ErrMsgDetachFail">Failed to detach device</sys:String>
     <sys:String x:Key="ErrMsgNotFoundIP">has no IP address</sys:String>
+    <sys:String x:Key="ErrMsgUSBIPDNotInstalled">usbipd-win is not installed.{br}Please visit https://github.com/dorssel/usbipd-win/releases to download and install the latest version of usbipd-win, then restart the application.</sys:String>
+    <sys:String x:Key="ErrMsgUSBIPDVersionLow">The detected version of usbipd-win is lower than 4.0.0.{br}Please visit https://github.com/dorssel/usbipd-win/releases to download and install the latest version of usbipd-win, then restart the application.</sys:String>
+
 </ResourceDictionary>

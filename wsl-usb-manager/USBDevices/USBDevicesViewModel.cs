@@ -13,6 +13,7 @@
 
 using log4net;
 using System.Collections.ObjectModel;
+using System.Xml.Linq;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 

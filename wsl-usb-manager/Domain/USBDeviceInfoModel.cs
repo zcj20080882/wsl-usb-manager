@@ -2,11 +2,11 @@
 * SPDX-License-Identifier: MIT
 * Project: wsl-usb-manager
 * Class: USBDeviceInfoModel.cs
-* NameSpace: wsl_usb_manager.USBDevices
+* NameSpace: wsl_usb_manager.Domain
 * Author: Chuckie
 * copyright: Copyright (c) Chuckie, 2024
 * Description:
-* Create Date: 2024/10/17 20:22
+* Create Date: 2024/10/18 19:21
 ******************************************************************************/
 
 // Ignore Spelling: usb

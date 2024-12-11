@@ -17,6 +17,7 @@ using System.Windows.Interop;
 using System.Windows.Threading;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
+using wsl_usb_manager.MessageBox;
 
 namespace wsl_usb_manager;
 
@@ -168,11 +169,17 @@ public partial class MainWindow : Window, INotifyService
         }
 
         USBEventProcessing = true;
-        Dispatcher.Invoke(async () =>
+        _ = Dispatcher.Invoke(async () =>
         {
             if (DataContext is not MainWindowViewModel vm)
             {
                 log.Error("Cannot get MainWindowViewModel");
+                return;
+            }
+            var (exitCode, version) = await USBIPD.CheckUsbipdWinInstallation();
+            if (exitCode != ExitCode.Success)
+            {
+                log.Warn("USBIPD-win is error.");
                 return;
             }
             await vm.USBEventProcess(e);
@@ -205,7 +212,11 @@ public partial class MainWindow : Window, INotifyService
         }
         else
         {
-            System.Windows.MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            var view = new MessageBoxView(MessageType.Info, "Error", message);
+            if (view != null)
+            {
+                DialogHost.Show(view, "RootDialog");
+            }
         }
     }
 

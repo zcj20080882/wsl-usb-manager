@@ -20,7 +20,11 @@ public class Lang
 
     public static string? GetText(string key)
     {
-        return System.Windows.Application.Current.FindResource(key) as String;
+        if(System.Windows.Application.Current.FindResource(key) is string text)
+        {
+            return text.Replace("{br}", Environment.NewLine);
+        }
+        return System.Windows.Application.Current.FindResource(key).ToString();
     }
 
     public static bool ChangeLanguage(bool isChinese)

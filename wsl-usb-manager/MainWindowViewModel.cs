@@ -13,10 +13,8 @@
 
 using log4net;
 using MaterialDesignThemes.Wpf;
-using Microsoft.VisualBasic;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using System.Windows.Interop;
 using wsl_usb_manager.AutoAttach;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
@@ -128,6 +126,23 @@ public partial class MainWindowViewModel : ViewModelBase
     private async void RefeshDevicesCommand(object? obj)
     {
         log.Info("Refresh device...");
+        var (exitCode, _) = await USBIPD.CheckUsbipdWinInstallation();
+        if (exitCode != ExitCode.Success)
+        {
+            if (ExitCode.NotFound == exitCode)
+            {
+                NotifyService.ShowErrorMessage(Lang.GetText("ErrMsgUSBIPDNotInstalled") ?? "usbipd-win is not installed, please install it firstly.");
+            }
+            else if (exitCode == ExitCode.LowVersion)
+            {
+                NotifyService.ShowErrorMessage(Lang.GetText("ErrMsgUSBIPDVersionLow") ?? "usbipd-win version is too low, please update it.");
+            }
+            else
+            {
+                NotifyService.ShowErrorMessage("Failed to check usbipd-win installation.");
+            }
+               return;
+        }
         DisableWindow();
         if (SelectedItem?.DataContext is USBDevicesViewModel uvm)
         {

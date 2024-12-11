@@ -1,4 +1,14 @@
-﻿using System;
+﻿/******************************************************************************
+* SPDX-License-Identifier: MIT
+* Project: wsl-usb-manager
+* Class: UsbDeviceNotification.cs
+* NameSpace: wsl_usb_manager.Controller
+* Author: Chuckie
+* copyright: Copyright (c) Chuckie, 2024
+* Description:
+* Create Date: 2024/12/11 18:43
+******************************************************************************/
+using System;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Text;

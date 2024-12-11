@@ -11,6 +11,7 @@
 using MaterialDesignThemes.Wpf;
 using System.Windows;
 using wsl_usb_manager.Controller;
+using wsl_usb_manager.MessageBox;
 using wsl_usb_manager.Resources;
 using wsl_usb_manager.Settings;
 
@@ -57,14 +58,14 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void Window_Loaded(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel vm)
-        {
-            await USBIPD.InitUSBIPD();
-            //vm.UpdateWindow();
-        }
-    }
+    //private async void Window_Loaded(object sender, RoutedEventArgs e)
+    //{
+    //    if (DataContext is MainWindowViewModel vm)
+    //    {
+    //        await USBIPD.CheckUsbipdWinInstallation();
+    //        //vm.UpdateWindow();
+    //    }
+    //}
 
     private void ListBoxNavigater_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {

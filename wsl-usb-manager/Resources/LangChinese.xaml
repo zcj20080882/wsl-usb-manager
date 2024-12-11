@@ -66,12 +66,12 @@
     
     <!--Message text-->
     <sys:String x:Key="ErrMsgNoSelectedDevice">没有选中的设备</sys:String>
-    <sys:String x:Key="ErrMsgBindFail">Failed to bind device</sys:String>
-    <sys:String x:Key="ErrMsgUnbindFail">Failed to unbind device</sys:String>
-    <sys:String x:Key="ErrMsgAttachFail">Failed to attach device</sys:String>
-    <sys:String x:Key="ErrMsgDetachFail">Failed to detach device</sys:String>
+    <sys:String x:Key="ErrMsgBindFail">无法绑定设备</sys:String>
+    <sys:String x:Key="ErrMsgUnbindFail">无法解绑设备</sys:String>
+    <sys:String x:Key="ErrMsgAttachFail">无法附加设备</sys:String>
+    <sys:String x:Key="ErrMsgDetachFail">无法分离设备</sys:String>
     <sys:String x:Key="ErrMsgNotFoundIP">没有IP地址</sys:String>
-    
-    
-       
+    <sys:String x:Key="ErrMsgUSBIPDNotInstalled">检测到usbipd-win没有安装。{br}请访问 https://github.com/dorssel/usbipd-win/releases 下载最新版本usbipd-win并安装，然后重启程序。 </sys:String>
+    <sys:String x:Key="ErrMsgUSBIPDVersionLow">检测到usbipd-win版本低于4.0.0。{br}请访问 https://github.com/dorssel/usbipd-win/releases 下载最新版本usbipd-win并安装，然后重启程序。</sys:String>
+
 </ResourceDictionary>

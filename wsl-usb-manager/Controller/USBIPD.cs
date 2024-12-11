@@ -16,6 +16,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Principal;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 
 namespace wsl_usb_manager.Controller;
 
@@ -38,6 +39,7 @@ public partial class USBIPD
     private static partial Regex DeviceInfoRegex();
 
     private static string USBIPD_INSTALL_PATH = string.Empty;
+    private static string USBIPD_VERSION = string.Empty;
 
     public const string USBIPSharedDeviceID = "80EE:CAFE";
 
@@ -53,19 +55,8 @@ public partial class USBIPD
         return principal.IsInRole(WindowsBuiltInRole.Administrator);
     }
 
-    public static async Task<(ExitCode exitCode, string errMsg)> InitUSBIPD()
-    {
-        (bool IsInstalled, string InstallPath) = await CheckUsbipdWinInstallation();
-        if (!IsInstalled)
-        {
-            return (ExitCode.Failure, "usbipd-win is not installed.");
-        }
-        USBIPD_INSTALL_PATH = InstallPath;
-        return (ExitCode.Success, "");
-    }
-
     public static string GetUSBIPDInstallPath() => USBIPD_INSTALL_PATH;
-    public static async Task<(bool IsInstalled, string InstallPath)> CheckUsbipdWinInstallation()
+    public static async Task<(ExitCode exitCode, string version)> CheckUsbipdWinInstallation()
     {
         string script = @"
             $usbipdPath = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' | Where-Object { $_.DisplayName -eq 'usbipd-win' }).InstallLocation
@@ -75,15 +66,48 @@ public partial class USBIPD
                 Write-Output ''
             }
         ";
+        string versionPattern = @"^(\d+)\.(\d+)\.(\d+)*";
 
-        (int exitCode, string stdout, _) = await RunPowerShellScripts(script, 5000);
-
-        if (exitCode == 0 && !string.IsNullOrWhiteSpace(stdout))
+        if (string.IsNullOrWhiteSpace(USBIPD_INSTALL_PATH))
         {
-            return (true, stdout.Trim());
+            (int exitCode, string stdout, _) = await RunPowerShellScripts(script, 5000);
+
+            if (exitCode != 0 || string.IsNullOrWhiteSpace(stdout))
+            {
+                return (ExitCode.NotFound, "");
+            }
+        }
+        if (string.IsNullOrWhiteSpace(USBIPD_VERSION))
+        {
+            (int exitCode, string stdout, string stderr) = await RunUSBIPD(false, ["--version"]);
+            if(exitCode != 0 || string.IsNullOrWhiteSpace(stdout))
+            {
+                return (ExitCode.NotFound, "");
+            }
+            
+
+            Match match = Regex.Match(stdout.Trim(), versionPattern);
+            if (match.Success)
+            {
+                int major = int.Parse(match.Groups[1].Value);
+                int minor = int.Parse(match.Groups[2].Value);
+                int patch = int.Parse(match.Groups[3].Value);
+                log.Info($"USBIPD version: {USBIPD_VERSION}");
+                if(major < 4)
+                {
+                    log.Warn($"USBIPD version is too low: {USBIPD_VERSION}");
+                    return (ExitCode.LowVersion, USBIPD_VERSION);
+                }
+                USBIPD_VERSION = $"{major}.{minor}.{patch}";
+            }
+            else
+            {
+                log.Warn($"Failed to parse USBIPD version: {stdout}");
+                return (ExitCode.ParseError, "");
+            }
         }
 
-        return (false, string.Empty);
+        return (ExitCode.Success, USBIPD_VERSION);
     }
 
 
