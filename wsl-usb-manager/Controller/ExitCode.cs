@@ -19,4 +19,10 @@ public enum ExitCode
     Timeout = 4,
     NotFound = 5,
     LowVersion = 6,
+    BindError = 7,
+    AttachError = 8,
+    UnbindError = 9,
+    DetachError = 10,
+    WslIsNotInstalled = 11,
+    WslIsNotRunning = 12
 };

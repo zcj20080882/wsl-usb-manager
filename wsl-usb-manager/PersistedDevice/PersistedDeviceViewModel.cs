@@ -33,6 +33,7 @@ public class PersistedDeviceViewModel : ViewModelBase
         if (ret != ExitCode.Success)
         {
             log.Error($"Failed to list persisted devices: {err}");
+            NotifyService.ShowUSBIPDError(ret, err, null);
             return;
         }
         if (persistedList == null)

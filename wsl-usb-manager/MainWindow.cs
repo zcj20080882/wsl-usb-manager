@@ -18,6 +18,7 @@ using System.Windows.Threading;
 using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 using wsl_usb_manager.MessageBox;
+using wsl_usb_manager.Resources;
 
 namespace wsl_usb_manager;
 
@@ -176,12 +177,12 @@ public partial class MainWindow : Window, INotifyService
                 log.Error("Cannot get MainWindowViewModel");
                 return;
             }
-            var (exitCode, version) = await USBIPD.CheckUsbipdWinInstallation();
-            if (exitCode != ExitCode.Success)
-            {
-                log.Warn("USBIPD-win is error.");
-                return;
-            }
+            //var (exitCode, version) = await USBIPD.CheckUsbipdWinInstallation();
+            //if (exitCode != ExitCode.Success)
+            //{
+            //    log.Warn("USBIPD-win is error.");
+            //    return;
+            //}
             await vm.USBEventProcess(e);
         });
         USBEventProcessing = false;

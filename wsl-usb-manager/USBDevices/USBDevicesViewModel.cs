@@ -67,6 +67,7 @@ public class USBDevicesViewModel : ViewModelBase
         if (ret != ExitCode.Success)
         {
             log.Warn($"Failed to get USB devices: {err}");
+            NotifyService.ShowUSBIPDError(ret, err,null);
             return;
         }
         if (USBDeviceList == null)

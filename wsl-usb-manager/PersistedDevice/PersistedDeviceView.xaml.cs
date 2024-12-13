@@ -40,6 +40,7 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
                     }
                     else
                         NotifyService.ShowErrorMessage("No device is selected.");
+                    await dm.UpdateDevices();
                     break;
                 case "MenuItemDeleteAll":
                     if (dm.DevicesItems != null && dm.DevicesItems.Count > 0)
@@ -49,6 +50,7 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
                             await d.Unbind();
                         }
                     }
+                    await dm.UpdateDevices();
                     break;
                 default:
                     break;

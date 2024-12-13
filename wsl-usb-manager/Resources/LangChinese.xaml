@@ -71,7 +71,8 @@
     <sys:String x:Key="ErrMsgAttachFail">无法附加设备</sys:String>
     <sys:String x:Key="ErrMsgDetachFail">无法分离设备</sys:String>
     <sys:String x:Key="ErrMsgNotFoundIP">没有IP地址</sys:String>
-    <sys:String x:Key="ErrMsgUSBIPDNotInstalled">检测到usbipd-win没有安装。{br}请访问 https://github.com/dorssel/usbipd-win/releases 下载最新版本usbipd-win并安装，然后重启程序。 </sys:String>
-    <sys:String x:Key="ErrMsgUSBIPDVersionLow">检测到usbipd-win版本低于4.0.0。{br}请访问 https://github.com/dorssel/usbipd-win/releases 下载最新版本usbipd-win并安装，然后重启程序。</sys:String>
+    <sys:String x:Key="ErrMsgUSBIPDNotInstalled">检测到usbipd-win没有安装。</sys:String>
+    <sys:String x:Key="InstallUSBIPDTips">请访问 https://github.com/dorssel/usbipd-win/releases 下载版本大于4.0.0的usbipd-win并安装，然后重启本程序。</sys:String>
+    <sys:String x:Key="ErrMsgUSBIPDVersionLow">检测到usbipd-win版本 ({version}) 低于4.0.0，</sys:String>
 
 </ResourceDictionary>

@@ -126,23 +126,6 @@ public partial class MainWindowViewModel : ViewModelBase
     private async void RefeshDevicesCommand(object? obj)
     {
         log.Info("Refresh device...");
-        var (exitCode, _) = await USBIPD.CheckUsbipdWinInstallation();
-        if (exitCode != ExitCode.Success)
-        {
-            if (ExitCode.NotFound == exitCode)
-            {
-                NotifyService.ShowErrorMessage(Lang.GetText("ErrMsgUSBIPDNotInstalled") ?? "usbipd-win is not installed, please install it firstly.");
-            }
-            else if (exitCode == ExitCode.LowVersion)
-            {
-                NotifyService.ShowErrorMessage(Lang.GetText("ErrMsgUSBIPDVersionLow") ?? "usbipd-win version is too low, please update it.");
-            }
-            else
-            {
-                NotifyService.ShowErrorMessage("Failed to check usbipd-win installation.");
-            }
-               return;
-        }
         DisableWindow();
         if (SelectedItem?.DataContext is USBDevicesViewModel uvm)
         {
@@ -244,10 +227,15 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         string hardwareid = e.HardwareID ?? "";
         string? name = e.Name;
-
-        UpdateWindow();
         string msg;
-        (_, _, USBDevice? changedDev) = await USBIPD.GetUSBDeviceByHardwareID(hardwareid);
+
+        (ExitCode ret, msg, USBDevice? changedDev) = await USBIPD.GetUSBDeviceByHardwareID(hardwareid);
+        if (ret != ExitCode.Success)
+        {
+            NotifyService.ShowUSBIPDError(ret, msg, null);
+            return;
+        }
+        UpdateWindow();
         if (changedDev != null && changedDev.IsConnected)
         {
             msg = $"\"{name}({hardwareid})\" is connected to {(changedDev.IsAttached ? "WSL" : "Windows")}.";

@@ -21,6 +21,8 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows.Interop;
+using wsl_usb_manager.Resources;
 
 namespace wsl_usb_manager.Controller;
 
@@ -37,8 +39,26 @@ public partial class USBIPD
     public sealed record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning);
 
     private const ushort USBIP_PORT = 3240;
-
-
+    private const string FwRuleReasonDoNotAllowExceptionsEN = @"A group policy blocks all incoming connections for the public network profile, which includes WSL.";
+    private const string FwRuleReasonDoNotAllowExceptionsZH = @"群组策略阻止了公共网络配置文件上的所有传入连接，其中包括WSL。";
+    private const string FwRuleReasonAllowLocalPolicyMergeEN = @"A group policy blocks the 'usbipd' firewall rule for the public network profile, which includes WSL.";
+    private const string FwRuleReasonAllowLocalPolicyMergeZH = @"群组策略阻止了'usbipd'防火墙规则，该规则包括WSL。";
+    private const string FwRuleReasonWinFwNotAllowedEN = @"Windows Firewall is blocking the 'usbipd' firewall rule for the public network profile, which includes WSL.";
+    private const string FwRuleReasonWinFwNotAllowedZH = @"Windows防火墙阻止了'usbipd'防火墙规则，该规则包括WSL。";
+    private const string ErrWslNotAvalibleEN = $"Windows Subsystem for Linux version 2 is not available. See {InstallWslUrl}.";
+    private const string ErrWslNotAvalibleZH = $"Windows Subsystem for Linux version 2 不可用. 参考 {InstallWslUrl} 。";
+    private const string ErrUsbipNotInstalledZH = "未检测到usbip。可能usbipd-win的版本低于4.0.0，请访问 https://github.com/dorssel/usbipd-win/releases 下载版本大于4.0.0的usbipd-win并安装，然后重启本程序。";
+    private const string ErrUsbipNotInstalledEN = "No usbip was found. Please download usbipd-win version greater than 4.0.0 from https://github.com/dorssel/usbipd-win/releases and install it, then restart this program.";
+    private const string ErrUsbipLocationZH = "检测到usbipd-win可能安装在远程磁盘中，请将usbipd-win安装到本地磁盘，然后重启本程序。";
+    private const string ErrUsbipLocationEN = "Detected that usbipd-win may be installed on a remote disk, please install usbipd-win to a local disk and restart this program.";
+    private const string ErrNoWslDistributionEN = $"There are no WSL distributions installed. Learn how to install one at {InstallDistributionUrl}.";
+    private const string ErrNoWslDistributionZH = $"未检测到已安装的WSL发行版。参考 {InstallDistributionUrl} 了解如何安装。";
+    private const string ErrWslVersionEn = $"This program only works with WSL 2 distributions. Learn how to upgrade at {SetWslVersionUrl}.";
+    private const string ErrWslVersionZh = $"本程序只支持 WSL2 发行版。参考 {SetWslVersionUrl} 了解如何升级。";
+    private const string ErrNoWslDistributionRunningEn = $"There is no WSL 2 distribution running; keep a command prompt to a WSL 2 distribution open to leave it running.";
+    private const string ErrNoWslDistributionRunningZh = $"未检测到正在运行的WSL2发行版；请打开一个WSL2发行版的命令提示符，以保持其运行。";
+    
+    private static bool IsChinese() => Lang.IsChinese();
     private static string? GetPossibleBlockReason()
     {
         using var policy = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile");
@@ -46,11 +66,11 @@ public partial class USBIPD
         {
             if (policy.GetValue("DoNotAllowExceptions") is int doNotAllowExceptions && doNotAllowExceptions != 0)
             {
-                return "A group policy blocks all incoming connections for the public network profile, which includes WSL.";
+                return (IsChinese() ? FwRuleReasonDoNotAllowExceptionsZH : FwRuleReasonDoNotAllowExceptionsEN);
             }
             if (policy.GetValue("AllowLocalPolicyMerge") is int allowLocalPolicyMerge && allowLocalPolicyMerge == 0)
             {
-                return "A group policy blocks the 'usbipd' firewall rule for the public network profile, which includes WSL.";
+                return (IsChinese() ? FwRuleReasonAllowLocalPolicyMergeZH : FwRuleReasonAllowLocalPolicyMergeEN);
             }
         }
 
@@ -59,7 +79,7 @@ public partial class USBIPD
         {
             if (settings.GetValue("DoNotAllowExceptions") is int doNotAllowExceptions && doNotAllowExceptions != 0)
             {
-                return "Windows Firewall is configured to block all incoming connections for the public network profile, which includes WSL.";
+                return (IsChinese() ? FwRuleReasonWinFwNotAllowedZH : FwRuleReasonWinFwNotAllowedEN);
             }
         }
 
@@ -71,6 +91,7 @@ public partial class USBIPD
     {
         var stdout = string.Empty;
         var stderr = string.Empty;
+        int exitCode = (int)ExitCode.Failure;
         var startInfo = new ProcessStartInfo
         {
             FileName = WslPath,
@@ -118,10 +139,30 @@ public partial class USBIPD
 
         if (process == null)
         {
-            return new((int)ExitCode.Failure, "", $"Failed to start \"{WslPath}\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}.");
+            exitCode = (int)ExitCode.Failure;
+            if (IsChinese())
+            {
+                stderr = $"无法启动子进程 \"{WslPath} {string.Join(" ", arguments)}\"。{Environment.NewLine}错误信息: {stderr}";
+            }
+            else
+                stderr = $"Failed to start \"{WslPath} {string.Join(" ", arguments)}\".{Environment.NewLine}Error: {stderr}";
+        }
+        else
+        {
+            exitCode = process.ExitCode;
+            if (exitCode != 0)
+            {
+                if (IsChinese())
+                {
+                    stderr = $"执行 \"{WslPath} {string.Join(" ", arguments)}\" 失败。{Environment.NewLine}错误信息: {stderr}; 退出码：{exitCode}";
+                }
+                else
+                    stderr = $"Failed to start \"{WslPath} {string.Join(" ", arguments)}\".{Environment.NewLine}Error: {stderr}; Exit Code: {exitCode}";
+                log.Error(stderr);
+            }
         }
 
-        return new(process.ExitCode, stdout, stderr);
+        return new(exitCode, stdout, stderr);
     }
 
     enum FirewallCheckResult
@@ -141,17 +182,24 @@ public partial class USBIPD
         var err_msg = "";
         var wslWindowsPath = Path.Combine(USBIPD.GetUSBIPDInstallPath(), "WSL");
         USBDevice? devinfo = null;
+        var(exitCode, stdout, stderr) = await CheckUsbipdWinInstallation();
+        if (exitCode != ExitCode.Success)
+        {
+            USBIPD_INSTALL_PATH = string.Empty;
+            return (exitCode, stderr, null);
+        }
         if (!Path.Exists(wslWindowsPath))
         {
-            err_msg = $"usbipd-win may be not installed; reinstall usbipd-win(version >= 4.3.0) then restart this program.";
+            USBIPD_INSTALL_PATH = string.Empty;
+            err_msg = $"{(IsChinese() ? ErrUsbipNotInstalledZH : ErrUsbipNotInstalledEN)}";
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg, devinfo);
+            return (ExitCode.LowVersion, err_msg, devinfo);
         }
         if ((Path.GetPathRoot(wslWindowsPath) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
         {
-            err_msg = $"This software should be installed on a local drive.";
+            err_msg = (IsChinese() ? ErrUsbipLocationZH : ErrUsbipLocationEN);
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg, devinfo);
+            return (ExitCode.AttachError, err_msg, devinfo);
         }
 
         // Figure out which distribution to use. WSL can be in many states:
@@ -175,33 +223,33 @@ public partial class USBIPD
         if (await GetWSLDistributions() is not IEnumerable<Distribution> distributions)
         {
             // check (a) failed
-            err_msg = $"Windows Subsystem for Linux version 2 is not available. See {InstallWslUrl}.";
+            err_msg = (IsChinese() ? ErrWslNotAvalibleZH : ErrWslNotAvalibleEN);
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg, devinfo);
+            return (ExitCode.AttachError, err_msg, devinfo);
         }
 
         // check (c1)
         if (!distributions.Any())
         {
-            err_msg = $"There are no WSL distributions installed. Learn how to install one at {InstallDistributionUrl}.";
+            err_msg = (IsChinese() ? ErrNoWslDistributionZH : ErrNoWslDistributionEN);
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg, devinfo);
+            return (ExitCode.AttachError, err_msg, devinfo);
         }
 
         // check (c2)
         if (!distributions.Any(d => d.Version == 2))
         {
-            err_msg = $"This program only works with WSL 2 distributions. Learn how to upgrade at {SetWslVersionUrl}.";
+            err_msg = IsChinese() ? ErrWslVersionZh : ErrWslVersionEn;
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg, devinfo);
+            return (ExitCode.AttachError, err_msg, devinfo);
         }
 
         // check (c3)
         if (!distributions.Any(d => d.Version == 2 && d.IsRunning))
         {
-            err_msg = $"There is no WSL 2 distribution running; keep a command prompt to a WSL 2 distribution open to leave it running.";
+            err_msg = IsChinese() ? ErrNoWslDistributionRunningZh : ErrNoWslDistributionRunningEn;
             log.Error(err_msg);
-            return (ExitCode.Failure, err_msg, devinfo);
+            return (ExitCode.AttachError, err_msg, devinfo);
         }
 
         if (distributions.FirstOrDefault(d => d.IsDefault && d.Version == 2 && d.IsRunning) is Distribution defaultDistribution)
@@ -225,8 +273,12 @@ public partial class USBIPD
             var wslResult = await RunWslAsync((distribution, "/"), 1000, "zgrep", "CONFIG_USBIP_VHCI_HCD", "/proc/config.gz");
             if (wslResult.ExitCode != 0)
             {
-                log.Error($"Unable to get WSL kernel configuration.");
-                return (ExitCode.Failure, $"Unable to get WSL kernel configuration: {wslResult.StandardError}", devinfo);
+                if (IsChinese())
+                    err_msg = $"Unable to get WSL kernel configuration: {wslResult.StandardError}";
+                else
+                    err_msg = $"无法获取 WSL 内核配置：{wslResult.StandardError}";
+                log.Error(err_msg);
+                return (ExitCode.AttachError, err_msg, devinfo);
             }
 
             var config = wslResult.StandardOutput;
@@ -246,8 +298,12 @@ public partial class USBIPD
                 wslResult = await RunWslAsync((distribution, "/"), 1000, "cat", "/proc/modules");
                 if (wslResult.ExitCode != 0)
                 {
-                    log.Error($"Unable to get WSL kernel modules: {wslResult.StandardError}");
-                    return (ExitCode.Failure, $"Unable to get WSL kernel modules: {wslResult.StandardError}", devinfo);
+                    if (IsChinese())
+                        err_msg = $"Unable to get WSL kernel modules: {wslResult.StandardError}";
+                    else
+                        err_msg = $"无法获取内核驱动模块信息: {wslResult.StandardError}";
+                    log.Error(err_msg);
+                    return (ExitCode.AttachError, err_msg, devinfo);
                 }
 
                 if (!wslResult.StandardOutput.Contains("vhci_hcd"))
@@ -256,8 +312,12 @@ public partial class USBIPD
                     wslResult = await RunWslAsync((distribution, "/"), 1000, "modprobe", "vhci_hcd");
                     if (wslResult.ExitCode != 0)
                     {
-                        log.Error($"Loading vhci_hcd failed: {wslResult.StandardError}");
-                        return (ExitCode.Failure, $"Loading vhci_hcd failed.", devinfo);
+                        if (IsChinese())
+                            err_msg = $"Loading vhci_hcd failed: {wslResult.StandardError}";
+                        else
+                            err_msg = $"加载 vhci_hcd 模块失败: {wslResult.StandardError}";
+                        log.Error(err_msg);
+                        return (ExitCode.AttachError, err_msg, devinfo);
                     }
                     // Expected output:
                     //
@@ -267,20 +327,32 @@ public partial class USBIPD
                     wslResult = await RunWslAsync((distribution, "/"), 1000, "cat", "/proc/modules");
                     if (wslResult.ExitCode != 0)
                     {
-                        log.Error($"Unable to get WSL kernel modules: {wslResult.StandardError}");
-                        return (ExitCode.Failure, $"Unable to get WSL kernel modules.", devinfo);
+                        if (IsChinese())
+                            err_msg = $"Unable to get WSL kernel modules: {wslResult.StandardError}";
+                        else
+                            err_msg = $"无法获取内核驱动模块信息: {wslResult.StandardError}";
+                        log.Error(err_msg);
+                        return (ExitCode.AttachError, err_msg, devinfo);
                     }
                     if (!wslResult.StandardOutput.Contains("vhci_hcd"))
                     {
-                        log.Error($"Module vhci_hcd not loaded.");
-                        return (ExitCode.Failure, $"Module vhci_hcd not loaded.", devinfo);
+                        if (IsChinese())
+                            err_msg = $"Loading vhci_hcd failed: {wslResult.StandardError}";
+                        else
+                            err_msg = $"加载 vhci_hcd 模块失败: {wslResult.StandardError}";
+                        log.Error(err_msg);
+                        return (ExitCode.AttachError, err_msg, devinfo);
                     }
                 }
             }
             else
             {
-                log.Error($"WSL kernel is not USBIP capable; update with 'wsl --update'.");
-                return (ExitCode.Failure, $"WSL kernel is not USBIP capable; update with 'wsl --update'.", devinfo);
+                if (IsChinese())
+                    err_msg = $"WSL kernel is not USBIP capable; update with 'wsl --update'.";
+                else
+                    err_msg = $"WSL 内核不支持 USBIP 功能；请使用 “wsl --update” 命令进行更新。";
+                log.Error(err_msg);
+                return (ExitCode.AttachError, err_msg, devinfo);
             }
         }
 
@@ -300,8 +372,12 @@ public partial class USBIPD
                 """.ReplaceLineEndings(" "));
             if (wslResult.ExitCode != 0)
             {
-                log.Error($"Mounting '{wslWindowsPath}' within WSL failed: {wslResult.StandardError}");
-                return (ExitCode.Failure, $"Mounting '{wslWindowsPath}' within WSL failed.", devinfo);
+                if (IsChinese())
+                    err_msg = $"Mounting '{wslWindowsPath}' within WSL failed: {wslResult.StandardError}";
+                else
+                    err_msg = $"挂载 '{wslWindowsPath}' 到 WSL 失败: {wslResult.StandardError}";
+                log.Error(err_msg);
+                return (ExitCode.AttachError, err_msg, devinfo);
             }
         }
 
@@ -310,8 +386,12 @@ public partial class USBIPD
             var wslResult = await RunWslAsync((distribution, WslMountPoint), 1000, "./usbip", "version");
             if (wslResult.ExitCode != 0 || wslResult.StandardOutput.Trim() != "usbip (usbip-utils 2.0)")
             {
-                log.Error($"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.");
-                return (ExitCode.Failure, $"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.", devinfo);
+                if (IsChinese())
+                    err_msg = $"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.";
+                else
+                    err_msg = $"无法运行 'usbip' 客户端工具. 请到 https://github.com/dorssel/usbipd-win/issue 报告问题。";
+                log.Error(err_msg);
+                return (ExitCode.AttachError, err_msg, devinfo);
             }
         }
 
@@ -384,9 +464,12 @@ public partial class USBIPD
                 }
                 if (clientAddresses.Count == 0)
                 {
-                    err_msg = $"WSL does not appear to have network connectivity; try `wsl --shutdown` and then restart WSL.";
+                    if (IsChinese())
+                        err_msg = $"WSL does not appear to have network connectivity; try `wsl --shutdown` and then restart WSL.";
+                    else
+                        err_msg = $"WSL 似乎没有网络连接；尝试使用wsl--shutdown命令，然后重新启动 WSL。";
                     log.Error(err_msg);
-                    return (ExitCode.Failure, err_msg, devinfo);
+                    return (ExitCode.AttachError, err_msg, devinfo);
                 }
 
                 // Get all non-loopback unicast IPv4 addresses (with their mask) for the host.
@@ -400,9 +483,12 @@ public partial class USBIPD
                 // Find any match; we'll just take the first.
                 if (hostAddresses.FirstOrDefault(ha => clientAddresses.Any(ca => IsOnSameIPv4Network(ha.Address, ha.IPv4Mask, ca))) is not UnicastIPAddressInformation matchHost)
                 {
-                    err_msg = "The host IP address for the WSL virtual switch could not be found.";
+                    if (IsChinese())
+                        err_msg = $"The host IP address for the WSL virtual switch could not be found.";
+                    else
+                        err_msg = $"无法找到 WSL 虚拟交换机的主机 IP 地址。";
                     log.Error(err_msg);
-                    return (ExitCode.Failure, err_msg, devinfo);
+                    return (ExitCode.AttachError, err_msg, devinfo);
                 }
 
                 hostAddress = matchHost.Address;
@@ -416,9 +502,12 @@ public partial class USBIPD
             }
             catch
             {
-                err_msg = $"{hostIP} is an invalid IP address.";
+                if (IsChinese())
+                    err_msg = $"'{hostIP}' is an invalid IP address.";
+                else
+                    err_msg = $"'{hostIP}' 是一个无效的 IP 地址。";
                 log.Error(err_msg);
-                return (ExitCode.Failure, err_msg, devinfo);
+                return (ExitCode.AttachError, err_msg, devinfo);
             }
         }
 
@@ -458,7 +547,7 @@ public partial class USBIPD
                         {
                             // We found a possible blocker.
                             log.Error(blockReason);
-                            return (ExitCode.Failure, blockReason, devinfo);
+                            return (ExitCode.AttachError, blockReason, devinfo);
                         }
                     }
                     break;
@@ -468,12 +557,19 @@ public partial class USBIPD
                         if (GetPossibleBlockReason() is string blockReason)
                         {
                             // We found a possible reason.
-                            log.Error(blockReason);
+                            err_msg = blockReason;
+                        }
+                        else
+                        {
+                            if (IsChinese())
+                                err_msg = $"A firewall appears to be blocking the connection; ensure TCP port {USBIP_PORT} is allowed.";
+                            else
+                                err_msg = $"似乎有防火墙阻止了连接；请确保 TCP 端口 '{USBIP_PORT}' 是被允许访问的。";
                         }
                         // In any case, it isn't working...
-                        err_msg = $"A firewall appears to be blocking the connection; ensure TCP port {USBIP_PORT} is allowed.";
+                        
                         log.Error(err_msg);
-                        return (ExitCode.Failure, err_msg, devinfo  );
+                        return (ExitCode.AttachError, err_msg, devinfo);
                     }
                 case FirewallCheckResult.Pass:
                     // All is well.
@@ -499,14 +595,16 @@ public partial class USBIPD
                     
                     if (wslResult.StandardError.Contains("Device busy"))
                     {
-                        err_msg = "The device appears to be used by Windows; stop the software using the device, or bind the device with force enabled.";
-
+                        if (IsChinese())
+                            err_msg = $"The device appears to be used by Windows; stop the software using the device, or bind the device with force enabled.";
+                        else
+                            err_msg = $"该设备似乎正被 Windows 系统使用；请停止正在使用该设备的软件，或者启用强制绑定该设备。";
                     }
                     else
                     {
                         err_msg = wslResult.StandardError;
                     }
-                    
+                    log.Error(err_msg);
                     Thread.Sleep(500);
                     wslResult = await RunWslAsync((distribution, WslMountPoint), attachTimeout, wslAttachCmd);
                 }
@@ -517,7 +615,7 @@ public partial class USBIPD
             }
         }
 
-        return (ExitCode.Failure, err_msg, devinfo);
+        return (ExitCode.AttachError, err_msg, devinfo);
     }
 
     internal static bool IsOnSameIPv4Network(IPAddress hostAddress, IPAddress hostMask, IPAddress clientAddress)

@@ -143,12 +143,11 @@ public class USBDeviceInfoModel : ViewModelBase
 
     public async Task<bool> Bind()
     {
-        string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",",StringSplitOptions.RemoveEmptyEntries)[0];
         Device.IsForced = IsForced;
         (ExitCode ret, string err) = await Device.Bind();
-        if(ret != ExitCode.Success)
+        if (ret != ExitCode.Success)
         {
-            NotifyService.ShowErrorMessage($"Failed to bind '{name}': {err}");
+            NotifyService.ShowUSBIPDError(ret, err, Device);
         }
         UpdateDeviceInfo();
         return IsBound;
@@ -165,11 +164,10 @@ public class USBDeviceInfoModel : ViewModelBase
     }
     public async Task<bool> Attach()
     {
-        string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
         (ExitCode ret, string err) = await Device.Attach(NetworkCardInfo.GetIPAddress(App.GetAppConfig().ForwardNetCard));
         if (ret != ExitCode.Success)
         {
-            NotifyService.ShowErrorMessage($"Failed to attach '{name}': {err}");
+            NotifyService.ShowUSBIPDError(ret,err,Device);
         }
         UpdateDeviceInfo();
         return IsAttached;

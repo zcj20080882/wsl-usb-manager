@@ -27,6 +27,11 @@ public class Lang
         return System.Windows.Application.Current.FindResource(key).ToString();
     }
 
+    public static bool IsChinese()
+    {
+        return App.GetAppConfig().Lang == "zh";
+    }
+
     public static bool ChangeLanguage(bool isChinese)
     {
         try
