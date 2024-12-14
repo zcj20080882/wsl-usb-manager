@@ -49,7 +49,7 @@ if (-not $gitversionInstalled) {
 } else {
     Write-Output "dotnet-gitversion is installed."
 }
-
+git fetch --prune
 dotnet-gitversion /updateassemblyinfo $AssemblyInfoPath /ensureassemblyinfo
 
 # Get the version number from AssemblyInfo.cs
