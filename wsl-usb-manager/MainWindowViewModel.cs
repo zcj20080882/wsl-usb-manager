@@ -110,7 +110,7 @@ public partial class MainWindowViewModel : ViewModelBase
             new BodyItem(autoattach_tilte, typeof(AutoAttachView), PackIconKind.StarBoxMultiple, PackIconKind.StarBoxMultipleOutline, new AutoAttachViewModel()),
         ];
         _windowTitle = Lang.GetText("WindowTitle") ?? "WSL USB Manager";
-        _windowTitle += " v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        _windowTitle += " " + GetVersion(); ;
         SelectedItem = BodyItems.First();
         WindowEnabled = true;
         IsDarkMode = AppConfig.DarkMode;
@@ -142,6 +142,14 @@ public partial class MainWindowViewModel : ViewModelBase
         EnableWindow();
     }
 
+    public string GetVersion()
+    {
+        if (System.Reflection.Assembly.GetExecutingAssembly().GetName().Version is Version version)
+        {
+            return $"v{version.Major}.{version.Minor}.{version.Build}";
+        }
+        return "";
+    }
     public void DisableWindow() => (ShowRefreshProgress, WindowEnabled) = (true, false);
 
     public void EnableWindow() => (ShowRefreshProgress, WindowEnabled) = (false, true);
@@ -220,7 +228,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         WindowTitle = Lang.GetText("WindowTitle") ?? "WSL USB Manager";
-        WindowTitle += " v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        WindowTitle += " " + GetVersion();  
     }
 
     public async Task USBEventProcess(USBEventArgs e)

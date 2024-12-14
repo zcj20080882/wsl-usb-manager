@@ -10,8 +10,6 @@
 ******************************************************************************/
 using MaterialDesignThemes.Wpf;
 using System.Windows;
-using wsl_usb_manager.Controller;
-using wsl_usb_manager.MessageBox;
 using wsl_usb_manager.Resources;
 using wsl_usb_manager.Settings;
 
