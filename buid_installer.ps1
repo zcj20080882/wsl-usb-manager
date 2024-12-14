@@ -49,7 +49,9 @@ if (-not $gitversionInstalled) {
 } else {
     Write-Output "dotnet-gitversion is installed."
 }
-git fetch --prune
+
+git tag -l | ForEach-Object{ git tag -d $_ }
+git fetch origin --tags
 git checkout $AssemblyInfoPath
 dotnet-gitversion /updateassemblyinfo $AssemblyInfoPath /ensureassemblyinfo
 
