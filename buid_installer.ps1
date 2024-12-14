@@ -50,6 +50,7 @@ if (-not $gitversionInstalled) {
     Write-Output "dotnet-gitversion is installed."
 }
 git fetch --prune
+git checkout $AssemblyInfoPath
 dotnet-gitversion /updateassemblyinfo $AssemblyInfoPath /ensureassemblyinfo
 
 # Get the version number from AssemblyInfo.cs
@@ -60,16 +61,55 @@ $versionMatch = [regex]::Match($AssembleInfoContent, $versionPattern)
 if ($versionMatch.Success) {
     $fullVersion = $versionMatch.Groups[1].Value
     # remove the last part of the version number
-    $shortVersion = ($fullVersion -split '\.')[0..2] -join '.'
+    $ShortVersion = ($fullVersion -split '\.')[0..2] -join '.'
 
-    # Replace the version number in the Installer project
-    $InstallerFileContent = Get-Content -Path $InstallerPrjPath
-    Write-Output "Update version '$shortVersion' to Installer project"
-    $updatedContent = $InstallerFileContent -replace '("ProductVersion" = "8:)(\d+\.\d+\.\d+)(")', "`"ProductVersion`" = `"8:$shortVersion`""
-    #Write-Output "Update ProductCode '$NewProductCode' to Installer project"
-    #$updatedContent = $updatedContent -replace '("ProductCode" = "8:)([^"]+)(")', "`"ProductCode`" = `"8:{$NewProductCode}`""
-    # Write the updated content back to the file
-    Set-Content -Path $InstallerPrjPath -Value $updatedContent -ErrorAction Stop
+    $NewInstallerPrjPath = Join-Path -Path $currentPath -ChildPath "tmp.vdproj"
+    if ((Test-Path -Path $NewInstallerPrjPath)) {
+        #Clear-Content -Path $NewInstallerPrjPath -ErrorAction Stop
+        Remove-Item -Path $NewInstallerPrjPath
+    }
+
+    $state=""
+    $cnt=0
+    foreach($line in [System.IO.File]::ReadLines($InstallerPrjPath))
+    {
+        switch ($state)
+        {
+            "Deployable" {
+                if ($line -match "Product") {
+                    $state="Product"
+                }
+                break
+            }
+            "Product" {
+                if ($line -match "ProductCode") {
+                    $cnt += 1
+                    Write-Output "Update ProductCode to $NewProductCode"
+                    #$NewProductCode = "8:{$NewProductCode}"
+                    $line = $line -replace '(?<="ProductCode" = ")[^"]*', "8:{$NewProductCode}"
+                    break
+                }
+                if ($line -match "ProductVersion") {
+                    $cnt += 1
+                    Write-Output "Update ProductVersion to $ShortVersion"
+                    $line = $line -replace '(?<="ProductVersion" = ")[^"]*', "8:$ShortVersion"
+                    break
+                }
+                break
+            }
+            default {
+                if ($line -match "Deployable") {
+                    $state = "Deployable"
+                }
+                break
+            }
+        }
+
+        Add-Content -Path $NewInstallerPrjPath -Value $line -ErrorAction Stop
+    }
+
+    Get-Content -Path $NewInstallerPrjPath | Set-Content -Path $InstallerPrjPath -ErrorAction Stop
+    Remove-Item -Path $NewInstallerPrjPath
 } else {
     Write-Output "Failed to get the version number from AssemblyInfo.cs"
     exit 1

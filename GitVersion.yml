@@ -12,5 +12,15 @@ commit-date-format: 'yyyy-MM-ddTHH:mm:ss'
 
 ignore:
   sha: []
-  commits-before: 2015-10-23T12:23:15
-merge-message-formats: {}
+branches:
+  main:
+    regex: ^master$|^main$
+    mode: ContinuousDelivery
+    label: ''
+    increment: None
+    track-merge-target: false
+    source-branches: [ 'develop', 'release' ]
+    tracks-release-branches: false
+    is-release-branch: false
+    is-main-branch: true
+    pre-release-weight: 55000
