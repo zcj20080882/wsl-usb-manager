@@ -1,27 +1,50 @@
 # wsl-usb-manager
 
 #### 介绍
-利用usbipd-win管理USB 设备，能够将USB设备附件到WSL中。本软件通过调用usbipd来绑定、解绑、附加以及分离USB设备，因此本软件运行时会自动检测本机是否安装usbipd-win，并且版本需要>=4.3.0，若不符合条件，则会自动安装uwbsipd-win。
+
+一款配合usbipd-win使用的用于附加USB设备到WSL中的工具，提供友好用户界面。
+
+**功能**
+
+1. 显示所有USB设备列表，可通过复选框或者右键菜单进行绑定设备附加设备等操作
+2. 显示已选设备的详细信息
+3. 支持自动检测USB设备插拔事件，自动刷新设备列表
+4. 支持通过指定网卡附加USB设备到WSL
+5. 显示持久化的设备，可删除持久化设备
+6. 支持自动附件功能：设备添加到自动附加列表后，当设备插入时自动附加到WSL
+7. 支持中英文
+
+**运行需求：**
+
+1. Win10以上版本
+2. .Net Framework 4.8环境
+2. WSL2环境，需要安装usbipd-win（须为4.0.0或者以上版本）
+3. 绑定设备时需要管理员权限
 
 #### 软件架构
-软件架构说明
 
 
 #### 构建
 
-1.  安装Visual Studio 2022
+1.  安装Visual Studio 2022，同时安装如下扩展：
+
+    - License Header Manager
+    - Microsoft Visual Studio Installer Projects 2022
+
 2.  安装Git Version
 
     ```powershell
     dotnet tool install --global GitVersion.Tool
     ```
-3.  xxxx
 
-#### 使用说明
+3.  构建
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+    ```powershell
+    .\buid_installer.ps1
+    ```
+
+    构建完成后，会在`Installer\Release\`生成一个名为`WSL-USB-Manager-vx.x.x.msi`的安装包，其中vx.x.x为当前版本号。
+
 
 #### 参与贡献
 
@@ -29,13 +52,3 @@
 2.  新建 Feat_xxx 分支
 3.  提交代码
 4.  新建 Pull Request
-
-
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)

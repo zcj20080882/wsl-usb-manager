@@ -2,6 +2,7 @@ $currentPath = Get-Location
 $SolutionPath = Join-Path -Path $currentPath -ChildPath "wsl-usb-manager.sln"
 $AssemblyInfoPath = Join-Path -Path $currentPath -ChildPath "wsl-usb-manager/AssemblyInfo.cs"
 $InstallerPrjPath = Join-Path -Path $currentPath -ChildPath "Installer/Installer.vdproj"
+$InstallerOutputPath = Join-Path -Path $currentPath -ChildPath "Installer/Release/WSL-USB-Manager.msi"
 $NewProductCode = [guid]::NewGuid().ToString().ToUpper()
 $devenvPath = ""
 $vswherePath = "$env:TEMP\vswhere.exe"
@@ -59,12 +60,11 @@ dotnet-gitversion /updateassemblyinfo $AssemblyInfoPath /ensureassemblyinfo
 $AssembleInfoContent = Get-Content -Path $AssemblyInfoPath
 $versionPattern = '\[assembly: AssemblyVersion\("(\d+\.\d+\.\d+\.\d+)"\)\]'
 $versionMatch = [regex]::Match($AssembleInfoContent, $versionPattern)
-
+$ShortVersion =
 if ($versionMatch.Success) {
     $fullVersion = $versionMatch.Groups[1].Value
     # remove the last part of the version number
     $ShortVersion = ($fullVersion -split '\.')[0..2] -join '.'
-
     $NewInstallerPrjPath = Join-Path -Path $currentPath -ChildPath "tmp.vdproj"
     if ((Test-Path -Path $NewInstallerPrjPath)) {
         #Clear-Content -Path $NewInstallerPrjPath -ErrorAction Stop
@@ -75,6 +75,14 @@ if ($versionMatch.Success) {
     $cnt=0
     foreach($line in [System.IO.File]::ReadLines($InstallerPrjPath))
     {
+        if ($line -match "OutputFilename") {
+            if ($line -match "Debug"){
+                $line = $line -replace '(?<="OutputFilename" = ")[^"]*', "8:Debug\\WSL-USB-Manager-v$ShortVersion.msi"
+            }
+            elseif ($line -match "Release") {
+                $line = $line -replace '(?<="OutputFilename" = ")[^"]*', "8:Release\\WSL-USB-Manager-v$ShortVersion.msi"
+            }
+        }
         switch ($state)
         {
             "Deployable" {
@@ -118,3 +126,8 @@ if ($versionMatch.Success) {
 }
 
 & $devenvPath $SolutionPath /Rebuild Release /Project $InstallerPrjPath
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "Build failed."
+    exit 1
+}
