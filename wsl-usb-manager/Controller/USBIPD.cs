@@ -14,9 +14,11 @@
 using log4net;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography.Xml;
 using System.Security.Principal;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using wsl_usb_manager.Resources;
 
 namespace wsl_usb_manager.Controller;
 
@@ -51,8 +53,9 @@ public partial class USBIPD
 
     private static string USBIPD_INSTALL_PATH = string.Empty;
     private static string USBIPD_VERSION = string.Empty;
-
+    private static string USBIPD_WSL_PATH = string.Empty;
     public const string USBIPSharedDeviceID = "80EE:CAFE";
+    private static bool IsChinese() => Lang.IsChinese();
 
     public USBIPD()
     {
@@ -67,14 +70,15 @@ public partial class USBIPD
     }
 
     public static string GetUSBIPDInstallPath() => USBIPD_INSTALL_PATH;
-    public static async Task<(ExitCode exitCode, string stdout, string stderr)> CheckUsbipdWinInstallation()
+
+    private static async Task<(int ExitCode, string StandardOutput, string StandardError)> CheckUSBIPDWin()
     {
         var stdout = string.Empty;
         var stderr = string.Empty;
 
         if(!string.IsNullOrWhiteSpace(USBIPD_INSTALL_PATH) && !string.IsNullOrWhiteSpace(USBIPD_VERSION))
         {
-            return (ExitCode.Success, USBIPD_INSTALL_PATH, USBIPD_VERSION);
+            return (0, USBIPD_INSTALL_PATH, USBIPD_VERSION);
         }
 
         var startInfo = new ProcessStartInfo
@@ -128,37 +132,55 @@ public partial class USBIPD
 
         if (process == null)
         {
-            log.Error($"Failed to check \"usbipd\" installation: Cannot start process.");
-            return new(ExitCode.Failure, "", $"Failed to check \"usbipd\" installation.");
+            if (IsChinese())
+                stderr = $"无法检查\"usbipd\"安装情况: 无法打开子进程。";
+            else
+                stderr = $"Failed to check \"usbipd\" installation: Cannot start process.";
+
+            log.Error(stderr);
+            return new((int)ExitCode.Failure, "", stderr);
         }
 
         if (string.IsNullOrWhiteSpace(stdout))
-        {
-            log.Error($"Failed to check \"usbipd\" installation: {stderr}");
-            return new(ExitCode.NotFound, "", stderr);
+        { 
+            if (IsChinese())
+                stderr = $"无法检查\"usbipd\"安装情况: {stderr}。";
+            else
+                stderr = $"Failed to check \"usbipd\" installation: {stderr}";
+            log.Error(stderr);
+            return new((int)ExitCode.NotFound, "", stderr);
         }
         string[] output = stdout.Trim().Split(Environment.NewLine);
         USBIPD_INSTALL_PATH = output[0].Trim();
         if (!Path.Exists(USBIPD_INSTALL_PATH))
         {
-            log.Error("USBIPD is not installed.");
+            stderr = $"{(IsChinese() ? ErrUsbipNotInstalledZH : ErrUsbipNotInstalledEN)}";
+            log.Error(stderr);
             USBIPD_INSTALL_PATH = string.Empty;
-            return (ExitCode.NotFound, "", "USBIPD is not installed");
+            return ((int)ExitCode.NotFound, "", stderr);
         }
 
         if (output.Length < 2)
         {
-            log.Error($"Failed to check \"usbipd\" installation: {stdout}");
+            if (IsChinese())
+                stderr = $"无法检查\"usbipd\"安装情况: {stderr}。";
+            else
+                stderr = $"Failed to check \"usbipd\" installation: {stderr}";
+            log.Error(stderr);
             USBIPD_INSTALL_PATH = string.Empty;
-            return new(ExitCode.Failure, stdout, "");
+            return new((int)ExitCode.Failure, stdout, stderr);
         }
 
         USBIPD_VERSION = output[1].Trim();
         if(string.IsNullOrWhiteSpace(USBIPD_VERSION))
         {
-            log.Error($"Failed to check \"usbipd\" version: {stdout}");
+            if (IsChinese())
+                stderr = $"无法检查\"usbipd\"版本： {stdout}。";
+            else
+                stderr = $"Failed to check \"usbipd\" version: {stdout}";
+            log.Error(stderr);
             USBIPD_INSTALL_PATH = string.Empty;
-            return new(ExitCode.Failure, stdout, "");
+            return new((int)ExitCode.Failure, stdout, stderr);
         }
         log.Info($"USBIPD version: {USBIPD_VERSION}");
         Match match = VersionRegex().Match(USBIPD_VERSION);
@@ -170,30 +192,53 @@ public partial class USBIPD
             USBIPD_VERSION = $"{major}.{minor}.{patch}";
             if (major < 4)
             {
-                log.Warn($"USBIPD version is too low: {USBIPD_VERSION}");
+                if (IsChinese())
+                    stderr = $"\"usbipd\"版本 \"{USBIPD_VERSION}\" 太低。";
+                else
+                    stderr = $"USBIPD version is too low: {USBIPD_VERSION}";
+                log.Error(stderr);
                 USBIPD_INSTALL_PATH = string.Empty;
-                return (ExitCode.LowVersion, USBIPD_VERSION,"Low usbipd-win version");
+                return ((int)ExitCode.LowVersion, stdout, stderr);
             }
         }
         else
         {
+            if (IsChinese())
+                stderr = $"无法解析\"usbipd\"版本： {stdout}。";
+            else
+                stderr = $"Failed to parse USBIPD version: {stdout}";
+            log.Error(stderr);
             USBIPD_INSTALL_PATH = string.Empty;
-            log.Warn($"Failed to parse USBIPD version: {stdout}");
-            return (ExitCode.ParseError, "", "");
+            return ((int)ExitCode.ParseError, stdout, stderr);
         }
+        USBIPD_WSL_PATH = Path.Combine(USBIPD.GetUSBIPDInstallPath(), "WSL");
 
-        return (ExitCode.Success, USBIPD_INSTALL_PATH,USBIPD_VERSION);
+        if (!Path.Exists(USBIPD_WSL_PATH))
+        {
+            USBIPD_INSTALL_PATH = string.Empty;
+            stderr = $"{(IsChinese() ? ErrUsbipNotInstalledZH : ErrUsbipNotInstalledEN)}";
+            log.Error(stderr);
+            return ((int)ExitCode.LowVersion, stdout,stderr);
+        }
+        if ((Path.GetPathRoot(USBIPD_WSL_PATH) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
+        {
+            stderr = (IsChinese() ? ErrUsbipLocationZH : ErrUsbipLocationEN);
+            log.Error(stderr);
+            return ((int)ExitCode.Failure, stdout, stderr);
+        }
+        return ((int)ExitCode.Success, stdout,stderr);
     }
 
 
-    private static async Task<(ExitCode ExitCode, string StandardOutput, string StandardError)>
+    private static async Task<(int ExitCode, string StandardOutput, string StandardError)>
         RunPowerShellScripts(string script, int timeout_ms)
     {
+        int exitCode = (int)ExitCode.Failure;
         var stdout = string.Empty;
         var stderr = string.Empty;
-        ExitCode exitCode = ExitCode.Failure;
-        (exitCode, stdout, stderr) = await CheckUsbipdWinInstallation();
-        if (exitCode != ExitCode.Success) {
+        (exitCode,stdout,stderr) = await CheckUSBIPDWin();
+        if (exitCode != (int)ExitCode.Success)
+        {
             USBIPD_INSTALL_PATH = string.Empty;
             return (exitCode, stdout, stderr);
         }
@@ -250,29 +295,30 @@ public partial class USBIPD
 
         if (process == null)
         {
-            return new(ExitCode.Failure, "", $"Failed to start \"usbipd\" with arguments {script}.");
+            return new((int)ExitCode.Failure, "", $"Failed to start \"usbipd\" with arguments {script}.");
         }
         if(process.ExitCode != 0)
         {
             log.Error($"Failed to run powershell scripts, error: {stderr}");
-            return new(ExitCode.Failure, stdout, stderr);
+            return new(process.ExitCode, stdout, stderr);
         }
-        return new(ExitCode.Success, stdout, stderr);
+        return new((int)ExitCode.Success, stdout, stderr);
     }
 
-    private static async Task<(ExitCode ExitCode, string StandardOutput, string StandardError)>
+    private static async Task<(int ExitCode, string StandardOutput, string StandardError)>
         RunUSBIPD(bool privilege, string[] arguments)
     {
+        ProcessStartInfo startInfo;
+        int exitCode = (int)ExitCode.Failure;
         var stdout = string.Empty;
         var stderr = string.Empty;
-        ProcessStartInfo startInfo;
-        ExitCode exitCode = ExitCode.Failure;
-        (exitCode, stdout, stderr) = await CheckUsbipdWinInstallation();
-        if (exitCode != ExitCode.Success)
+        (exitCode, stdout, stderr) = await CheckUSBIPDWin();
+        if (exitCode != (int)ExitCode.Success)
         {
             USBIPD_INSTALL_PATH = string.Empty;
             return (exitCode, stdout, stderr);
         }
+
         if (privilege && !IsRunningAsAdministrator())
         {
             //Run as administrator example:
@@ -324,14 +370,14 @@ public partial class USBIPD
 
         if (process == null)
         {
-            return new(ExitCode.Failure, "", $"Failed to start \"usbipd\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}.");
+            return new((int)ExitCode.Failure, "", $"Failed to start \"usbipd\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}.");
         }
         if(process.ExitCode != 0)
         {
             log.Error($"Failed to run '{startInfo.FileName} {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}', error: {stderr}");
-            return new(ExitCode.Failure, stdout, stderr);
+            return new((int)ExitCode.Failure, stdout, stderr);
         }
-        return new(ExitCode.Success, stdout, stderr);
+        return new((int)ExitCode.Success, stdout, stderr);
     }
 
     private static List<USBDevice>? ParseStringDevInfoToUSBDeviceList(string stringDeviceInfo)
@@ -391,14 +437,14 @@ public partial class USBIPD
     {
         string stderr = "";
         USBDevice? dev = null;
-        ExitCode ret = ExitCode.BindError;
+        int ret = (int)ExitCode.BindError;
         for (int i= 0; i < 3; i++){
             (ret, string stdout, stderr) = 
                 await RunUSBIPD(true, ["bind", "--hardware-id", hardwareid, (force ? "--force" : "")]);
-            if (ret == ExitCode.Success)
+            if (ret == (int)ExitCode.Success)
             {
                 (_, _, dev) = await GetUSBDeviceByHardwareID(hardwareid, true);
-                return (ret, "", dev);
+                return (ExitCode.Success, "", dev);
             }
             else
             {
@@ -412,7 +458,7 @@ public partial class USBIPD
             }
         }
         
-        return ((int)ret >= (int)ExitCode.NotFound ? ret : ExitCode.BindError, stderr,dev);
+        return (ret >= (int)ExitCode.NotFound ? (ExitCode)ret : ExitCode.BindError, stderr,dev);
     }
 
 
@@ -423,24 +469,24 @@ public partial class USBIPD
     public static async Task<(ExitCode exitCode, string errMsg, USBDevice? newDev)>
         UnbindDevice(string? hardwareid)
     {
-        ExitCode exitCode = ExitCode.UnbindError;
+        int ret = (int)ExitCode.UnbindError;
         string stderr = "";
         USBDevice? dev = null;
         for (int i= 0; i < 3; i++)
         {
             if (string.IsNullOrEmpty(hardwareid))
             {
-                (exitCode, _, stderr) = await RunUSBIPD(true, ["unbind", "--all"]);
+                (ret, _, stderr) = await RunUSBIPD(true, ["unbind", "--all"]);
             }
             else
             {
-                (exitCode, _, stderr) = await RunUSBIPD(true, ["unbind", "--hardware-id", hardwareid]);
+                (ret, _, stderr) = await RunUSBIPD(true, ["unbind", "--hardware-id", hardwareid]);
                 (_, _, dev) = await GetUSBDeviceByHardwareID(hardwareid, true);
             }
 
-            if (exitCode == ExitCode.Success)
+            if (ret == (int)ExitCode.Success)
             {
-                return (exitCode, "",dev);
+                return ((ExitCode)ret, "",dev);
             }
             else
             {
@@ -448,7 +494,7 @@ public partial class USBIPD
             }
         }
 
-        return ((int)exitCode >= (int)ExitCode.NotFound ? exitCode : ExitCode.UnbindError, stderr, dev);
+        return (ret >= (int)ExitCode.NotFound ? (ExitCode)ret : ExitCode.UnbindError, stderr, dev);
     }
 
     public static async Task<(ExitCode exitCode, string errMsg)> 
@@ -461,29 +507,29 @@ public partial class USBIPD
     public static async Task<(ExitCode exitCode, string errMsg, USBDevice? newDev)>
         DetachDevice(string? hardwareid)
     {
-        ExitCode exitCode = ExitCode.DetachError;
+        int ret = (int)ExitCode.DetachError;
         string stderr = "";
         USBDevice? dev = null;
         for (int i= 0; i< 3; i++)
         {
             if (string.IsNullOrEmpty(hardwareid))
             {
-                (exitCode, _, stderr) = await RunUSBIPD(false, ["detach", "--all"]);
+                (ret, _, stderr) = await RunUSBIPD(false, ["detach", "--all"]);
             }
             else
             {
                 log.Warn($"Failed to detach device '{hardwareid}': {stderr}");
-                (exitCode, _, stderr) = await RunUSBIPD(false, ["detach", "--hardware-id", hardwareid]);
+                (ret, _, stderr) = await RunUSBIPD(false, ["detach", "--hardware-id", hardwareid]);
                 (_, _, dev) = await GetUSBDeviceByHardwareID(hardwareid, true);
             }
 
-            if (exitCode == 0)
+            if (ret == 0)
             {
                 return (ExitCode.Success, "", dev);
             }
         }
         
-        return  ((int)exitCode >= (int)ExitCode.NotFound ? exitCode : ExitCode.DetachError, stderr, dev);
+        return  ((int)ret >= (int)ExitCode.NotFound ? (ExitCode)ret : ExitCode.DetachError, stderr, dev);
     }
 
     public static async Task<(ExitCode exitCode, string errMsg)> 
@@ -497,12 +543,12 @@ public partial class USBIPD
     public static async Task<(ExitCode exitCode, string errMsg, List<USBDevice>? devList)> 
         ListAllUSBDevices()
     {
-        var (exitCode, stdout, stderr) = await RunPowerShellScripts(CmdGetAllDevices, 2000);
+        var (ret, stdout, stderr) = await RunPowerShellScripts(CmdGetAllDevices, 2000);
 
-        if (exitCode != ExitCode.Success)
+        if (ret != (int)ExitCode.Success)
         {
             log.Warn($"Failed to fetch USB device list: {stderr}");
-            return (exitCode, stderr, []);
+            return ((ExitCode)ret, stderr, []);
         }
 
         return (ExitCode.Success, "", ParseStringDevInfoToUSBDeviceList(stdout));
@@ -512,12 +558,12 @@ public partial class USBIPD
         ListConnectedDevices()
     {
         string cmd = $"{CmdGetAllDevices} | Where-Object {{$_.IsConnected}}";
-        var(exitCode, stdout, stderr) = await RunPowerShellScripts(cmd, 2000);
+        var(ret, stdout, stderr) = await RunPowerShellScripts(cmd, 2000);
 
-        if (exitCode != ExitCode.Success)
+        if (ret != (int)ExitCode.Success)
         {
             log.Warn($"Failed to fetch connected devices: {stderr}");
-            return (exitCode, stderr, []);
+            return ((ExitCode)ret, stderr, []);
         }
 
         return (ExitCode.Success, "", ParseStringDevInfoToUSBDeviceList(stdout));
@@ -527,12 +573,12 @@ public partial class USBIPD
         ListPersistedDevices()
     {
         string cmd = $"{CmdGetAllDevices} | Where-Object {{-not $_.IsConnected -and $_.IsBound}}";
-        var (exitCode, stdout, stderr) = await RunPowerShellScripts(cmd, 2000);
+        var (ret, stdout, stderr) = await RunPowerShellScripts(cmd, 2000);
 
-        if (exitCode != 0 || stdout.Length == 0)
+        if (ret != 0 || stdout.Length == 0)
         {
             log.Warn($"Failed to fetch persisted devices: {stderr}");
-            return (exitCode, stderr, []);
+            return ((ExitCode)ret, stderr, []);
         }
 
         return (ExitCode.Success, "", ParseStringDevInfoToUSBDeviceList(stdout));

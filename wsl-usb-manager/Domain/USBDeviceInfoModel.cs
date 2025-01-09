@@ -204,6 +204,7 @@ public class USBDeviceInfoModel : ViewModelBase
             {
                 return false;
             }
+            await Task.Delay(1000);
         }
 
         if (!Device.IsAttached)

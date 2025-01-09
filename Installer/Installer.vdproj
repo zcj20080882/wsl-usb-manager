@@ -33,13 +33,19 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_753D8C9ACE224AD5A845296C9DDC10BB"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_7EE1B59F96FB4203B533C39BC25A137C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_833E284A9AEF4B30B9D8285F775B405A"
+        "MsmKey" = "8:_D76EA1035E7C452FA5FDF84AA9613F90"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -57,7 +63,7 @@
         "DisplayName" = "8:Debug"
         "IsDebugOnly" = "11:TRUE"
         "IsReleaseOnly" = "11:FALSE"
-        "OutputFilename" = "8:Debug\\WSL-USB-Manager-v1.1.0}.msi"
+        "OutputFilename" = "8:Debug\\WSL-USB-Manager-v1.1.0.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -89,7 +95,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:Release\\WSL-USB-Manager-v1.1.0}.msi"
+        "OutputFilename" = "8:Release\\WSL-USB-Manager-v1.1.0.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -211,6 +217,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_753D8C9ACE224AD5A845296C9DDC10BB"
+            {
+            "SourcePath" = "8:..\\wsl-usb-manager\\bin\\Release\\net8.0-windows\\win-x64\\wsl-usb-manager.deps.json"
+            "TargetName" = "8:wsl-usb-manager.deps.json"
+            "Tag" = "8:"
+            "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7EE1B59F96FB4203B533C39BC25A137C"
             {
             "SourcePath" = "8:..\\wsl-usb-manager\\images\\appicon.ico"
@@ -231,10 +257,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_833E284A9AEF4B30B9D8285F775B405A"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D76EA1035E7C452FA5FDF84AA9613F90"
             {
-            "SourcePath" = "8:..\\wsl-usb-manager\\bin\\x64\\Release\\net8.0-windows\\win-x64\\wsl-usb-manager.deps.json"
-            "TargetName" = "8:wsl-usb-manager.deps.json"
+            "SourcePath" = "8:..\\wsl-usb-manager\\bin\\Release\\net8.0-windows\\win-x64\\wsl-usb-manager.dll.config"
+            "TargetName" = "8:wsl-usb-manager.dll.config"
             "Tag" = "8:"
             "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
             "Condition" = "8:"
@@ -318,8 +344,8 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:WSL USB Manager"
-        "ProductCode" = "8:{046E2379-2319-4FC3-B92B-B63CE07D3999}"
-        "PackageCode" = "8:{DE528D97-E8B3-45A2-A388-6186C1F20976}"
+        "ProductCode" = "8:{CEEA1627-AFBE-4D74-9CC9-B0BA19595440}"
+        "PackageCode" = "8:{7E114B36-38E2-4C41-88E1-FAC1A6629E70}"
         "UpgradeCode" = "8:{E25B9175-97B9-4342-A1E3-81A09A0398E2}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -962,7 +988,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_F9FC334E920C467C88B5D18882D778F3"
             {
-            "SourcePath" = "8:..\\wsl-usb-manager\\obj\\x64\\Release\\net8.0-windows\\win-x64\\apphost.exe"
+            "SourcePath" = "8:..\\wsl-usb-manager\\obj\\Release\\net8.0-windows\\win-x64\\apphost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"

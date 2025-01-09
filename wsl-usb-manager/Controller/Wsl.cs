@@ -19,10 +19,13 @@ using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Printing.IndexedProperties;
+using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Interop;
 using wsl_usb_manager.Resources;
+using static wsl_usb_manager.Controller.USBIPD;
 
 namespace wsl_usb_manager.Controller;
 
@@ -58,7 +61,8 @@ public partial class USBIPD
     private const string ErrNoWslDistributionRunningEn = $"There is no WSL 2 distribution running; keep a command prompt to a WSL 2 distribution open to leave it running.";
     private const string ErrNoWslDistributionRunningZh = $"未检测到正在运行的WSL2发行版；请打开一个WSL2发行版的命令提示符，以保持其运行。";
     
-    private static bool IsChinese() => Lang.IsChinese();
+    private const int WslRunTimeout = 5000;
+    
     private static string? GetPossibleBlockReason()
     {
         using var policy = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile");
@@ -91,7 +95,7 @@ public partial class USBIPD
     {
         var stdout = string.Empty;
         var stderr = string.Empty;
-        int exitCode = (int)ExitCode.Failure;
+        int exitCode = 0;
         var startInfo = new ProcessStartInfo
         {
             FileName = WslPath,
@@ -139,7 +143,7 @@ public partial class USBIPD
 
         if (process == null)
         {
-            exitCode = (int)ExitCode.Failure;
+            exitCode = (int)ExitCode.UnknownError;
             if (IsChinese())
             {
                 stderr = $"无法启动子进程 \"{WslPath} {string.Join(" ", arguments)}\"。{Environment.NewLine}错误信息: {stderr}";
@@ -150,19 +154,160 @@ public partial class USBIPD
         else
         {
             exitCode = process.ExitCode;
-            if (exitCode != 0)
+            if (process.ExitCode != 0)
             {
                 if (IsChinese())
                 {
-                    stderr = $"执行 \"{WslPath} {string.Join(" ", arguments)}\" 失败。{Environment.NewLine}错误信息: {stderr}; 退出码：{exitCode}";
+                    stderr = $"执行 \"{WslPath} {string.Join(" ", arguments)}\" 失败。{Environment.NewLine}错误信息: {stderr}; 退出码：{process.ExitCode}";
                 }
                 else
-                    stderr = $"Failed to start \"{WslPath} {string.Join(" ", arguments)}\".{Environment.NewLine}Error: {stderr}; Exit Code: {exitCode}";
+                    stderr = $"Failed to start \"{WslPath} {string.Join(" ", arguments)}\".{Environment.NewLine}Error: {stderr}; Exit Code: {process.ExitCode}";
+                log.Info(stdout);
                 log.Error(stderr);
             }
         }
 
         return new(exitCode, stdout, stderr);
+    }
+
+    private static async Task<(int ExitCode, string StandardOutput, string StandardErrorr)> CheckWslKernel(string distribution)
+    {
+        var wslResult = await RunWslAsync((distribution, "/"), WslRunTimeout, "zgrep", "CONFIG_USBIP_VHCI_HCD", "/proc/config.gz");
+        if (wslResult.ExitCode != 0 && !wslResult.StandardOutput.Contains("CONFIG_USBIP_VHCI_HCD"))
+        {
+            if (IsChinese())
+                wslResult.StandardError = $"无法获取 WSL 内核配置：{wslResult.StandardError}";
+            else
+                wslResult.StandardError = $"Unable to get WSL kernel configuration: {wslResult.StandardError}";
+            
+            return wslResult;
+        }
+
+        var config = wslResult.StandardOutput;
+        if (config.Contains("CONFIG_USBIP_VHCI_HCD=y"))
+        {
+            // USBIP client built-in, we're done
+        }
+        else if (config.Contains("CONFIG_USBIP_VHCI_HCD=m"))
+        {
+            // USBIP client built as a module
+
+            // Expected output:
+            //
+            //    ...
+            //    vhci_hcd 61440 0 - Live 0x0000000000000000
+            //    ...
+            log.Info($"Checking vhci_hcd module...");
+            wslResult = await RunWslAsync((distribution, "/"), 1000, "cat", "/proc/modules");
+            if (wslResult.ExitCode != 0)
+            {
+                if (!IsChinese())
+                    wslResult.StandardError = $"Unable to get WSL kernel modules: {wslResult.StandardError}";
+                else
+                    wslResult.StandardError = $"无法获取内核驱动模块信息: {wslResult.StandardError}";
+                log.Error(wslResult.StandardError);
+                return wslResult;
+            }
+
+            if (!wslResult.StandardOutput.Contains("vhci_hcd"))
+            {
+                log.Info($"Loading vhci_hcd module.");
+                wslResult = await RunWslAsync((distribution, "/"), 1000, "modprobe", "vhci_hcd");
+                if (wslResult.ExitCode != 0)
+                {
+                    if (!IsChinese())
+                        wslResult.StandardError = $"Loading vhci_hcd failed: {wslResult.StandardError}";
+                    else
+                        wslResult.StandardError = $"加载 vhci_hcd 模块失败: {wslResult.StandardError}";
+                    log.Error(wslResult.StandardError);
+                    return wslResult;
+                }
+                // Expected output:
+                //
+                //    ...
+                //    vhci_hcd 61440 0 - Live 0x0000000000000000
+                //    ...
+                wslResult = await RunWslAsync((distribution, "/"), 1000, "cat", "/proc/modules");
+                if (wslResult.ExitCode != 0)
+                {
+                    if (!IsChinese())
+                        wslResult.StandardError = $"Unable to get WSL kernel modules: {wslResult.StandardError}";
+                    else
+                        wslResult.StandardError = $"无法获取内核驱动模块信息: {wslResult.StandardError}";
+                    log.Error(wslResult.StandardError);
+                    return wslResult;
+                }
+                if (!wslResult.StandardOutput.Contains("vhci_hcd"))
+                {
+                    if (!IsChinese())
+                        wslResult.StandardError = $"Loading vhci_hcd failed: {wslResult.StandardError}";
+                    else
+                        wslResult.StandardError = $"加载 vhci_hcd 模块失败: {wslResult.StandardError}";
+                    log.Error(wslResult.StandardError);
+                    wslResult.ExitCode = (int)ExitCode.Failure;
+                    return wslResult;
+                }
+            }
+        }
+        else
+        {
+            wslResult.ExitCode = (int)ExitCode.LowVersion;
+            if (!IsChinese())
+                wslResult.StandardError = $"WSL kernel is not USBIP capable; update with 'wsl --update'.";
+            else
+                wslResult.StandardError = $"WSL 内核不支持 USBIP 功能；请使用 “wsl --update” 命令进行更新。";
+            log.Error(wslResult.StandardError);
+        }
+        return wslResult;
+    }
+
+    private static async Task<(int exitCode, string stdout, string stderr)> MountWslPath(string distribution)
+    {
+        // Ensure our wsl directory is mounted.
+        // NOTE: This should resolve all issues for users that modified [automount], such as:
+        //       disabled automount, mounting at weird locations, mounting non-executable, etc.
+        // NOTE: We don't know the shell type (for example, docker-desktop does not even have bash),
+        //       so be as portable as possible: single line, use 'test', quote all paths, etc.
+        var result = await RunWslAsync((distribution, "/"), 1000, "/bin/sh", "-c", $$"""
+                if ! test -d "{{WslMountPoint}}"; then
+                    mkdir -m 0000 "{{WslMountPoint}}";
+                fi;
+                if ! test -f "{{WslMountPoint}}/usbip"; then
+                    mount -t drvfs -o "ro,umask=222" "{{USBIPD_WSL_PATH}}" "{{WslMountPoint}}";
+                    sleep 0.5;
+                fi;
+                if test -f "{{WslMountPoint}}/usbip"; then
+                    chmod a+x "{{WslMountPoint}}/usbip" > /dev/null 2>&1;
+                    echo "Success to mount WSL path.";
+                    exit 0;
+                else
+                    echo "Failed to mount WSL path.";
+                    exit 1;
+                fi;
+                """.ReplaceLineEndings(" "));
+        if (!result.StandardOutput.Contains("Success to mount WSL path"))
+        {
+            if (!IsChinese())
+                result.StandardError = $"Mounting '{USBIPD_WSL_PATH}' within WSL failed: {result.StandardError}";
+            else
+                result.StandardError = $"挂载 '{USBIPD_WSL_PATH}' 到 WSL 失败: {result.StandardError}";
+            log.Error(result.StandardError);
+            result.ExitCode = (int)ExitCode.Failure;
+            return result;
+        }
+
+        result = await RunWslAsync((distribution, WslMountPoint), 1000, "./usbip", "version");
+        if (result.ExitCode != 0 || result.StandardOutput.Trim() != "usbip (usbip-utils 2.0)")
+        {
+            result.ExitCode = (int)ExitCode.Failure;
+            if (!IsChinese())
+                result.StandardError = $"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.";
+            else
+                result.StandardError = $"无法运行 'usbip' 客户端工具. 请到 https://github.com/dorssel/usbipd-win/issue 报告问题。";
+            log.Error(result.StandardError);
+        }
+
+        return result;
     }
 
     enum FirewallCheckResult
@@ -180,26 +325,12 @@ public partial class USBIPD
     {
         var distribution = "";
         var err_msg = "";
-        var wslWindowsPath = Path.Combine(USBIPD.GetUSBIPDInstallPath(), "WSL");
-        USBDevice? devinfo = null;
-        var(exitCode, stdout, stderr) = await CheckUsbipdWinInstallation();
-        if (exitCode != ExitCode.Success)
+        USBDevice? newDev = null;
+
+        var result = await CheckUSBIPDWin();
+        if (result.ExitCode != (int)ExitCode.Success)
         {
-            USBIPD_INSTALL_PATH = string.Empty;
-            return (exitCode, stderr, null);
-        }
-        if (!Path.Exists(wslWindowsPath))
-        {
-            USBIPD_INSTALL_PATH = string.Empty;
-            err_msg = $"{(IsChinese() ? ErrUsbipNotInstalledZH : ErrUsbipNotInstalledEN)}";
-            log.Error(err_msg);
-            return (ExitCode.LowVersion, err_msg, devinfo);
-        }
-        if ((Path.GetPathRoot(wslWindowsPath) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
-        {
-            err_msg = (IsChinese() ? ErrUsbipLocationZH : ErrUsbipLocationEN);
-            log.Error(err_msg);
-            return (ExitCode.AttachError, err_msg, devinfo);
+            return ((ExitCode)result.ExitCode, result.StandardError, newDev);
         }
 
         // Figure out which distribution to use. WSL can be in many states:
@@ -219,47 +350,32 @@ public partial class USBIPD
         //
         // We provide enough instructions to the user how to fix whatever
         // error/warning we give. Or else we get flooded with "it doesn't work" issues...
-
-        if (await GetWSLDistributions() is not IEnumerable<Distribution> distributions)
-        {
-            // check (a) failed
-            err_msg = (IsChinese() ? ErrWslNotAvalibleZH : ErrWslNotAvalibleEN);
-            log.Error(err_msg);
-            return (ExitCode.AttachError, err_msg, devinfo);
-        }
-
-        // check (c1)
-        if (!distributions.Any())
-        {
-            err_msg = (IsChinese() ? ErrNoWslDistributionZH : ErrNoWslDistributionEN);
-            log.Error(err_msg);
-            return (ExitCode.AttachError, err_msg, devinfo);
-        }
-
-        // check (c2)
+        (ExitCode exitCode,err_msg, IEnumerable<Distribution>? distributions) = await GetWSLDistributions();
+        if(exitCode != ExitCode.Success || distributions is null)
+            return (ExitCode.AttachError, err_msg, newDev);
+        
+        // check distribution version
         if (!distributions.Any(d => d.Version == 2))
         {
             err_msg = IsChinese() ? ErrWslVersionZh : ErrWslVersionEn;
             log.Error(err_msg);
-            return (ExitCode.AttachError, err_msg, devinfo);
+            return (ExitCode.AttachError, err_msg, newDev);
         }
 
-        // check (c3)
+        // check is any distribution running
         if (!distributions.Any(d => d.Version == 2 && d.IsRunning))
         {
             err_msg = IsChinese() ? ErrNoWslDistributionRunningZh : ErrNoWslDistributionRunningEn;
             log.Error(err_msg);
-            return (ExitCode.AttachError, err_msg, devinfo);
+            return (ExitCode.AttachError, err_msg, newDev);
         }
 
         if (distributions.FirstOrDefault(d => d.IsDefault && d.Version == 2 && d.IsRunning) is Distribution defaultDistribution)
         {
-            // case (c4i)
             distribution = defaultDistribution.Name;
         }
         else
         {
-            // case (c4ii)
             distribution = distributions.First(d => d.Version == 2 && d.IsRunning).Name;
         }
 
@@ -269,138 +385,41 @@ public partial class USBIPD
         // We now have determined which running version 2 distribution to use.
 
         // Check: WSL kernel must be USBIP capable.
+        for (int retry = 0; retry < 4; retry++)
         {
-            var wslResult = await RunWslAsync((distribution, "/"), 1000, "zgrep", "CONFIG_USBIP_VHCI_HCD", "/proc/config.gz");
-            if (wslResult.ExitCode != 0)
+            result = await CheckWslKernel(distribution);
+            if (result.ExitCode == (int)ExitCode.Success)
             {
-                if (IsChinese())
-                    err_msg = $"Unable to get WSL kernel configuration: {wslResult.StandardError}";
-                else
-                    err_msg = $"无法获取 WSL 内核配置：{wslResult.StandardError}";
-                log.Error(err_msg);
-                return (ExitCode.AttachError, err_msg, devinfo);
+                break;
             }
-
-            var config = wslResult.StandardOutput;
-            if (config.Contains("CONFIG_USBIP_VHCI_HCD=y"))
+            if (retry >= 3)
             {
-                // USBIP client built-in, we're done
+                return (ExitCode.AttachError, result.StandardError, newDev);
             }
-            else if (config.Contains("CONFIG_USBIP_VHCI_HCD=m"))
-            {
-                // USBIP client built as a module
-
-                // Expected output:
-                //
-                //    ...
-                //    vhci_hcd 61440 0 - Live 0x0000000000000000
-                //    ...
-                wslResult = await RunWslAsync((distribution, "/"), 1000, "cat", "/proc/modules");
-                if (wslResult.ExitCode != 0)
-                {
-                    if (IsChinese())
-                        err_msg = $"Unable to get WSL kernel modules: {wslResult.StandardError}";
-                    else
-                        err_msg = $"无法获取内核驱动模块信息: {wslResult.StandardError}";
-                    log.Error(err_msg);
-                    return (ExitCode.AttachError, err_msg, devinfo);
-                }
-
-                if (!wslResult.StandardOutput.Contains("vhci_hcd"))
-                {
-                    log.Info($"Loading vhci_hcd module.");
-                    wslResult = await RunWslAsync((distribution, "/"), 1000, "modprobe", "vhci_hcd");
-                    if (wslResult.ExitCode != 0)
-                    {
-                        if (IsChinese())
-                            err_msg = $"Loading vhci_hcd failed: {wslResult.StandardError}";
-                        else
-                            err_msg = $"加载 vhci_hcd 模块失败: {wslResult.StandardError}";
-                        log.Error(err_msg);
-                        return (ExitCode.AttachError, err_msg, devinfo);
-                    }
-                    // Expected output:
-                    //
-                    //    ...
-                    //    vhci_hcd 61440 0 - Live 0x0000000000000000
-                    //    ...
-                    wslResult = await RunWslAsync((distribution, "/"), 1000, "cat", "/proc/modules");
-                    if (wslResult.ExitCode != 0)
-                    {
-                        if (IsChinese())
-                            err_msg = $"Unable to get WSL kernel modules: {wslResult.StandardError}";
-                        else
-                            err_msg = $"无法获取内核驱动模块信息: {wslResult.StandardError}";
-                        log.Error(err_msg);
-                        return (ExitCode.AttachError, err_msg, devinfo);
-                    }
-                    if (!wslResult.StandardOutput.Contains("vhci_hcd"))
-                    {
-                        if (IsChinese())
-                            err_msg = $"Loading vhci_hcd failed: {wslResult.StandardError}";
-                        else
-                            err_msg = $"加载 vhci_hcd 模块失败: {wslResult.StandardError}";
-                        log.Error(err_msg);
-                        return (ExitCode.AttachError, err_msg, devinfo);
-                    }
-                }
-            }
-            else
-            {
-                if (IsChinese())
-                    err_msg = $"WSL kernel is not USBIP capable; update with 'wsl --update'.";
-                else
-                    err_msg = $"WSL 内核不支持 USBIP 功能；请使用 “wsl --update” 命令进行更新。";
-                log.Error(err_msg);
-                return (ExitCode.AttachError, err_msg, devinfo);
-            }
+            await Task.Delay(500);
         }
 
-        // Ensure our wsl directory is mounted.
-        // NOTE: This should resolve all issues for users that modified [automount], such as:
-        //       disabled automount, mounting at weird locations, mounting non-executable, etc.
-        // NOTE: We don't know the shell type (for example, docker-desktop does not even have bash),
-        //       so be as portable as possible: single line, use 'test', quote all paths, etc.
+        // Mount WSL path on windows and usbip
+        for (int retry = 0; retry < 4; retry++)
         {
-            var wslResult = await RunWslAsync((distribution, "/"), 1000, "/bin/sh", "-c", $$"""
-                if ! test -d "{{WslMountPoint}}"; then
-                    mkdir -m 0000 "{{WslMountPoint}}";
-                fi;
-                if ! test -f "{{WslMountPoint}}/README.md"; then
-                    mount -t drvfs -o "ro,umask=222" "{{wslWindowsPath}}" "{{WslMountPoint}}";
-                fi;
-                """.ReplaceLineEndings(" "));
-            if (wslResult.ExitCode != 0)
+            result = await MountWslPath(distribution);
+            if (result.ExitCode == (int)ExitCode.Success)
             {
-                if (IsChinese())
-                    err_msg = $"Mounting '{wslWindowsPath}' within WSL failed: {wslResult.StandardError}";
-                else
-                    err_msg = $"挂载 '{wslWindowsPath}' 到 WSL 失败: {wslResult.StandardError}";
-                log.Error(err_msg);
-                return (ExitCode.AttachError, err_msg, devinfo);
+                break;
             }
-        }
-
-        // Check: our distribution-independent usbip client must be runnable.
-        {
-            var wslResult = await RunWslAsync((distribution, WslMountPoint), 1000, "./usbip", "version");
-            if (wslResult.ExitCode != 0 || wslResult.StandardOutput.Trim() != "usbip (usbip-utils 2.0)")
+            if (retry >= 3)
             {
-                if (IsChinese())
-                    err_msg = $"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.";
-                else
-                    err_msg = $"无法运行 'usbip' 客户端工具. 请到 https://github.com/dorssel/usbipd-win/issue 报告问题。";
-                log.Error(err_msg);
-                return (ExitCode.AttachError, err_msg, devinfo);
+                return (ExitCode.AttachError, result.StandardError, newDev);
             }
+            await Task.Delay(500);
         }
-
+        
         // Now find out the IP address of the host.
         IPAddress hostAddress;
         if (hostIP is null || hostIP.Length == 0)
         {
-            var wslResult = await RunWslAsync((distribution, "/"), 1000, "/bin/wslinfo", "--networking-mode");
-            if (wslResult.ExitCode == 0 && wslResult.StandardOutput.Trim() == "mirrored")
+           result = await RunWslAsync((distribution, "/"), 1000, "/bin/wslinfo", "--networking-mode");
+            if (result.ExitCode == (int)ExitCode.Success && result.StandardOutput.Trim() == "mirrored")
             {
                 // mirrored networking mode ... we're done
                 hostAddress = IPAddress.Loopback;
@@ -411,8 +430,8 @@ public partial class USBIPD
                 var clientAddresses = new List<IPAddress>();
                 {
                     // We use 'cat /proc/net/fib_trie', where we assume 'cat' is available on all distributions and /proc/net/fib_trie is supported by the WSL kernel.
-                    var ipResult = await RunWslAsync((distribution, "/"), 500, "cat", "/proc/net/fib_trie");
-                    if (ipResult.ExitCode == 0)
+                    result = await RunWslAsync((distribution, "/"), 500, "cat", "/proc/net/fib_trie");
+                    if (result.ExitCode == (int)ExitCode.Success)
                     {
                         // Example output:
                         //
@@ -438,7 +457,7 @@ public partial class USBIPD
                         //
                         // These are the interface addresses.
 
-                        for (var match = LocalAddressRegex().Match(ipResult.StandardOutput); match.Success; match = match.NextMatch())
+                        for (var match = LocalAddressRegex().Match(result.StandardOutput); match.Success; match = match.NextMatch())
                         {
                             if (!IPAddress.TryParse(match.Groups[1].Value, out var clientAddress))
                             {
@@ -464,12 +483,12 @@ public partial class USBIPD
                 }
                 if (clientAddresses.Count == 0)
                 {
-                    if (IsChinese())
+                    if (!IsChinese())
                         err_msg = $"WSL does not appear to have network connectivity; try `wsl --shutdown` and then restart WSL.";
                     else
                         err_msg = $"WSL 似乎没有网络连接；尝试使用wsl--shutdown命令，然后重新启动 WSL。";
                     log.Error(err_msg);
-                    return (ExitCode.AttachError, err_msg, devinfo);
+                    return (ExitCode.AttachError, err_msg, newDev);
                 }
 
                 // Get all non-loopback unicast IPv4 addresses (with their mask) for the host.
@@ -483,12 +502,12 @@ public partial class USBIPD
                 // Find any match; we'll just take the first.
                 if (hostAddresses.FirstOrDefault(ha => clientAddresses.Any(ca => IsOnSameIPv4Network(ha.Address, ha.IPv4Mask, ca))) is not UnicastIPAddressInformation matchHost)
                 {
-                    if (IsChinese())
+                    if (!IsChinese())
                         err_msg = $"The host IP address for the WSL virtual switch could not be found.";
                     else
                         err_msg = $"无法找到 WSL 虚拟交换机的主机 IP 地址。";
                     log.Error(err_msg);
-                    return (ExitCode.AttachError, err_msg, devinfo);
+                    return (ExitCode.AttachError, err_msg, newDev);
                 }
 
                 hostAddress = matchHost.Address;
@@ -502,12 +521,12 @@ public partial class USBIPD
             }
             catch
             {
-                if (IsChinese())
+                if (!IsChinese())
                     err_msg = $"'{hostIP}' is an invalid IP address.";
                 else
                     err_msg = $"'{hostIP}' 是一个无效的 IP 地址。";
                 log.Error(err_msg);
-                return (ExitCode.AttachError, err_msg, devinfo);
+                return (ExitCode.AttachError, err_msg, newDev);
             }
         }
 
@@ -517,26 +536,26 @@ public partial class USBIPD
         {
             // The current timeout is two seconds.
             // This used to be one second, but some users got false results due to WSL being slow to start the command.
-            FirewallCheckResult result;
+            FirewallCheckResult fwResult;
             // With minimal requirements (bash only) try to connect from WSL to our server.
-            var pingResult = await RunWslAsync((distribution, "/"), 1000, "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{USBIP_PORT}");
-            if (pingResult.StandardError.Contains("refused"))
+            result = await RunWslAsync((distribution, "/"), 1000, "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{USBIP_PORT}");
+            if (result.StandardOutput.Contains("refused"))
             {
                 // If the output contains "refused", then the test was executed and failed, irrespective of the exit code.
-                result = FirewallCheckResult.Fail;
+                fwResult = FirewallCheckResult.Fail;
             }
-            else if (pingResult.ExitCode == 0)
+            else if (result.ExitCode == (int)ExitCode.Success)
             {
                 // The test was executed, and returned within the timeout, and the connection was not actively refused (see above).
-                result = FirewallCheckResult.Pass;
+                fwResult = FirewallCheckResult.Pass;
             }
             else
             {
                 // The test was not executed properly (bash unavailable, /dev/tcp not supported, etc.).
-                result = FirewallCheckResult.Unknown;
+                fwResult = FirewallCheckResult.Unknown;
             }
 
-            switch (result)
+            switch (fwResult)
             {
                 case FirewallCheckResult.Unknown:
                 default:
@@ -547,7 +566,7 @@ public partial class USBIPD
                         {
                             // We found a possible blocker.
                             log.Error(blockReason);
-                            return (ExitCode.AttachError, blockReason, devinfo);
+                            return (ExitCode.AttachError, blockReason, newDev);
                         }
                     }
                     break;
@@ -561,7 +580,7 @@ public partial class USBIPD
                         }
                         else
                         {
-                            if (IsChinese())
+                            if (!IsChinese())
                                 err_msg = $"A firewall appears to be blocking the connection; ensure TCP port {USBIP_PORT} is allowed.";
                             else
                                 err_msg = $"似乎有防火墙阻止了连接；请确保 TCP 端口 '{USBIP_PORT}' 是被允许访问的。";
@@ -569,7 +588,7 @@ public partial class USBIPD
                         // In any case, it isn't working...
                         
                         log.Error(err_msg);
-                        return (ExitCode.AttachError, err_msg, devinfo);
+                        return (ExitCode.AttachError, err_msg, newDev);
                     }
                 case FirewallCheckResult.Pass:
                     // All is well.
@@ -581,41 +600,42 @@ public partial class USBIPD
         {
             string[] wslAttachCmd = ["./usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}"];
             int attachTimeout = 5000;
-            var wslResult = await RunWslAsync((distribution, WslMountPoint), attachTimeout, wslAttachCmd);
+            result = await RunWslAsync((distribution, WslMountPoint), attachTimeout, wslAttachCmd);
             for (int i = 0; i < 3; i++)
             {
-                (_, _, devinfo) = await GetUSBDeviceByBusID(busId);
-                if (wslResult.ExitCode != 0)
+                Thread.Sleep(500);
+                (_, _, newDev) = await GetUSBDeviceByBusID(busId);
+                if (result.ExitCode != 0)
                 {
-                    log.Warn($"Failed to attach device with busid '{busId}': {wslResult.StandardError}");
-                    if (devinfo != null && devinfo.IsAttached)
+                    log.Warn($"Failed to attach device with busid '{busId}': {result.StandardError}");
+                    if (newDev != null && newDev.IsAttached)
                     {
-                        return (ExitCode.Success, "", devinfo);
+                        return (ExitCode.Success, "", newDev);
                     }
                     
-                    if (wslResult.StandardError.Contains("Device busy"))
+                    if (result.StandardError.Contains("Device busy"))
                     {
-                        if (IsChinese())
+                        if (!IsChinese())
                             err_msg = $"The device appears to be used by Windows; stop the software using the device, or bind the device with force enabled.";
                         else
                             err_msg = $"该设备似乎正被 Windows 系统使用；请停止正在使用该设备的软件，或者启用强制绑定该设备。";
                     }
                     else
                     {
-                        err_msg = wslResult.StandardError;
+                        err_msg = result.StandardError;
                     }
                     log.Error(err_msg);
                     Thread.Sleep(500);
-                    wslResult = await RunWslAsync((distribution, WslMountPoint), attachTimeout, wslAttachCmd);
+                    result = await RunWslAsync((distribution, WslMountPoint), attachTimeout, wslAttachCmd);
                 }
                 else
                 {
-                    return (ExitCode.Success, "", devinfo);
+                    return (ExitCode.Success, "", newDev);
                 }
             }
         }
 
-        return (ExitCode.AttachError, err_msg, devinfo);
+        return (ExitCode.AttachError, err_msg, newDev);
     }
 
     internal static bool IsOnSameIPv4Network(IPAddress hostAddress, IPAddress hostMask, IPAddress clientAddress)
@@ -649,8 +669,9 @@ public partial class USBIPD
     /// <summary>
     /// Returns null if WSL 2 is not even installed.
     /// </summary>
-    public static async Task<IEnumerable<Distribution>?> GetWSLDistributions()
+    public static async Task<(ExitCode exitCode, string errMsg, IEnumerable<Distribution>? distributions)> GetWSLDistributions()
     {
+        string err_msg;
         if (!File.Exists(WslPath))
         {
             // Since WSL 2, the wsl.exe command is used to manage WSL.
@@ -658,7 +679,9 @@ public partial class USBIPD
             // Users with older (< 1903) Windows will simply get a report that WSL 2 is not available,
             //    even if they have WSL (version 1) installed. It won't work for them anyway.
             // We won't bother checking for the older wslconfig.exe that was used to manage WSL 1.
-            return null;
+            err_msg = (IsChinese() ? ErrWslNotAvalibleZH : ErrWslNotAvalibleEN);
+            log.Error(err_msg);
+            return (ExitCode.NotFound,err_msg,null);
         }
 
         var distributions = new List<Distribution>();
@@ -681,8 +704,12 @@ public partial class USBIPD
                 // Sanity check
                 if (!WslListHeaderRegex().IsMatch(details[0]))
                 {
-                    log.Error($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
-                    return null;
+                    if (IsChinese())
+                        err_msg = $"无法解析WSL分发版信息: {detailsResult.StandardOutput}";
+                    else
+                        err_msg = $"WSL failed to parse distributions: {detailsResult.StandardOutput}";
+                    log.Error(err_msg);
+                    return (ExitCode.NotFound, err_msg, null);
                 }
 
                 foreach (var line in details.Skip(1))
@@ -690,8 +717,12 @@ public partial class USBIPD
                     var match = WslListDistributionRegex().Match(line);
                     if (!match.Success)
                     {
-                        log.Error($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
-                        return null;
+                        if (IsChinese())
+                            err_msg = $"无法解析WSL分发版信息: {line}";
+                        else
+                            err_msg = $"WSL failed to parse distributions: {line}";
+                        log.Error(err_msg);
+                        return (ExitCode.NotFound, err_msg, null);
                     }
                     var isDefault = match.Groups[1].Value == "*";
                     var name = match.Groups[2].Value.TrimEnd();
@@ -714,7 +745,9 @@ public partial class USBIPD
                 if ((await RunWslAsync(null, 500, "--status")).ExitCode != 0)
                 {
                     // We conclude that WSL is indeed not installed at all.
-                    return null;
+                    err_msg = (IsChinese() ? ErrWslNotAvalibleZH : ErrWslNotAvalibleEN);
+                    log.Error(err_msg);
+                    return (ExitCode.NotFound, err_msg, null);
                 }
 
                 // We conclude that WSL is installed after all.
@@ -723,13 +756,21 @@ public partial class USBIPD
             case -1:
                 // This is returned by wsl.exe when WSL is installed, but there are no distributions installed.
                 // At least, that seems to be the case; it turns out that the wsl.exe command line interface isn't stable.
-                break;
+                err_msg = (IsChinese() ? ErrNoWslDistributionZH : ErrNoWslDistributionEN);
+                log.Error(err_msg);
+                return (ExitCode.NotFound, err_msg, null);
 
             default:
                 // An unknown response. Just assume WSL is installed and report no distributions.
                 break;
         }
 
-        return distributions.AsEnumerable();
+        if (distributions.Count == 0)
+        {
+            err_msg = (IsChinese() ? ErrNoWslDistributionZH : ErrNoWslDistributionEN);
+            log.Error(err_msg);
+            return (ExitCode.Failure, err_msg, null);
+        }
+        return (ExitCode.Success,"", distributions.AsEnumerable());
     }
 }

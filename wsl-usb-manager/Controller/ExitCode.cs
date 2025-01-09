@@ -24,5 +24,7 @@ public enum ExitCode
     UnbindError = 9,
     DetachError = 10,
     WslIsNotInstalled = 11,
-    WslIsNotRunning = 12
+    WslIsNotRunning = 12,
+    UnknownError = 255,
 };
+

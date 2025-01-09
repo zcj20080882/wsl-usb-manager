@@ -165,7 +165,7 @@ public partial class MainWindow : Window, INotifyService
         }
         if (string.IsNullOrEmpty(e.HardwareID))
         {
-            log.Error("Invalid hardware id.");
+            log.Debug("hardware id is empty.");
             return;
         }
 
@@ -177,12 +177,6 @@ public partial class MainWindow : Window, INotifyService
                 log.Error("Cannot get MainWindowViewModel");
                 return;
             }
-            //var (exitCode, version) = await USBIPD.CheckUsbipdWinInstallation();
-            //if (exitCode != ExitCode.Success)
-            //{
-            //    log.Warn("USBIPD-win is error.");
-            //    return;
-            //}
             await vm.USBEventProcess(e);
         });
         USBEventProcessing = false;

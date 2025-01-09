@@ -56,15 +56,6 @@ public partial class MainWindow : Window
         }
     }
 
-    //private async void Window_Loaded(object sender, RoutedEventArgs e)
-    //{
-    //    if (DataContext is MainWindowViewModel vm)
-    //    {
-    //        await USBIPD.CheckUsbipdWinInstallation();
-    //        //vm.UpdateWindow();
-    //    }
-    //}
-
     private void ListBoxNavigater_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         if (DataContext is MainWindowViewModel vm)

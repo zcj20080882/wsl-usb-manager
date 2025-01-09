@@ -119,9 +119,9 @@ public partial class USBMonitor
             }
             else
             {
-                log.Error($"Failed to get device id from {usbEventArgs.PNPDeviceID}");
+                log.Debug($"Failed to get device id from {usbEventArgs.PNPDeviceID}");
             }
-            log.Info($"{usbEventArgs.Name}({usbEventArgs.HardwareID}) is {(usbEventArgs.IsConnected ? "connected" : "disconnected")}");
+            log.Debug($"{usbEventArgs.Name}({usbEventArgs.HardwareID}) is {(usbEventArgs.IsConnected ? "connected" : "disconnected")}");
         }
 
         return usbEventArgs;
