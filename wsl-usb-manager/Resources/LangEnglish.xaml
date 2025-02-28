@@ -27,7 +27,10 @@
     <sys:String x:Key="OK">OK</sys:String>
     <sys:String x:Key="Cancel">Cancel</sys:String>
     <sys:String x:Key="Refresh">Refresh</sys:String>
-
+    <sys:String x:Key="ResetConfig">Restore default config</sys:String>
+    <sys:String x:Key="ClearLogFiles">Clear history logs</sys:String>
+    <sys:String x:Key="OpenCinfigPath">Open config path</sys:String>
+    
     <!--Device info text-->
     <sys:String x:Key="DeviceInfo">Device information:</sys:String>
     <sys:String x:Key="InstanceID">Instance ID</sys:String>
@@ -75,4 +78,6 @@
     <sys:String x:Key="ErrMsgUSBIPDNotInstalled">usbipd-win is not installed.</sys:String>
     <sys:String x:Key="InstallUSBIPDTips">Please visit https://github.com/dorssel/usbipd-win/releases to download usbipd-win with a version greater than 4.0.0 and install it. Then restart the application.</sys:String>
     <sys:String x:Key="ErrMsgUSBIPDVersionLow">The detected version ({version}) of usbipd-win is lower than 4.0.0,</sys:String>
+    <sys:String x:Key="ErrMsgDeviceNotConnected">not connected.</sys:String>
+    <sys:String x:Key="ErrMsgDeviceNotBound">not bound.</sys:String>
 </ResourceDictionary>

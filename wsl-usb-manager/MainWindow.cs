@@ -4,21 +4,19 @@
 * Class: MainWindow.cs
 * NameSpace: wsl_usb_manager
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
 using log4net;
 using MaterialDesignThemes.Wpf;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Interop;
 using System.Windows.Threading;
-using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 using wsl_usb_manager.MessageBox;
-using wsl_usb_manager.Resources;
+using wsl_usb_manager.USBIPD;
+using wsl_usb_manager.USBMonitor;
 
 namespace wsl_usb_manager;
 
@@ -26,6 +24,8 @@ public partial class MainWindow : Window, INotifyService
 {
     private static readonly NotifyIcon notifyIcon = new();
     private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
+    private static UsbMonitor? usbMonitor;
+    //private UsbDeviceNotification? usbDeviceNotification;
     private bool USBEventProcessing { get; set; } = false;
 
     protected override void OnStateChanged(EventArgs e)
@@ -44,56 +44,21 @@ public partial class MainWindow : Window, INotifyService
             base.OnClosing(e);
         }
     }
-    #region unused 
-    //private readonly UsbDeviceNotification usbDeviceNotification = new();
 
-    //protected override void OnSourceInitialized(EventArgs e)
-    //{
-    //    base.OnSourceInitialized(e);
-    //    var hwndSource = (HwndSource)PresentationSource.FromVisual(this);
-    //    hwndSource.AddHook(WndProc);
-    //    usbDeviceNotification.RegisterDeviceNotification(hwndSource.Handle);
-    //}
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        usbMonitor = new UsbMonitor(OnUSBEvent);
+        usbMonitor.Start();
+        //usbDeviceNotification = new UsbDeviceNotification(this);
+        //usbDeviceNotification.RegisterUSBEvent(OnUSBEvent);
+    }
 
-    //protected override void OnClosed(EventArgs e)
-    //{
-    //    usbDeviceNotification.UnregisterDeviceNotification();
-    //    base.OnClosed(e);
-    //}
-    //private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    //{
-    //    var message = new Message { HWnd = hwnd, Msg = msg, WParam = wParam, LParam = lParam };
-    //    usbDeviceNotification.WndProc(ref message);
-    //    return IntPtr.Zero;
-    //}
-    //private void USBDeviceChanged(object? sender, UsbDeviceEventArgs e)
-
-    //{
-    //    if (USBEventProcessing)
-    //    {
-    //        log.Warn("USB event is processing, ignore this event.");
-    //        return;
-    //    }
-    //    if (string.IsNullOrEmpty(e.HardwareID))
-    //    {
-    //        log.Error("Invalid hardware id.");
-    //        return;
-    //    }
-    //    USBEventProcessing = true;
-    //    Dispatcher.Invoke(async () =>
-    //    {
-    //        if (DataContext is not MainWindowViewModel vm)
-    //        {
-    //            log.Error("Cannot get MainWindowViewModel");
-    //            return;
-    //        }
-    //        await vm.USBEventProcess(e);
-    //    });
-    //    USBEventProcessing = false;
-    //}
-    #endregion
+    
     private void MenuExitButton_OnClick(object sender, RoutedEventArgs e)
     {
+        USBIPDWin.StopAutoAttachProcesses();
+        usbMonitor?.Stop();
         Environment.Exit(0);
     }
 
@@ -119,13 +84,6 @@ public partial class MainWindow : Window, INotifyService
 
     private void OnSelectedItemChanged(object sender, DependencyPropertyChangedEventArgs e)
         => MainScrollViewer.ScrollToHome();
-
-    private void InitializeUSBEvent()
-    {
-        //usbDeviceNotification.DeviceChanged += USBDeviceChanged;
-        USBMonitor m = new(OnUSBEvent);
-        m.Start();
-    }
 
     private static void ModifyTheme(bool isDarkTheme)
     {
@@ -156,7 +114,7 @@ public partial class MainWindow : Window, INotifyService
         NotifyService.RegisterNotifyService(this);
     }
     
-    private void OnUSBEvent(object sender, USBEventArgs e)
+    private void OnUSBEvent(USBEventArgs e)
     {
         if (USBEventProcessing)
         {

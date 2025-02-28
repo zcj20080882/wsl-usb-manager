@@ -4,14 +4,14 @@
 * Class: SystemConfig.cs
 * NameSpace: wsl_usb_manager.Settings
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
 
 // Ignore Spelling: App
 
-using wsl_usb_manager.Controller;
+using wsl_usb_manager.USBIPD;
 
 namespace wsl_usb_manager.Settings;
 

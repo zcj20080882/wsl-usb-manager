@@ -4,7 +4,7 @@
 * Class: App.cs
 * NameSpace: wsl_usb_manager
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
@@ -152,6 +152,46 @@ public partial class App : System.Windows.Application
         InitConfiguration();
     }
 
+    private static bool IsFileInUse(string filePath)
+    {
+        try
+        {
+            using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                return false;
+            }
+        }
+        catch (IOException)
+        {
+            return true;
+        }
+    }
+
+    public static void RemoveHistroicalLogs()
+    {
+        string logDirectory = Path.Combine(AppTempPath, "Logs/");
+        if (Directory.Exists(logDirectory))
+        {
+            var files = Directory.GetFiles(logDirectory, "*", SearchOption.AllDirectories);
+
+            foreach (var file in files)
+            {
+                if (!IsFileInUse(file))
+                {
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Error($"Failed to delete file: {file}. Error: {ex.Message}");
+                    }
+                }
+            }
+        }
+    }
+
+    public static string ConfigurationDirPath => AppTempPath;
     public static SystemConfig GetSysConfig() => SysConfig;
 
     public static ApplicationConfig GetAppConfig() => SysConfig.AppConfig;
@@ -163,6 +203,12 @@ public partial class App : System.Windows.Application
             SysConfig.AppConfig = appCfg;
             SaveConfig();
         }
+    }
+
+    public static void RestoreDefaultConfiguration()
+    {
+        SysConfig = new();
+        SaveConfig();
     }
 
     public static void SaveConfig()

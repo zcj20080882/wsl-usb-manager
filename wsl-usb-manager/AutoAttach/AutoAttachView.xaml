@@ -44,7 +44,7 @@
                       Grid.Row="0"
                       SelectedItem="{Binding SelectedDevice}"
                       SelectionMode="Single"
-                      ItemsSource="{Binding DevicesItems}"
+                      ItemsSource="{Binding DeviceInfoModules}"
                       md:DataGridAssist.ColumnHeaderPadding="5"
                       ContextMenu="{StaticResource ListViewContextMenu}"
                       PreviewMouseRightButtonUp="ListView_PreviewMouseRightButtonUp">

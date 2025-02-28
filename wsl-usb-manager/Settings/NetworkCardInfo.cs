@@ -2,15 +2,15 @@
 * SPDX-License-Identifier: MIT
 * Project: wsl-usb-manager
 * Class: NetworkCardInfo.cs
-* NameSpace: wsl_usb_manager.Controller
+* NameSpace: wsl_usb_manager.Settings
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
-* Create Date: 2024/10/17 20:22
+* Create Date: 2025/3/2 18:08
 ******************************************************************************/
 using System.Net.NetworkInformation;
 
-namespace wsl_usb_manager.Controller;
+namespace wsl_usb_manager.Settings;
 
 internal class NetworkCardInfo
 {

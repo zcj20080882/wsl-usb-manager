@@ -4,7 +4,7 @@
 * Class: AutoAttachView.xaml.cs
 * NameSpace: wsl_usb_manager.AutoAttach
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:31
 ******************************************************************************/
@@ -43,9 +43,9 @@ namespace wsl_usb_manager.AutoAttach
                             NotifyService.ShowErrorMessage("No device is selected.");
                         break;
                     case "MenuItemDeleteAll":
-                        if (dm.DevicesItems != null && dm.DevicesItems.Count > 0)
+                        if (dm.DeviceInfoModules != null && dm.DeviceInfoModules.Count > 0)
                         {
-                            foreach (var d in dm.DevicesItems)
+                            foreach (var d in dm.DeviceInfoModules)
                             {
                                 devicelist.Add(d);
                             }

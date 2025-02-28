@@ -4,7 +4,7 @@
 * Class: MainWindow.xaml.cs
 * NameSpace: wsl_usb_manager
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
@@ -24,7 +24,6 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        InitializeUSBEvent();
         InitNotifition();
         DataContext = new MainWindowViewModel();
         ModifyTheme(App.GetAppConfig().DarkMode == true);
@@ -63,4 +62,5 @@ public partial class MainWindow : Window
             vm.UpdateWindow();
         }
     }
+    
 }

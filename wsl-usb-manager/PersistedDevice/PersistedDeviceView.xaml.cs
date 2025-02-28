@@ -4,7 +4,7 @@
 * Class: PersistedDeviceView.xaml.cs
 * NameSpace: wsl_usb_manager.PersistedDevice
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
@@ -43,9 +43,9 @@ public partial class PersistedDeviceView : System.Windows.Controls.UserControl
                     await dm.UpdateDevices();
                     break;
                 case "MenuItemDeleteAll":
-                    if (dm.DevicesItems != null && dm.DevicesItems.Count > 0)
+                    if (dm.DeviceInfoModules != null && dm.DeviceInfoModules.Count > 0)
                     {
-                        foreach (var d in dm.DevicesItems)
+                        foreach (var d in dm.DeviceInfoModules)
                         {
                             await d.Unbind();
                         }

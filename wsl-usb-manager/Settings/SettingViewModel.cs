@@ -4,7 +4,7 @@
 * Class: SettingViewModel.cs
 * NameSpace: wsl_usb_manager.Settings
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
@@ -13,8 +13,12 @@
 
 using log4net;
 using System.Collections.ObjectModel;
-using wsl_usb_manager.Controller;
+using System.Diagnostics;
+using System.IO;
+using System.Windows;
+using System.Windows.Input;
 using wsl_usb_manager.Domain;
+using wsl_usb_manager.Resources;
 
 namespace wsl_usb_manager.Settings;
 
@@ -38,6 +42,9 @@ public class SettingViewModel : ViewModelBase
         SelectedForwardNetCard = appcfg.ForwardNetCard;
         IsSpecifyNetCard = appcfg.SpecifyNetCard;
         CloseToTray = appcfg.CloseToTray;
+        ResetCfgCommand = new CommandImplementations(RestorDefaultConfiguration);
+        ClearLogCommand = new CommandImplementations(ClearHistoryLog);
+        OpenLogPathCommand = new CommandImplementations(OpenConfigurationPath);
     }
 
 
@@ -69,6 +76,42 @@ public class SettingViewModel : ViewModelBase
         AppConfig.CloseToTray = CloseToTray;
         AppConfig.SpecifyNetCard = IsSpecifyNetCard;
         AppConfig.ForwardNetCard = SelectedForwardNetCard ?? "";
+    }
+
+    public ICommand ResetCfgCommand { get; }
+    public ICommand ClearLogCommand { get; }
+    public ICommand OpenLogPathCommand { get; }
+
+    private void RestorDefaultConfiguration(object? obj)
+    {
+        App.RestoreDefaultConfiguration();
+        ApplicationConfig appcfg = App.GetAppConfig();
+        AppConfig = appcfg;
+        SelectedForwardNetCard = appcfg.ForwardNetCard;
+        IsSpecifyNetCard = appcfg.SpecifyNetCard;
+        CloseToTray = appcfg.CloseToTray;
+    }
+
+    private void ClearHistoryLog(object? obj)
+    {
+        App.RemoveHistroicalLogs();
+        System.Windows.MessageBox.Show(Lang.IsChinese() ? "历史日志已经删除。":"History logs have been cleared.", Lang.IsChinese() ? "提示" : "Note");
+    }
+    private void OpenConfigurationPath(object? obj)
+    {
+        if (!string.IsNullOrEmpty(App.ConfigurationDirPath) && Directory.Exists(App.ConfigurationDirPath))
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = App.ConfigurationDirPath,
+                UseShellExecute = true,
+                Verb = "open"
+            });
+        }
+        else
+        {
+            log.Error($"Directory does not exist: {App.ConfigurationDirPath}");
+        }
     }
 }
 

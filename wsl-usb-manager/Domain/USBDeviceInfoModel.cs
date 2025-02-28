@@ -4,7 +4,7 @@
 * Class: USBDeviceInfoModel.cs
 * NameSpace: wsl_usb_manager.Domain
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/18 19:21
 ******************************************************************************/
@@ -12,7 +12,8 @@
 // Ignore Spelling: usb
 
 using log4net;
-using wsl_usb_manager.Controller;
+using wsl_usb_manager.Settings;
+using wsl_usb_manager.USBIPD;
 
 namespace wsl_usb_manager.Domain;
 
@@ -144,62 +145,43 @@ public class USBDeviceInfoModel : ViewModelBase
     public async Task<bool> Bind()
     {
         Device.IsForced = IsForced;
-        (ExitCode ret, string err) = await Device.Bind();
-        if (ret != ExitCode.Success)
+        var (Success, ErrMsg) = await Device.Bind();
+        if (!Success)
         {
-            NotifyService.ShowUSBIPDError(ret, err, Device);
+            NotifyService.ShowUSBIPDError(ErrorCode.DeviceBindFailed, ErrMsg, Device);
         }
         UpdateDeviceInfo();
         return IsBound;
     }
+
     public async Task<bool> Unbind()
     {
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
-        (ExitCode ret, string err) = await Device.Unbind();
-        if (ret != ExitCode.Success) {
-            NotifyService.ShowErrorMessage($"Failed to unbind '{name}': {err}");
+        var (Success, ErrMsg) = await Device.Unbind();
+        if (!Success) {
+            NotifyService.ShowErrorMessage($"Failed to unbind '{name}': {ErrMsg}");
         }
         UpdateDeviceInfo();
         return (!IsBound);
     }
+
     public async Task<bool> Attach()
     {
-        (ExitCode ret, string err) = await Device.Attach(NetworkCardInfo.GetIPAddress(App.GetAppConfig().ForwardNetCard));
-        if (ret != ExitCode.Success)
-        {
-            NotifyService.ShowUSBIPDError(ret,err,Device);
-        }
-        UpdateDeviceInfo();
-        return IsAttached;
-    }
-    public async Task<bool> Detach()
-    {
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
-        (ExitCode ret, string err) = await Device.Detach();
-        if (ret != ExitCode.Success)
-        {
-            NotifyService.ShowErrorMessage($"Failed to detach '{name}': {err}");
-        }
-        UpdateDeviceInfo();
-        return (!IsAttached);
-    }
-
-    public async Task<bool> AutoAttach()
-    {
-        string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
-        if (!IsInAutoAttachList())
-        {
-            return false;
-        }
 
         if (!Device.IsConnected)
         {
-            NotifyService.ShowErrorMessage($"The device '{name}' is not connected!");
+            NotifyService.ShowUSBIPDError(ErrorCode.DeviceNotConnected, $"The device '{name}' is not connected!", Device);
             return false;
         }
 
         if (!Device.IsBound)
         {
+            if (!IsAutoAttach)
+            {
+                NotifyService.ShowUSBIPDError(ErrorCode.DeviceNotBound, $"The device '{name}' is not bound!", Device);
+                return false;
+            }
             if (!await Bind())
             {
                 return false;
@@ -207,11 +189,28 @@ public class USBDeviceInfoModel : ViewModelBase
             await Task.Delay(1000);
         }
 
-        if (!Device.IsAttached)
+        var (Success, ErrMsg) = await Device.Attach(NetworkCardInfo.GetIPAddress(App.GetAppConfig().ForwardNetCard), IsAutoAttach);
+        if (!Success)
         {
-            return await Attach();
+            if(IsAutoAttach)
+                NotifyService.ShowNotification(ErrMsg);
+            else
+                NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, ErrMsg, Device);
         }
-        return true;    
+        UpdateDeviceInfo();
+        return IsAttached;
+    }
+
+    public async Task<bool> Detach()
+    {
+        string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
+        var (Success, ErrMsg) = await Device.Detach();
+        if (!Success)
+        {
+            NotifyService.ShowErrorMessage($"Failed to detach '{name}': {ErrMsg}");
+        }
+        UpdateDeviceInfo();
+        return (!IsAttached);
     }
 
     public async Task AddToAutoAttach()
@@ -227,7 +226,7 @@ public class USBDeviceInfoModel : ViewModelBase
         App.GetSysConfig().AddToAutoAttachDeviceList(Device);
         App.SaveConfig();
         NotifyService.ShowNotification($"'{name}' is added to auto attach list.");
-        await AutoAttach();
+        await Attach();
     }
 
     public void RemoveFromAutoAttach()

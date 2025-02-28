@@ -4,7 +4,7 @@
 * Class: BodyItem.cs
 * NameSpace: wsl_usb_manager.Domain
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/

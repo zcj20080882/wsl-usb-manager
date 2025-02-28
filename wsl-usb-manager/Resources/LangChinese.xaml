@@ -25,6 +25,9 @@
     <sys:String x:Key="OK">确定</sys:String>
     <sys:String x:Key="Cancel">取消</sys:String>
     <sys:String x:Key="Refresh">刷新设备</sys:String>
+    <sys:String x:Key="ResetConfig">恢复默认配置</sys:String>
+    <sys:String x:Key="ClearLogFiles">清除历史日志</sys:String>
+    <sys:String x:Key="OpenCinfigPath">打开配置目录</sys:String>
 
     <!--Device info text-->
     <sys:String x:Key="DeviceInfo">设备信息:</sys:String>
@@ -74,5 +77,7 @@
     <sys:String x:Key="ErrMsgUSBIPDNotInstalled">检测到usbipd-win没有安装。</sys:String>
     <sys:String x:Key="InstallUSBIPDTips">请访问 https://github.com/dorssel/usbipd-win/releases 下载版本大于4.0.0的usbipd-win并安装，然后重启本程序。</sys:String>
     <sys:String x:Key="ErrMsgUSBIPDVersionLow">检测到usbipd-win版本 ({version}) 低于4.0.0，</sys:String>
+    <sys:String x:Key="ErrMsgDeviceNotConnected">设备未连接</sys:String>
+    <sys:String x:Key="ErrMsgDeviceNotBound">设备未绑定</sys:String>
 
 </ResourceDictionary>

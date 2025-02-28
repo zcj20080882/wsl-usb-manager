@@ -4,14 +4,14 @@
 * Class: NotifyService.cs
 * NameSpace: wsl_usb_manager.Domain
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/12/7 22:41
 ******************************************************************************/
 using log4net;
 using System.Web;
-using wsl_usb_manager.Controller;
 using wsl_usb_manager.Resources;
+using wsl_usb_manager.USBIPD;
 
 namespace wsl_usb_manager.Domain;
 
@@ -43,7 +43,7 @@ public static class NotifyService
     public static void DisableWindow() => _notifyService?.DisableWindow();
     public static void EnableWindow() => _notifyService?.EnableWindow();
 
-    public static void ShowUSBIPDError(ExitCode exitCode, string error, USBDevice? dev)
+    public static void ShowUSBIPDError(ErrorCode errCode, string error, USBDevice? dev)
     {
         string name = "";
         string msg = "";
@@ -53,10 +53,10 @@ public static class NotifyService
             name = string.IsNullOrWhiteSpace(dev.Description) ? "" : dev.Description.Split(",")[0];
             name = $"{name} ({dev.HardwareId})";
         }
-        log.Warn($"USBIPD error: {exitCode}, {error}, {name}");
-        switch (exitCode)
+        log.Warn($"USBIPD error: {errCode}, {error}, {name}");
+        switch (errCode)
         {
-            case ExitCode.NotFound:
+            case ErrorCode.USBIPDNotFound:
                 if (Lang.GetText("ErrMsgUSBIPDNotInstalled") is string m1
                     && Lang.GetText("InstallUSBIPDTips") is string m2)
                 {
@@ -67,18 +67,18 @@ public static class NotifyService
                     msg = $"usbipd-win is not installed.{Environment.NewLine}{error}";
                 }
                 break;
-            case ExitCode.LowVersion:
+            case ErrorCode.USBIPDLowVersion:
                 if (Lang.GetText("ErrMsgUSBIPDVersionLow") is string s1
                     && Lang.GetText("InstallUSBIPDTips") is string s2)
                 {
-                    msg = $"{s1.Replace("{version}",USBIPD.GetUSBIPDVersion())} {s2}{Environment.NewLine}";
+                    msg = $"{s1.Replace("{version}", USBIPDWin.GetUSBIPDVersion())} {s2}{Environment.NewLine}";
                 }
                 else
                 {
-                    msg = $"usbipd-win version ({USBIPD.GetUSBIPDVersion()}) is too low.";
+                    msg = $"usbipd-win version ({USBIPDWin.GetUSBIPDVersion()}) is too low.";
                 }
                 break;
-            case ExitCode.BindError:
+            case ErrorCode.DeviceBindFailed:
                 if (Lang.GetText("ErrMsgBindFail") is string binderr)
                 {
                     msg = $"{binderr} {name}: {Environment.NewLine}{error}";
@@ -88,7 +88,7 @@ public static class NotifyService
                     msg = $"Failed to bind {name}: {Environment.NewLine}{error}";
                 }
                     break;
-            case ExitCode.AttachError:
+            case ErrorCode.DeviceAttachFailed:
                 if (Lang.GetText("ErrMsgAttachFail") is string atterr)
                 {
                     msg = $"{atterr} {name}: {Environment.NewLine}{error}";
@@ -98,7 +98,27 @@ public static class NotifyService
                     msg = $"Failed to attach {name}: {Environment.NewLine}{error}";
                 }
                 break;
-            case ExitCode.Failure:
+            case ErrorCode.DeviceNotConnected:
+                if (Lang.GetText("ErrMsgDeviceNotConnected") is string notconnected)
+                {
+                    msg = $"\"{name}\" {notconnected}";
+                }
+                else
+                {
+                    msg = $"The device {name} is not connected.";
+                }
+                break;
+            case ErrorCode.DeviceNotBound:
+                if (Lang.GetText("ErrMsgDeviceNotBound") is string notbound)
+                {
+                    msg = $"\"{name}\" {notbound}";
+                }
+                else
+                {
+                    msg = $"The device {name} is not bound.";
+                }
+                break;
+            case ErrorCode.Failure:
             default:
                 msg = error;
                 break;
