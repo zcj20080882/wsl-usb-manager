@@ -4,7 +4,7 @@
 * Class: MainWindowViewModel.cs
 * NameSpace: wsl_usb_manager
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
@@ -16,12 +16,13 @@ using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using wsl_usb_manager.AutoAttach;
-using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 using wsl_usb_manager.PersistedDevice;
 using wsl_usb_manager.Resources;
 using wsl_usb_manager.Settings;
 using wsl_usb_manager.USBDevices;
+using wsl_usb_manager.USBIPD;
+using wsl_usb_manager.USBMonitor;
 
 namespace wsl_usb_manager;
 
@@ -235,24 +236,40 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         string hardwareid = e.HardwareID ?? "";
         string? name = e.Name;
-        string msg;
+        string msg= "";
+        USBDevice? changedDev = null;
 
-        (ExitCode ret, msg, USBDevice? changedDev) = await USBIPD.GetUSBDeviceByHardwareID(hardwareid);
-        if (ret != ExitCode.Success)
+        if (string.IsNullOrEmpty(e.HardwareID))
         {
-            NotifyService.ShowUSBIPDError(ret, msg, null);
+            log.Warn("hardware id is empty.");
             return;
         }
+
+        //Wait for USBIPD to update the device list
+        //await Task.Delay(500);
+        var (ErrCode, ErrMsg, DevicesList) = await USBIPDWin.ListUSBDevices(hardwareid);
+        if (DevicesList != null && DevicesList.Count > 0)
+        {
+            changedDev = DevicesList?.FirstOrDefault(d => d.HardwareId.Equals(hardwareid, StringComparison.OrdinalIgnoreCase));
+            if (changedDev != null) {
+                name = string.IsNullOrWhiteSpace(changedDev.Description) ? changedDev.HardwareId : 
+                        changedDev.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
+                if (changedDev.IsConnected)
+                {
+                    msg = $"\"{name}({hardwareid})\" is connected to {(changedDev.IsAttached ? "WSL" : "Windows")}.";
+                    log.Info(msg);
+                    NotifyService.ShowNotification(msg);
+                }
+                else
+                {
+                    msg = $"\"{name}({hardwareid})\" is disconnected.";
+                    log.Info(msg);
+                    NotifyService.ShowNotification(msg);
+                }
+            }
+        }
+
         UpdateWindow();
-        if (changedDev != null && changedDev.IsConnected)
-        {
-            msg = $"\"{name}({hardwareid})\" is connected to {(changedDev.IsAttached ? "WSL" : "Windows")}.";
-            NotifyService.ShowNotification(msg);
-        }
-        else if(!e.IsConnected)
-        {
-            msg = $"\"{name}({hardwareid})\" is disconnected.";
-            NotifyService.ShowNotification(msg);
-        }
+        
     }
 }

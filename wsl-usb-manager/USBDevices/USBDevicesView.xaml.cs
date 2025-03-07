@@ -4,7 +4,7 @@
 * Class: USBDevicesView.xaml.cs
 * NameSpace: wsl_usb_manager.USBDevices
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
@@ -136,7 +136,7 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
             if (dm.SelectedDevice is USBDeviceInfoModel device)
             {
                 NotifyService.DisableWindow();
-                ObservableCollection<USBDeviceInfoModel>? oldList = dm.USBDevicesItems;
+                ObservableCollection<USBDeviceInfoModel>? oldList = dm.USBDeviceInfoModules;
                 switch (item.Name)
                 {
                     case "MenuItemBind":
@@ -170,15 +170,15 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
                         device.RemoveFromFilter();
                         break;
                     case "MenuItemShowHide":
-                        if (dm.USBDevicesItems == null)
+                        if (dm.USBDeviceInfoModules == null)
                         {
                             break;
                         }
-                        foreach (USBDeviceInfoModel usbDeviceInfo in dm.USBDevicesItems)
+                        foreach (USBDeviceInfoModel usbDeviceInfo in dm.USBDeviceInfoModules)
                         {
                             usbDeviceInfo.IsVisible = true;
                         }
-                        dm.USBDevicesItems = oldList;
+                        dm.USBDeviceInfoModules = oldList;
                         break;
                     default:
                         break;

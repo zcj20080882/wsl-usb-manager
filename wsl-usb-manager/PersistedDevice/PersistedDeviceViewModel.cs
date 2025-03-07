@@ -4,23 +4,23 @@
 * Class: PersistedDeviceViewModel.cs
 * NameSpace: wsl_usb_manager.PersistedDevice
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
 using log4net;
 using System.Collections.ObjectModel;
-using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
+using wsl_usb_manager.USBIPD;
 
 namespace wsl_usb_manager.PersistedDevice;
 
 public class PersistedDeviceViewModel : ViewModelBase
 {
-    public ObservableCollection<USBDeviceInfoModel>? DevicesItems { get => _devicesItems; set => SetProperty(ref _devicesItems, value); }
+    public ObservableCollection<USBDeviceInfoModel>? DeviceInfoModules { get => _deviceInfoModules; set => SetProperty(ref _deviceInfoModules, value); }
     public USBDeviceInfoModel? SelectedDevice { get => _selectedDevice; set => SetProperty(ref _selectedDevice, value); }
 
-    private ObservableCollection<USBDeviceInfoModel>? _devicesItems;
+    private ObservableCollection<USBDeviceInfoModel>? _deviceInfoModules;
     private USBDeviceInfoModel? _selectedDevice;
     private USBDeviceInfoModel? _lastSelectedDevice;
     private static readonly ILog log = LogManager.GetLogger(typeof(PersistedDeviceViewModel));
@@ -28,26 +28,28 @@ public class PersistedDeviceViewModel : ViewModelBase
     public async Task UpdateDevices()
     {
         _lastSelectedDevice = SelectedDevice;
-        ObservableCollection<USBDeviceInfoModel> DeviceList = [];
-        (ExitCode ret, string err, List<USBDevice>? persistedList) = await USBIPD.ListPersistedDevices();
-        if (ret != ExitCode.Success)
+        ObservableCollection<USBDeviceInfoModel> deviceInfoModules = [];
+        (ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList) = await USBIPDWin.ListPersistedDevices();
+        if (ErrCode != ErrorCode.Success)
         {
-            log.Error($"Failed to list persisted devices: {err}");
-            NotifyService.ShowUSBIPDError(ret, err, null);
+            log.Error($"Failed to list persisted devices: {ErrMsg}");
+            NotifyService.ShowUSBIPDError(ErrCode, ErrMsg, null);
             return;
         }
-        if (persistedList == null)
+        if (DevicesList == null || DevicesList.Count < 1)
             return;
-        foreach (var device in persistedList)
+
+        foreach (var device in DevicesList)
         {
             USBDeviceInfoModel item = new(device);
             if (!item.IsConnected)
-                DeviceList.Add(item);
+                deviceInfoModules.Add(item);
         }
-        DevicesItems = DeviceList;
-        if (_lastSelectedDevice != null && DevicesItems != null && DevicesItems.Any())
+        DeviceInfoModules = deviceInfoModules;
+        if (_lastSelectedDevice != null)
         {
-            SelectedDevice = DevicesItems?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, StringComparison.CurrentCultureIgnoreCase)) ?? DevicesItems?.First();
+            SelectedDevice = DeviceInfoModules?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, 
+                StringComparison.CurrentCultureIgnoreCase)) ?? DeviceInfoModules?.First();
         }
     }
 }

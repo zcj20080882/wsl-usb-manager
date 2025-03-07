@@ -4,7 +4,7 @@
 * Class: USBDevicesViewModel.cs
 * NameSpace: wsl_usb_manager.USBDevices
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:22
 ******************************************************************************/
@@ -14,8 +14,8 @@
 using log4net;
 using System.Collections.ObjectModel;
 using System.Xml.Linq;
-using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
+using wsl_usb_manager.USBIPD;
 
 namespace wsl_usb_manager.USBDevices;
 
@@ -32,7 +32,7 @@ public class USBDevicesViewModel : ViewModelBase
     public bool MenuUnhiddenEnabled { get => _menuUnhidenEnabled; set => SetProperty(ref _menuUnhidenEnabled, value); }
     public bool MenuAddToAutoEnabled { get => _menuAddToAutoEanbled; set => SetProperty(ref _menuAddToAutoEanbled, value); }
     public bool MenuRemoveFromAutoEnabled { get => _menuRemoveFromAutoEnabled; set => SetProperty(ref _menuRemoveFromAutoEnabled, value); }
-    public ObservableCollection<USBDeviceInfoModel>? USBDevicesItems { get => _usbDevicesItems; set => SetProperty(ref _usbDevicesItems, value); }
+    public ObservableCollection<USBDeviceInfoModel>? USBDeviceInfoModules { get => _usbDeviceInfoModules; set => SetProperty(ref _usbDeviceInfoModules, value); }
     public USBDeviceInfoModel? SelectedDevice { get => _selectedDevice; set => SetProperty(ref _selectedDevice, value); }
 
     public USBDevicesViewModel()
@@ -51,49 +51,46 @@ public class USBDevicesViewModel : ViewModelBase
     private bool _menuAddToAutoEanbled;
     private bool _menuRemoveFromAutoEnabled;
 
-    private ObservableCollection<USBDeviceInfoModel>? _usbDevicesItems;
+    private ObservableCollection<USBDeviceInfoModel>? _usbDeviceInfoModules;
     private USBDeviceInfoModel? _selectedDevice;
     private USBDeviceInfoModel? _lastSelectedDevice;
-    private List<USBDevice>? _connectedDeviceList;
 
     private bool _initialized = false;
 
-    public List<USBDevice>? ConnectedDeviceList { get => _connectedDeviceList; }
-
     public async Task UpdateDevices()
     {
-        ObservableCollection<USBDeviceInfoModel> DeviceList = [];
-        (ExitCode ret, string err, List<USBDevice>? USBDeviceList) = await USBIPD.ListConnectedDevices();
-        if (ret != ExitCode.Success)
+        ObservableCollection<USBDeviceInfoModel> DeviceInfoModuleList = [];
+        var (ErrCode, ErrMsg, DevicesList) = await USBIPDWin.ListConnectedDevices();
+        if (ErrCode != ErrorCode.Success)
         {
-            log.Warn($"Failed to get USB devices: {err}");
-            NotifyService.ShowUSBIPDError(ret, err,null);
+            log.Warn($"Failed to get USB devices: {ErrMsg}");
+            NotifyService.ShowUSBIPDError(ErrCode, ErrMsg, null);
             return;
         }
-        if (USBDeviceList == null)
+        if (DevicesList == null || DevicesList.Count < 1)
         {
             log.Debug($"No connected device is found.");
             return;
         }
 
         _lastSelectedDevice = SelectedDevice;
-        foreach (var device in USBDeviceList)
+        foreach (var device in DevicesList)
         {
             USBDeviceInfoModel item = new(device);
-            DeviceList.Add(item);
+            DeviceInfoModuleList.Add(item);
 
-            if (item.IsConnected && _initialized)
+            if (item.IsConnected && _initialized && item.IsInAutoAttachList())
             {
-                await item.AutoAttach();
+                await item.Attach();
             }
         }
 
-        _connectedDeviceList = USBDeviceList;
-        USBDevicesItems = DeviceList;
-        if (_lastSelectedDevice != null && USBDevicesItems != null && USBDevicesItems.Any())
+        USBDeviceInfoModules = DeviceInfoModuleList;
+        if (_lastSelectedDevice != null)
         {
-            SelectedDevice = USBDevicesItems?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, StringComparison.CurrentCultureIgnoreCase)) ?? USBDevicesItems?.First();
+            SelectedDevice = USBDeviceInfoModules?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, 
+                StringComparison.CurrentCultureIgnoreCase)) ?? USBDeviceInfoModules?.First();
         }
-        _initialized=true;
+        _initialized = true;
     }
 }

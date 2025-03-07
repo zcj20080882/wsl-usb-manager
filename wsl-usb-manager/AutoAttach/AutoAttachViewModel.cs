@@ -4,32 +4,32 @@
 * Class: AutoAttachViewModel.cs
 * NameSpace: wsl_usb_manager.AutoAttach
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/17 20:31
 ******************************************************************************/
 using System.Collections.ObjectModel;
-using wsl_usb_manager.Controller;
 using wsl_usb_manager.Domain;
 using wsl_usb_manager.Settings;
+using wsl_usb_manager.USBIPD;
 
 namespace wsl_usb_manager.AutoAttach;
 
 public class AutoAttachViewModel : ViewModelBase
 {
-    private ObservableCollection<USBDeviceInfoModel> _devicesItems = [];
+    private ObservableCollection<USBDeviceInfoModel> _deviceInfoModules = [];
     private USBDeviceInfoModel? _selectedDevice;
     private USBDeviceInfoModel? _lastSelectedDevice;
     private readonly SystemConfig Sysconfig = App.GetSysConfig();
 
-    public ObservableCollection<USBDeviceInfoModel> DevicesItems { get => _devicesItems; set => SetProperty(ref _devicesItems, value); }
+    public ObservableCollection<USBDeviceInfoModel> DeviceInfoModules { get => _deviceInfoModules; set => SetProperty(ref _deviceInfoModules, value); }
     public USBDeviceInfoModel? SelectedDevice { get => _selectedDevice; set => SetProperty(ref _selectedDevice, value); }
 
     public AutoAttachViewModel()
     {
         foreach (var device in Sysconfig.AutoAttachDeviceList)
         {
-            DevicesItems.Add(new USBDeviceInfoModel(device));
+            DeviceInfoModules.Add(new USBDeviceInfoModel(device));
         }
     }
 
@@ -44,9 +44,9 @@ public class AutoAttachViewModel : ViewModelBase
                 NotifyService.ShowNotification($"{device.Description} is removed from auto attach list.");
             }
 
-            if (DevicesItems != null && DevicesItems.Contains(device))
+            if (DeviceInfoModules != null && DeviceInfoModules.Contains(device))
             {
-                DevicesItems.Remove(device);
+                DeviceInfoModules.Remove(device);
             }
         }
     }
@@ -59,7 +59,7 @@ public class AutoAttachViewModel : ViewModelBase
         foreach (var device in devices)
         {
             bool exist = false;
-            foreach (var item in DevicesItems)
+            foreach (var item in DeviceInfoModules)
             {
                 if (item.HardwareId == device.HardwareId)
                 {
@@ -73,10 +73,10 @@ public class AutoAttachViewModel : ViewModelBase
             }
             new_list.Add(new USBDeviceInfoModel(device));
         }
-        DevicesItems = new_list;
-        if (_lastSelectedDevice != null && DevicesItems != null && DevicesItems.Any())
+        DeviceInfoModules = new_list;
+        if (_lastSelectedDevice != null && DeviceInfoModules != null && DeviceInfoModules.Any())
         {
-            SelectedDevice = DevicesItems?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, StringComparison.CurrentCultureIgnoreCase)) ?? DevicesItems?.First();
+            SelectedDevice = DeviceInfoModules?.FirstOrDefault(di => string.Equals(di.HardwareId, _lastSelectedDevice.HardwareId, StringComparison.CurrentCultureIgnoreCase)) ?? DeviceInfoModules?.First();
         }
     }
     

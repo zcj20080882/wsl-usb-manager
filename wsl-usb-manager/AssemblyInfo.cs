@@ -4,7 +4,7 @@
 * Class: AssemblyInfo.cs
 * NameSpace: %Namespace%
 * Author: Chuckie
-* copyright: Copyright (c) Chuckie, 2024
+* copyright: Copyright (c) Chuckie, 2025
 * Description:
 * Create Date: 2024/10/26 13:27
 ******************************************************************************/
@@ -32,4 +32,4 @@ using System.Runtime.InteropServices;
 [assembly: Guid("9a938903-6944-40f6-8498-45ebc76f768f")]
 [assembly: AssemblyVersion("1.1.0.0")]
 [assembly: AssemblyFileVersion("1.1.0")]
-[assembly: AssemblyInformationalVersion("1.1.0-1+Branch.master.Sha.435968db5883f54d412595eb7ae5773be17d45bf")]
+[assembly: AssemblyInformationalVersion("1.1.0-catchup-usbipd-win-4-4-0.1+3.Branch.catchup-usbipd-win-4.4.0.Sha.1bd2b9bfbf20268e05cce729cd6d67330d021887")]

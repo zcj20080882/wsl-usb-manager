@@ -8,11 +8,11 @@
              xmlns:wpf="clr-namespace:MaterialDesignThemes.Wpf;assembly=MaterialDesignThemes.Wpf"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              Height="200"
-             Width="400"
+             Width="500"
              d:DataContext="{d:DesignInstance Type=local:SettingViewModel}"
              mc:Ignorable="d"
              d:DesignHeight="200"
-             d:DesignWidth="400">
+             d:DesignWidth="500">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -37,6 +37,7 @@
         <Grid Grid.Row="2"
               Margin="16,0,16,0">
             <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
@@ -81,6 +82,28 @@
                       IsChecked="{Binding CloseToTray}"
                       md:CheckBoxAssist.CheckBoxSize="20"
                       Margin="0,0,10,0" />
+            <Grid Grid.Row="2"
+                  Grid.Column="0"
+                  Grid.ColumnSpan="3"
+                  Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="AUto" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        Content="{DynamicResource ResetConfig}"
+                        Command="{Binding ResetCfgCommand}"
+                        Style="{StaticResource MaterialDesignFlatButton}" />
+                <Button Grid.Column="1"
+                        Content="{DynamicResource ClearLogFiles}"
+                        Command="{Binding ClearLogCommand}"
+                        Style="{StaticResource MaterialDesignFlatButton}" />
+                <Button Grid.Column="2"
+                        Content="{DynamicResource OpenCinfigPath}"
+                        Command="{Binding OpenLogPathCommand}"
+                        Style="{StaticResource MaterialDesignFlatButton}" />
+            </Grid>
         </Grid>
         <Separator Grid.Row="3"
                    Margin="0,5,0,5" />

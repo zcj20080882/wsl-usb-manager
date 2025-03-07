@@ -88,7 +88,7 @@
                       x:Name="ListViewUSBDevice"
                       SelectedItem="{Binding SelectedDevice}"
                       SelectionMode="Single" 
-                      ItemsSource="{Binding USBDevicesItems}" 
+                      ItemsSource="{Binding USBDeviceInfoModules}" 
                       md:DataGridAssist.ColumnHeaderPadding="5"
                       md:ListViewAssist.ListViewItemPadding="5"
                       SelectedIndex="0"
