@@ -240,7 +240,7 @@ public static partial class USBIPDWin
         {
             foreach (var p in AttachProcessList)
             {
-                if (p.Name.ToLower() == busID.ToLower())
+                if (p.Name.Equals(busID, StringComparison.CurrentCultureIgnoreCase))
                 {
                     if (!p.HasExited())
                     {
@@ -255,6 +255,7 @@ public static partial class USBIPDWin
                         log.Warn($"Device {busID} has been auto-attached, but the process has exited.");
                         AttachProcessList.Remove(p);
                     }
+                    break;
                 }
             }
         }
