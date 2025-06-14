@@ -29,7 +29,7 @@ public static partial class USBIPDWin
     private const string ErrUsbipLocationZH = "检测到usbipd-win可能安装在远程磁盘中，请将usbipd-win安装到本地磁盘，然后重启本程序。";
     private const string ErrUsbipLocationEN = "Detected that usbipd-win may be installed on a remote disk, please install usbipd-win to a local disk and restart this program.";
 
-    private static readonly string CmdGetAllDevices = @"Import-Module $env:ProgramW6432'\usbipd-win\PowerShell\Usbipd.Powershell.dll';Get-UsbipdDevice";
+    private static string CmdGetAllDevices = @"Import-Module $env:ProgramW6432'\usbipd-win\PowerShell\Usbipd.Powershell.dll';Get-UsbipdDevice";
     private static readonly string ScriptsCheckUSBIPD = @"
             $usbipdPath = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' | Where-Object { $_.DisplayName -eq 'usbipd-win' }).InstallLocation
             if ($usbipdPath) {
@@ -140,6 +140,12 @@ public static partial class USBIPDWin
                 USBIPD_INSTALL_PATH = string.Empty;
                 runner.Destroy();
                 return (ErrorCode.USBIPDLowVersion, stderr);
+            }
+            else if (major > 4)
+            {
+                CmdGetAllDevices = @"Import-Module $env:ProgramW6432'\usbipd-win\Usbipd.Powershell.dll';Get-UsbipdDevice";
+                log.Info($"USBIPD version is {USBIPD_VERSION}, using new command to get USB devices info.");
+                log.Info($"CmdGetAllDevices: {CmdGetAllDevices}");
             }
         }
         else
@@ -293,8 +299,6 @@ public static partial class USBIPDWin
     {
         List<USBDevice>? devList = [];
         ProcessRunner runner = new();
-        string cmd = CmdGetAllDevices;
-
         var check = await CheckUSBIPDWin();
         if (check.ErrCode != ErrorCode.Success)
         {
@@ -302,7 +306,7 @@ public static partial class USBIPDWin
             runner.Destroy();
             return (check.ErrCode, check.ErrMsg, null);
         }
-
+        string cmd = CmdGetAllDevices;
         if (connectedOnly)
         {
             cmd += " | Where-Object {$_.IsConnected}";
@@ -343,7 +347,6 @@ public static partial class USBIPDWin
     public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)> 
         ListPersistedDevices()
     {
-        string cmd = $"{CmdGetAllDevices} | Where-Object {{-not $_.IsConnected -and $_.IsBound}}";
         ProcessRunner runner = new();
 
         var check = await CheckUSBIPDWin();
@@ -353,7 +356,7 @@ public static partial class USBIPDWin
             runner.Destroy();
             return (check.ErrCode, check.ErrMsg, null);
         }
-
+        string cmd = $"{CmdGetAllDevices} | Where-Object {{-not $_.IsConnected -and $_.IsBound}}";
         var ret = await runner.RunPowerShellScripts(cmd);
 
         if (ret.ExitCode != 0)

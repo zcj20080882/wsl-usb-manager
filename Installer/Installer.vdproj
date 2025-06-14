@@ -21,6 +21,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_184A311A1BA54B978F33F753E5BA10C6"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_1DE300179FF84453ADC909CA45D215A2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -33,7 +39,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_753D8C9ACE224AD5A845296C9DDC10BB"
+        "MsmKey" = "8:_7507051BF1A6478BA4D88895A4BF85D8"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -45,7 +51,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_D76EA1035E7C452FA5FDF84AA9613F90"
+        "MsmKey" = "8:_AE1FBD79847243038A8411552A33B6BA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -63,7 +69,7 @@
         "DisplayName" = "8:Debug"
         "IsDebugOnly" = "11:TRUE"
         "IsReleaseOnly" = "11:FALSE"
-        "OutputFilename" = "8:Debug\\WSL-USB-Manager-v1.1.0.msi"
+        "OutputFilename" = "8:Debug\\WSL-USB-Manager-v2.0.0.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -95,7 +101,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:Release\\WSL-USB-Manager-v1.1.0.msi"
+        "OutputFilename" = "8:Release\\WSL-USB-Manager-v2.0.0.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -177,6 +183,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_184A311A1BA54B978F33F753E5BA10C6"
+            {
+            "SourcePath" = "8:..\\wsl-usb-manager\\bin\\x64\\Release\\net8.0-windows\\win-x64\\wsl-usb-manager.dll.config"
+            "TargetName" = "8:wsl-usb-manager.dll.config"
+            "Tag" = "8:"
+            "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1DE300179FF84453ADC909CA45D215A2"
             {
             "SourcePath" = "8:..\\wsl-usb-manager\\images\\appicon.png"
@@ -217,10 +243,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_753D8C9ACE224AD5A845296C9DDC10BB"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7507051BF1A6478BA4D88895A4BF85D8"
             {
-            "SourcePath" = "8:..\\wsl-usb-manager\\bin\\Release\\net8.0-windows\\win-x64\\wsl-usb-manager.deps.json"
-            "TargetName" = "8:wsl-usb-manager.deps.json"
+            "SourcePath" = "8:..\\wsl-usb-manager\\bin\\x64\\Release\\net8.0-windows\\win-x64\\wsl-usb-manager.runtimeconfig.json"
+            "TargetName" = "8:wsl-usb-manager.runtimeconfig.json"
             "Tag" = "8:"
             "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
             "Condition" = "8:"
@@ -257,10 +283,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D76EA1035E7C452FA5FDF84AA9613F90"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AE1FBD79847243038A8411552A33B6BA"
             {
-            "SourcePath" = "8:..\\wsl-usb-manager\\bin\\Release\\net8.0-windows\\win-x64\\wsl-usb-manager.dll.config"
-            "TargetName" = "8:wsl-usb-manager.dll.config"
+            "SourcePath" = "8:..\\wsl-usb-manager\\bin\\x64\\Release\\net8.0-windows\\win-x64\\wsl-usb-manager.deps.json"
+            "TargetName" = "8:wsl-usb-manager.deps.json"
             "Tag" = "8:"
             "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"
             "Condition" = "8:"
@@ -344,7 +370,7 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:WSL USB Manager"
-        "ProductCode" = "8:{CEEA1627-AFBE-4D74-9CC9-B0BA19595440}"
+        "ProductCode" = "8:{E55CFE53-EBB5-4270-986C-4975069EA3A3}"
         "PackageCode" = "8:{7E114B36-38E2-4C41-88E1-FAC1A6629E70}"
         "UpgradeCode" = "8:{E25B9175-97B9-4342-A1E3-81A09A0398E2}"
         "AspNetVersion" = "8:2.0.50727.0"
@@ -352,7 +378,7 @@
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.1.0"
+        "ProductVersion" = "8:2.0.0"
         "Manufacturer" = "8:Chuckie"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -506,7 +532,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_F38C35AB4E8647FB87FBA16D01CE9695"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Finished"
+                    "DisplayName" = "8:?????"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminFinishedDlg.wid"
@@ -549,7 +575,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_2A05676EBFA947C7A9168BBE045BD75D"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Progress"
+                    "DisplayName" = "8:????"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdProgressDlg.wid"
@@ -593,7 +619,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_97FF427BA04D446A801E458963E05E29"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Finished"
+                    "DisplayName" = "8:?????"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdFinishedDlg.wid"
@@ -637,7 +663,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_CCF4B32D042A46DD83E5EB4FFFC48655"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Progress"
+                    "DisplayName" = "8:????"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminProgressDlg.wid"
@@ -681,7 +707,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_6556FBB5C9D14D18A234C7F54A1478CA"
                     {
                     "Sequence" = "3:110"
-                    "DisplayName" = "8:Welcome"
+                    "DisplayName" = "8:??????"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdWelcomeDlg.wid"
@@ -729,7 +755,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_AE0368657C164CDCB355620FA9FF3A1C"
                     {
                     "Sequence" = "3:200"
-                    "DisplayName" = "8:Installation Folder"
+                    "DisplayName" = "8:????????"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdFolderDlg.wid"
@@ -764,7 +790,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_BCEB404FF93B4990A6B055DF306E4501"
                     {
                     "Sequence" = "3:300"
-                    "DisplayName" = "8:Confirm Installation"
+                    "DisplayName" = "8:?????"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdConfirmDlg.wid"
@@ -786,7 +812,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_E5B664DC6EFB4B069A1977F4AF3E397F"
                     {
                     "Sequence" = "3:120"
-                    "DisplayName" = "8:License Agreement"
+                    "DisplayName" = "8:???§¿??"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdLicenseDlg.wid"
@@ -842,7 +868,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_8D3A7F7052774662B58A57C351620A72"
                     {
                     "Sequence" = "3:200"
-                    "DisplayName" = "8:Installation Folder"
+                    "DisplayName" = "8:????????"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminFolderDlg.wid"
@@ -864,7 +890,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_9E1329983938497C9E3BBCE7136AC779"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Welcome"
+                    "DisplayName" = "8:??????"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminWelcomeDlg.wid"
@@ -912,7 +938,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_D497E6CC950E4527990261693DEE5FE3"
                     {
                     "Sequence" = "3:110"
-                    "DisplayName" = "8:License Agreement"
+                    "DisplayName" = "8:???§¿??"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminLicenseDlg.wid"
@@ -959,7 +985,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_DB9A1029999140B2B94BA611FD8ABB4B"
                     {
                     "Sequence" = "3:300"
-                    "DisplayName" = "8:Confirm Installation"
+                    "DisplayName" = "8:?????"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminConfirmDlg.wid"
@@ -988,7 +1014,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_F9FC334E920C467C88B5D18882D778F3"
             {
-            "SourcePath" = "8:..\\wsl-usb-manager\\obj\\Release\\net8.0-windows\\win-x64\\apphost.exe"
+            "SourcePath" = "8:..\\wsl-usb-manager\\obj\\x64\\Release\\net8.0-windows\\win-x64\\apphost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_546281D513074E4CBF20D08C889CB6AC"

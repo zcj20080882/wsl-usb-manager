@@ -1,4 +1,4 @@
-﻿/******************************************************************************
+/******************************************************************************
 * SPDX-License-Identifier: MIT
 * Project: wsl-usb-manager
 * Class: AssemblyInfo.cs
@@ -30,6 +30,6 @@ using System.Runtime.InteropServices;
 [assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
 [assembly: Guid("9a938903-6944-40f6-8498-45ebc76f768f")]
-[assembly: AssemblyVersion("1.1.0.0")]
-[assembly: AssemblyFileVersion("1.1.0")]
-[assembly: AssemblyInformationalVersion("1.1.0-catchup-usbipd-win-4-4-0.1+3.Branch.catchup-usbipd-win-4.4.0.Sha.1bd2b9bfbf20268e05cce729cd6d67330d021887")]
+[assembly: AssemblyVersion("2.0.0.0")]
+[assembly: AssemblyFileVersion("2.0.0")]
+[assembly: AssemblyInformationalVersion("2.0.0-1+Branch.master.Sha.a7ab9653dc3176d000379a3b0df411990e2f4f8a")]
