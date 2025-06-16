@@ -18,10 +18,40 @@
 
 1. Win10以上版本
 2. .Net Framework 4.8环境
-2. WSL2环境，需要安装usbipd-win（须为4.0.0或者以上版本）
+2. WSL2环境，需要安装usbipd-win（须为4.4.0或者以上版本）
 3. 绑定设备时需要管理员权限
 
-#### 软件架构
+#### 使用方法
+
+**绑定设备**
+
+![bind](./screen/bind-1-zh.png)
+![bind](./screen/bind-2-zh.png)
+
+**附加设备**
+
+>附加设备之前，必须先绑定设备。
+
+![attach](./screen/attach-zh.png)
+
+**解绑设备**
+
+![unbind](./screen/unbind-zh.png)
+
+**分离设备**
+
+![detach](./screen/detach-zh.png)
+
+**自动附加设备**
+
+设备添加到自动附加设备列表后，当设备插入时，自动附加到WSL。
+
+![auto-attach](./screen/auto-attach-zh.png)
+
+对于某些被组织域管控的windows，可能有特殊的防火墙配置，不允许WSL通过非私有网络访问host机上服务，这样导致设备无法被附加到WSL中。此时可以将设备上某个网络设置为私有网路，并且设置通过该网卡附加设备。注意：请不要将非安全网络（例如公共场所的WiFi网络）设置为私有网络。
+
+![private-network](./screen/workaround-fw-1-zh.png)
+![private-network](./screen/workaround-fw-2-zh.png)
 
 
 #### 构建
@@ -46,9 +76,10 @@
     构建完成后，会在`Installer\Release\`生成一个名为`WSL-USB-Manager-vx.x.x.msi`的安装包，其中vx.x.x为当前版本号。
 
 
-#### 参与贡献
+#### 报告bug
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+如果您在使用中遇到问题，请按照如下步骤打开日志路径，拷贝出最新日志，并在`issue`中提交bug同时附加日志。
+
+![step1](./screen/get-log-step1-zh.png)
+![step2](./screen/get-log-step2-zh.png)
+![step3](./screen/get-log-step3-zh.png)]
