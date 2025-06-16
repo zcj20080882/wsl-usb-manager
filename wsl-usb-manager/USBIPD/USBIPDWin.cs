@@ -30,6 +30,7 @@ public static partial class USBIPDWin
     private const string ErrUsbipLocationEN = "Detected that usbipd-win may be installed on a remote disk, please install usbipd-win to a local disk and restart this program.";
 
     private static string CmdGetAllDevices = @"Import-Module $env:ProgramW6432'\usbipd-win\PowerShell\Usbipd.Powershell.dll';Get-UsbipdDevice";
+    private static string AutoAttachProcessName = "auto-attach.sh";
     private static readonly string ScriptsCheckUSBIPD = @"
             $usbipdPath = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' | Where-Object { $_.DisplayName -eq 'usbipd-win' }).InstallLocation
             if ($usbipdPath) {
@@ -130,12 +131,12 @@ public static partial class USBIPDWin
             int minor = int.Parse(match.Groups[2].Value);
             int patch = int.Parse(match.Groups[3].Value);
             USBIPD_VERSION = $"{major}.{minor}.{patch}";
-            if (major < 4)
+            if (major < 4 || ( major == 4 && minor < 4))
             {
                 if (IsChinese())
-                    stderr = $"\"usbipd\"版本 \"{USBIPD_VERSION}\" 太低。";
+                    stderr = $"\"usbipd\"版本 \"{USBIPD_VERSION}\" 太低。请安装usbipd-win v4.4.0及其以上版本。";
                 else
-                    stderr = $"USBIPD version is too low: {USBIPD_VERSION}";
+                    stderr = $"USBIPD version is too low: {USBIPD_VERSION}. Please install usbipd-win version 4.4.0 or above.";
                 log.Error(stderr);
                 USBIPD_INSTALL_PATH = string.Empty;
                 runner.Destroy();
@@ -144,6 +145,7 @@ public static partial class USBIPDWin
             else if (major > 4)
             {
                 CmdGetAllDevices = @"Import-Module $env:ProgramW6432'\usbipd-win\Usbipd.Powershell.dll';Get-UsbipdDevice";
+                AutoAttachProcessName= "usbip-auto-attach";
                 log.Info($"USBIPD version is {USBIPD_VERSION}, using new command to get USB devices info.");
                 log.Info($"CmdGetAllDevices: {CmdGetAllDevices}");
             }
@@ -234,6 +236,7 @@ public static partial class USBIPDWin
 
     public static string GetUSBIPDVersion() => USBIPD_VERSION;
 
+    public static string GetAutoAttachProcessName() => AutoAttachProcessName;
     /**
      * Bind a device with a hardware ID.
      */
@@ -261,7 +264,7 @@ public static partial class USBIPDWin
         UnbindDevice(string? hardwareid)
     {
         ProcessRunner runner = new();
-        var ret = await runner.RunUSBIPD(true, string.IsNullOrEmpty(hardwareid) ? ["unbind", "--all"] : ["unbind", "--hardware-id", hardwareid]);
+        var ret = await runner.RunUSBIPD(false, string.IsNullOrEmpty(hardwareid) ? ["unbind", "--all"] : ["unbind", "--hardware-id", hardwareid]);
         if (ret.ExitCode != 0)
         {
             log.Warn($"Failed to unbind device '{hardwareid}': {ret.StandardError}");
@@ -273,7 +276,134 @@ public static partial class USBIPDWin
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg)> 
         UnbindAllDevice() => await UnbindDevice(null);
- 
+
+    /// <summary>
+    /// BusId has already been checked, and the server is running.
+    /// </summary>
+    public static async Task<(ErrorCode ErrCode, string ErrMsg)>
+        Attach(string busID, bool autoAttach, string? hostIP)
+    {
+        ProcessRunner runner = new(busID);
+        string distribution = string.Empty;
+        string errMsg = string.Empty;
+
+        // Check: Is the device has been auto-attached.
+        lock (AttachProcessListLock)
+        {
+            foreach (var p in AttachProcessList)
+            {
+                if (p.Name.Equals(busID, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    if (!p.HasExited())
+                    {
+
+                        errMsg = $"Device {busID} has been auto-attached.";
+                        log.Info(errMsg);
+                        runner.Destroy();
+                        return new(ErrorCode.Success, errMsg);
+                    }
+                    else
+                    {
+                        log.Warn($"Device {busID} has been auto-attached, but the process has exited.");
+                        AttachProcessList.Remove(p);
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Figure out which distribution to use. WSL can be in many states:
+        // (a) not installed at all
+        // (b) if the user specified one:
+        //      (1) it must exist
+        //      (2) it must be version 2
+        //      (3) it must be running
+        // (c) if the user did not specify one:
+        //      (1) there must exist at least one distribution
+        //      (2) there must exist at least one version 2 distribution
+        //      (3) there must be at least one version 2 running
+        //      (4)
+        //          (i) use the default distribution, if and only if it is version 2 and running
+        //              (FYI: This is administered by WSL in HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Lxss.)
+        //          (ii) use the first one that is version 2 and running
+        //
+        // We provide enough instructions to the user how to fix whatever
+        // error/warning we give. Or else we get flooded with "it doesn't work" issues...
+
+        if (await GetWSLDistributions() is not IEnumerable<Distribution> distributions)
+        {
+            // check (a) failed
+            errMsg = IsChinese() ? ErrNoWslDistributionZH : ErrNoWslDistributionEN;
+            runner.Destroy();
+            return new(ErrorCode.WslDistribNotFound, errMsg); ;
+        }
+
+        // check distribution version
+        if (!distributions.Any(d => d.Version == 2))
+        {
+            errMsg = IsChinese() ? ErrWslVersionZh : ErrWslVersionEn;
+            log.Error(errMsg);
+            runner.Destroy();
+            return (ErrorCode.WslLowVersion, errMsg);
+        }
+
+        // check is any distribution running
+        if (!distributions.Any(d => d.Version == 2 && d.IsRunning))
+        {
+            errMsg = IsChinese() ? ErrNoWslDistributionRunningZh : ErrNoWslDistributionRunningEn;
+            log.Error(errMsg);
+            runner.Destroy();
+            return (ErrorCode.WslNotRunning, errMsg);
+        }
+
+        if (distributions.FirstOrDefault(d => d.IsDefault && d.Version == 2 && d.IsRunning) is Distribution defaultDistribution)
+        {
+            distribution = defaultDistribution.Name;
+        }
+        else
+        {
+            distribution = distributions.First(d => d.Version == 2 && d.IsRunning).Name;
+        }
+
+
+        log.Info($"Using WSL distribution '{distribution}' to attach; the device will be available in all WSL 2 distributions.");
+
+        var args = new List<string>
+        {
+            "attach",
+            "--busid", busID,
+            "--wsl", distribution
+        };
+        if (!string.IsNullOrEmpty(hostIP))
+        {
+            args.Add("--host-ip");
+            args.Add(hostIP);
+        }
+        if (autoAttach)
+        {
+            args.Add("--auto-attach");
+        }
+        
+        var (ExitCode, StandardOutput, StandardError) = await runner.RunUSBIPD(false, [.. args]);
+
+        if (!autoAttach)
+        {
+            if (ExitCode != 0)
+            {
+                log.Warn($"Failed to attach device '{busID}': {StandardError}");
+            }
+            runner.Destroy();
+            return new(ExitCode == 0 ? ErrorCode.Success : ErrorCode.DeviceAttachFailed, StandardError);
+        }
+
+        log.Info($"Auto-attach process started for device {busID}.");
+        lock (AttachProcessListLock)
+        {
+            AttachProcessList.Add(runner);
+        }
+
+        return new(ErrorCode.Failure, IsChinese() ? "运行于WSL中的自动附加程序已退出。" : "The automatic attachment program running in WSL has exited.");
+    }
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg)>
         DetachDevice(string? hardwareid)
