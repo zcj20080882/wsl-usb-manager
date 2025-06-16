@@ -264,14 +264,14 @@ public static partial class USBIPDWin
         UnbindDevice(string? hardwareid)
     {
         ProcessRunner runner = new();
-        var ret = await runner.RunUSBIPD(false, string.IsNullOrEmpty(hardwareid) ? ["unbind", "--all"] : ["unbind", "--hardware-id", hardwareid]);
-        if (ret.ExitCode != 0)
+        var (ExitCode, _, StandardError) = await runner.RunUSBIPD(true, string.IsNullOrEmpty(hardwareid) ? ["unbind", "--all"] : ["unbind", "--hardware-id", hardwareid]);
+        if (ExitCode != 0)
         {
-            log.Warn($"Failed to unbind device '{hardwareid}': {ret.StandardError}");
+            log.Warn($"Failed to unbind device '{hardwareid}': {StandardError}");
         }
         runner.Destroy();
 
-        return new(ret.ExitCode == 0 ? ErrorCode.Success : ErrorCode.DeviceUnbindFailed, ret.StandardError);
+        return new(ExitCode == 0 ? ErrorCode.Success : ErrorCode.DeviceUnbindFailed, StandardError);
     }
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg)> 
