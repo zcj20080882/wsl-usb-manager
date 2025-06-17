@@ -57,26 +57,8 @@ public static class NotifyService
         switch (errCode)
         {
             case ErrorCode.USBIPDNotFound:
-                if (Lang.GetText("ErrMsgUSBIPDNotInstalled") is string m1
-                    && Lang.GetText("InstallUSBIPDTips") is string m2)
-                {
-                    msg = $"{m1}{Environment.NewLine}{Environment.NewLine}{m2}{Environment.NewLine}";
-                }
-                else
-                {
-                    msg = $"usbipd-win is not installed.{Environment.NewLine}{error}";
-                }
-                break;
             case ErrorCode.USBIPDLowVersion:
-                if (Lang.GetText("ErrMsgUSBIPDVersionLow") is string s1
-                    && Lang.GetText("InstallUSBIPDTips") is string s2)
-                {
-                    msg = $"{s1.Replace("{version}", USBIPDWin.GetUSBIPDVersion())} {s2}{Environment.NewLine}";
-                }
-                else
-                {
-                    msg = $"usbipd-win version ({USBIPDWin.GetUSBIPDVersion()}) is too low.";
-                }
+                msg = error;
                 break;
             case ErrorCode.DeviceBindFailed:
                 if (Lang.GetText("ErrMsgBindFail") is string binderr)

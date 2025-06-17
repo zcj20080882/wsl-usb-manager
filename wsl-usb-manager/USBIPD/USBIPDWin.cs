@@ -14,33 +14,29 @@
 using log4net;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Security.Cryptography.Xml;
 using System.Security.Principal;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using wsl_usb_manager.Domain;
 using wsl_usb_manager.Resources;
 
 namespace wsl_usb_manager.USBIPD;
 
 public static partial class USBIPDWin
 {
-    private const string ErrUsbipNotInstalledZH = "未检测到usbipd-win。可能usbipd-win的版本低于4.0.0，请访问 https://github.com/dorssel/usbipd-win/releases 下载版本大于4.0.0的usbipd-win并安装，然后重启本程序。";
-    private const string ErrUsbipNotInstalledEN = "No usbipd-win was found. Please download usbipd-win version greater than 4.0.0 from https://github.com/dorssel/usbipd-win/releases and install it, then restart this program.";
+    private const string UsbipdMinVersion = "4.4.0";
+    private const string UsbipdDownloadUrl = "https://github.com/dorssel/usbipd-win/releases";
+    private const string ErrUsbipNotInstalledZH = $"检测到usbipd-win未安装。请访问 {UsbipdDownloadUrl} 下载V{UsbipdMinVersion}及更高版本的usbipd-win并安装，然后重启本程序。";
+    private const string ErrUsbipNotInstalledEN = $"Detected that usbipd-win is not installed. Please visit {UsbipdDownloadUrl} to download and install usbipd-win V{UsbipdMinVersion} or higher, then restart this program.";
+    private const string ErrUsbipLowVersionZH = $"检测到usbipd-win版本低于V{UsbipdMinVersion}。请访问 {UsbipdDownloadUrl} 下载V{UsbipdMinVersion}及更高版本的usbipd-win并安装，然后重启本程序。";
+    private const string ErrUsbipLowVersionEN = $"Detected that usbipd-win version is lower than V{UsbipdMinVersion}. Please visit {UsbipdDownloadUrl} to download and install usbipd-win V{UsbipdMinVersion} or higher, then restart this program.";
     private const string ErrUsbipLocationZH = "检测到usbipd-win可能安装在远程磁盘中，请将usbipd-win安装到本地磁盘，然后重启本程序。";
     private const string ErrUsbipLocationEN = "Detected that usbipd-win may be installed on a remote disk, please install usbipd-win to a local disk and restart this program.";
 
-    private static string CmdGetAllDevices = @"Import-Module $env:ProgramW6432'\usbipd-win\PowerShell\Usbipd.Powershell.dll';Get-UsbipdDevice";
-    private static string AutoAttachProcessName = "auto-attach.sh";
-    private static readonly string ScriptsCheckUSBIPD = @"
-            $usbipdPath = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' | Where-Object { $_.DisplayName -eq 'usbipd-win' }).InstallLocation
-            if ($usbipdPath) {
-                $usbipdVersion = & usbipd --version
-                write-output $usbipdPath
-                write-output $usbipdVersion
-            } else {
-                Write-Output ''
-            }
-        ";
+    private static string UsbipdPowershellModulePath = "";
     private static readonly ILog log = LogManager.GetLogger(typeof(USBIPDWin));
     [GeneratedRegex(@"^(\d+)\.(\d+)\.(\d+)*")]
     private static partial Regex VersionRegex();
@@ -57,131 +53,126 @@ public static partial class USBIPDWin
                     @"IsAttached\s*:\s*(?<IsAttached>.*?)\s*(?=\n\n|\Z)", RegexOptions.Singleline)]
     private static partial Regex DeviceInfoRegex();
 
-    private static string USBIPD_INSTALL_PATH = string.Empty;
-    private static string USBIPD_VERSION = string.Empty;
-    private static string USBIPD_WSL_PATH = string.Empty;
     private const ushort USBIP_PORT = 3240;
+    private static ApplicationInfo? USBIPDAppInfo = null;
     private static bool IsChinese() => Lang.IsChinese();
 
     private static async Task<(ErrorCode ErrCode, string ErrMsg)> CheckUSBIPDWin()
     {
         var stderr = string.Empty;
-        ProcessRunner runner = new();
-        if (!string.IsNullOrWhiteSpace(USBIPD_INSTALL_PATH) && !string.IsNullOrWhiteSpace(USBIPD_VERSION))
+
+        if (USBIPDAppInfo is not null)
         {
-            runner.Destroy();
             return new(ErrorCode.Success, stderr);
         }
 
-        var result = await runner.RunPowerShellScripts(ScriptsCheckUSBIPD);
+        var appInfo = ApplicationChecker.GetApplicationInfo("usbipd-win");
 
-        if (result.ExitCode != (int)ErrorCode.Success || string.IsNullOrWhiteSpace(result.StandardOutput))
-        {
-            if (IsChinese())
-                stderr = $"无法检查\"usbipd\"安装情况: {result.StandardError}。";
-            else
-                stderr = $"Failed to check \"usbipd\" installation: {result.StandardError}.";
-
-            log.Error(stderr);
-            runner.Destroy();
-            return new(ErrorCode.Failure, stderr);
-        }
-
-
-        string[] output = result.StandardOutput.Trim().Split("\n");
-        USBIPD_INSTALL_PATH = output[0].Trim().Trim('\r').Trim('\n');
-        if (!Path.Exists(USBIPD_INSTALL_PATH))
+        if (appInfo == null || string.IsNullOrWhiteSpace(appInfo.InstallLocation) || string.IsNullOrWhiteSpace(appInfo.DisplayName))
         {
             stderr = $"{(IsChinese() ? ErrUsbipNotInstalledZH : ErrUsbipNotInstalledEN)}";
             log.Error(stderr);
-            USBIPD_INSTALL_PATH = string.Empty;
-            runner.Destroy();
             return (ErrorCode.USBIPDNotFound, stderr);
         }
-
-        if (output.Length < 2)
+        appInfo.InstallLocation = appInfo.InstallLocation.Trim();
+        if (!Directory.Exists(appInfo.InstallLocation))
         {
-            if (IsChinese())
-                stderr = $"无法检查\"usbipd\"安装情况: {result.StandardError}。";
-            else
-                stderr = $"Failed to check \"usbipd\" installation: {result.StandardError}";
+            stderr = $"{(IsChinese() ? ErrUsbipNotInstalledZH : ErrUsbipNotInstalledEN)}";
             log.Error(stderr);
-            USBIPD_INSTALL_PATH = string.Empty;
+            return (ErrorCode.USBIPDNotFound, stderr);
+        }
+        if (string.IsNullOrWhiteSpace(appInfo.DisplayVersion))
+        {
+            ProcessRunner runner = new();
+            var (ExitCode, StandardOutput, StandardError) = await runner.RunUSBIPD(true, ["--version"]);
             runner.Destroy();
-            return new(ErrorCode.Failure, stderr);
+            appInfo.DisplayVersion = StandardOutput.Trim();
+            stderr = StandardError;
+            if (ExitCode == 0)
+            {
+                
+                log.Error(StandardError);
+                if (IsChinese())
+                    stderr = $"无法检查\"usbipd\"版本： {stderr}。";
+                else
+                    stderr = $"Failed to check \"usbipd\" version: {stderr}";
+                log.Error(stderr);
+                return new(ErrorCode.Failure, stderr);
+            }
         }
 
-        USBIPD_VERSION = output[1].Trim();
-        if (string.IsNullOrWhiteSpace(USBIPD_VERSION))
+        if (string.IsNullOrWhiteSpace(appInfo.DisplayVersion))
         {
             if (IsChinese())
-                stderr = $"无法检查\"usbipd\"版本： {result.StandardOutput}。";
+                stderr = $"无法检查\"usbipd\"版本： {stderr}。";
             else
-                stderr = $"Failed to check \"usbipd\" version: {result.StandardOutput}";
+                stderr = $"Failed to check \"usbipd\" version: {stderr}";
             log.Error(stderr);
-            USBIPD_INSTALL_PATH = string.Empty;
-            runner.Destroy();
             return new(ErrorCode.Failure, stderr);
         }
-        log.Info($"USBIPD version: {USBIPD_VERSION}");
-        Match match = VersionRegex().Match(USBIPD_VERSION);
+        log.Info($"USBIPD version: {appInfo.DisplayVersion}");
+        Match match = VersionRegex().Match(appInfo.DisplayVersion);
         if (match.Success)
         {
             int major = int.Parse(match.Groups[1].Value);
             int minor = int.Parse(match.Groups[2].Value);
             int patch = int.Parse(match.Groups[3].Value);
-            USBIPD_VERSION = $"{major}.{minor}.{patch}";
-            if (major < 4 || ( major == 4 && minor < 4))
+            appInfo.DisplayVersion = $"{major}.{minor}.{patch}";
+            Match requestVersion = VersionRegex().Match(UsbipdMinVersion);
+            if (requestVersion.Success) 
+            {
+                int minimajor = int.Parse(requestVersion.Groups[1].Value);
+                int miniminer = int.Parse(requestVersion.Groups[2].Value);
+
+                if (major < minimajor || (major == minimajor && minor < miniminer))
+                {
+                    stderr = $"{(IsChinese() ? ErrUsbipLowVersionZH : ErrUsbipLowVersionEN)}";
+                    
+                    log.Error(stderr);
+                    return (ErrorCode.USBIPDLowVersion, stderr);
+                }
+                else if (major == minimajor)
+                {
+                    UsbipdPowershellModulePath=Path.Combine(appInfo.InstallLocation, "PowerShell", "Usbipd.Powershell.dll");
+                }
+                else
+                {
+                    UsbipdPowershellModulePath=Path.Combine(appInfo.InstallLocation, "Usbipd.Powershell.dll");
+                }
+            }
+            else
             {
                 if (IsChinese())
-                    stderr = $"\"usbipd\"版本 \"{USBIPD_VERSION}\" 太低。请安装usbipd-win v4.4.0及其以上版本。";
+                    stderr = $"无法解析请求的\"usbipd\"版本： {UsbipdMinVersion}。";
                 else
-                    stderr = $"USBIPD version is too low: {USBIPD_VERSION}. Please install usbipd-win version 4.4.0 or above.";
+                    stderr = $"Failed to parse requested USBIPD version: {UsbipdMinVersion}";
                 log.Error(stderr);
-                USBIPD_INSTALL_PATH = string.Empty;
-                runner.Destroy();
-                return (ErrorCode.USBIPDLowVersion, stderr);
-            }
-            else if (major > 4)
-            {
-                CmdGetAllDevices = @"Import-Module $env:ProgramW6432'\usbipd-win\Usbipd.Powershell.dll';Get-UsbipdDevice";
-                AutoAttachProcessName= "usbip-auto-attach";
-                log.Info($"USBIPD version is {USBIPD_VERSION}, using new command to get USB devices info.");
-                log.Info($"CmdGetAllDevices: {CmdGetAllDevices}");
+                return (ErrorCode.ParseError, stderr);
             }
         }
         else
         {
             if (IsChinese())
-                stderr = $"无法解析\"usbipd\"版本： {result.StandardOutput}。";
+                stderr = $"无法解析\"usbipd\"版本： {appInfo.DisplayVersion}。";
             else
-                stderr = $"Failed to parse USBIPD version: {result.StandardOutput}";
+                stderr = $"Failed to parse USBIPD version: {appInfo.DisplayVersion}";
             log.Error(stderr);
-            USBIPD_INSTALL_PATH = string.Empty;
-            runner.Destroy();
             return (ErrorCode.ParseError, stderr);
         }
-        USBIPD_WSL_PATH = Path.Combine(GetUSBIPDInstallPath(), "WSL");
 
-        if (!Path.Exists(USBIPD_WSL_PATH))
-        {
-            USBIPD_INSTALL_PATH = string.Empty;
-            stderr = $"{(IsChinese() ? ErrUsbipNotInstalledZH : ErrUsbipNotInstalledEN)}";
-            log.Error(stderr);
-            runner.Destroy();
-            return (ErrorCode.USBIPDLowVersion, stderr);
-        }
-        if ((Path.GetPathRoot(USBIPD_WSL_PATH) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
+        
+        if ((Path.GetPathRoot(appInfo.InstallLocation) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
         {
             stderr = (IsChinese() ? ErrUsbipLocationZH : ErrUsbipLocationEN);
-            log.Error(stderr);
-            runner.Destroy();
-            return (ErrorCode.Failure, stderr);
+            log.Warn(stderr);
         }
-        runner.Destroy();
+
+        log.Info($"USBIPD version is {appInfo.DisplayVersion}.");
+        log.Info($"USBIPD powershell module path: {UsbipdPowershellModulePath}");
+        USBIPDAppInfo = appInfo;
         return (ErrorCode.Success, stderr);
     }
-    
+
 
     private static List<USBDevice>? ParseStringDevInfoToUSBDeviceList(string stringDeviceInfo)
     {
@@ -232,11 +223,10 @@ public static partial class USBIPDWin
         return devList;
     }
 
-    public static string GetUSBIPDInstallPath() => USBIPD_INSTALL_PATH;
+    public static string GetUSBIPDInstallPath() => USBIPDAppInfo?.InstallLocation ?? string.Empty;
 
-    public static string GetUSBIPDVersion() => USBIPD_VERSION;
+    public static string GetUSBIPDVersion() => USBIPDAppInfo?.DisplayVersion ?? string.Empty;
 
-    public static string GetAutoAttachProcessName() => AutoAttachProcessName;
     /**
      * Bind a device with a hardware ID.
      */
@@ -245,18 +235,18 @@ public static partial class USBIPDWin
     {
         string stderr = "";
         ProcessRunner runner = new();
-        var result = await runner.RunUSBIPD(true, ["bind", "--hardware-id", hardwareid, (force ? "--force" : "")]);
-        if (result.ExitCode != 0)
+        var (ExitCode, _, StandardError) = await runner.RunUSBIPD(true, ["bind", "--hardware-id", hardwareid, (force ? "--force" : "")]);
+        if (ExitCode != 0)
         {
-            log.Error($"Failed to bind device '{hardwareid}': {result.StandardError}");
-            stderr = result.StandardError;
+            log.Error($"Failed to bind device '{hardwareid}': {StandardError}");
+            stderr = StandardError;
         }
         runner.Destroy();
-        return new(result.ExitCode == 0 ? ErrorCode.Success : ErrorCode.DeviceBindFailed, stderr);
+        return new(ExitCode == 0 ? ErrorCode.Success : ErrorCode.DeviceBindFailed, stderr);
     }
 
 
-    public static async Task<(ErrorCode ErrCode, string ErrMsg)> 
+    public static async Task<(ErrorCode ErrCode, string ErrMsg)>
         BindDevice(string hardwareid) => await BindDevice(hardwareid, false);
 
 
@@ -274,7 +264,7 @@ public static partial class USBIPDWin
         return new(ExitCode == 0 ? ErrorCode.Success : ErrorCode.DeviceUnbindFailed, StandardError);
     }
 
-    public static async Task<(ErrorCode ErrCode, string ErrMsg)> 
+    public static async Task<(ErrorCode ErrCode, string ErrMsg)>
         UnbindAllDevice() => await UnbindDevice(null);
 
     /// <summary>
@@ -286,6 +276,7 @@ public static partial class USBIPDWin
         ProcessRunner runner = new(busID);
         string distribution = string.Empty;
         string errMsg = string.Empty;
+        ErrorCode errorCode = ErrorCode.Failure;
 
         // Check: Is the device has been auto-attached.
         lock (AttachProcessListLock)
@@ -312,94 +303,50 @@ public static partial class USBIPDWin
             }
         }
 
-        // Figure out which distribution to use. WSL can be in many states:
-        // (a) not installed at all
-        // (b) if the user specified one:
-        //      (1) it must exist
-        //      (2) it must be version 2
-        //      (3) it must be running
-        // (c) if the user did not specify one:
-        //      (1) there must exist at least one distribution
-        //      (2) there must exist at least one version 2 distribution
-        //      (3) there must be at least one version 2 running
-        //      (4)
-        //          (i) use the default distribution, if and only if it is version 2 and running
-        //              (FYI: This is administered by WSL in HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Lxss.)
-        //          (ii) use the first one that is version 2 and running
-        //
-        // We provide enough instructions to the user how to fix whatever
-        // error/warning we give. Or else we get flooded with "it doesn't work" issues...
+        (errorCode, distribution, errMsg) = await GetRunningDistribution();
 
-        if (await GetWSLDistributions() is not IEnumerable<Distribution> distributions)
+        if (errorCode != ErrorCode.Success)
         {
-            // check (a) failed
-            errMsg = IsChinese() ? ErrNoWslDistributionZH : ErrNoWslDistributionEN;
+            log.Error($"Failed to get running WSL distribution: {errMsg}");
             runner.Destroy();
-            return new(ErrorCode.WslDistribNotFound, errMsg); ;
+            return (errorCode, errMsg);
         }
-
-        // check distribution version
-        if (!distributions.Any(d => d.Version == 2))
-        {
-            errMsg = IsChinese() ? ErrWslVersionZh : ErrWslVersionEn;
-            log.Error(errMsg);
-            runner.Destroy();
-            return (ErrorCode.WslLowVersion, errMsg);
-        }
-
-        // check is any distribution running
-        if (!distributions.Any(d => d.Version == 2 && d.IsRunning))
-        {
-            errMsg = IsChinese() ? ErrNoWslDistributionRunningZh : ErrNoWslDistributionRunningEn;
-            log.Error(errMsg);
-            runner.Destroy();
-            return (ErrorCode.WslNotRunning, errMsg);
-        }
-
-        if (distributions.FirstOrDefault(d => d.IsDefault && d.Version == 2 && d.IsRunning) is Distribution defaultDistribution)
-        {
-            distribution = defaultDistribution.Name;
-        }
-        else
-        {
-            distribution = distributions.First(d => d.Version == 2 && d.IsRunning).Name;
-        }
-
-
+        
         log.Info($"Using WSL distribution '{distribution}' to attach; the device will be available in all WSL 2 distributions.");
-
+        (errorCode, errMsg) = await CheckWslCondition(distribution,hostIP);
+        if (errorCode != ErrorCode.Success) {
+            log.Error($"Failed to check WSL distribution: {errMsg}");
+            runner.Destroy();
+            return (errorCode, errMsg);
+        }
         var args = new List<string>
         {
             "attach",
             "--busid", busID,
             "--wsl", distribution
         };
+
         if (!string.IsNullOrEmpty(hostIP))
         {
             args.Add("--host-ip");
             args.Add(hostIP);
         }
+
         if (autoAttach)
         {
+            log.Info($"Auto-attach process started for device {busID}.");
             args.Add("--auto-attach");
+            lock (AttachProcessListLock)
+            {
+                AttachProcessList.Add(runner);
+            }
         }
+        var (ExitCode, _, StandardError) = await runner.RunUSBIPD(false, [.. args]);
         
-        var (ExitCode, StandardOutput, StandardError) = await runner.RunUSBIPD(false, [.. args]);
-
         if (!autoAttach)
         {
-            if (ExitCode != 0)
-            {
-                log.Warn($"Failed to attach device '{busID}': {StandardError}");
-            }
             runner.Destroy();
             return new(ExitCode == 0 ? ErrorCode.Success : ErrorCode.DeviceAttachFailed, StandardError);
-        }
-
-        log.Info($"Auto-attach process started for device {busID}.");
-        lock (AttachProcessListLock)
-        {
-            AttachProcessList.Add(runner);
         }
 
         return new(ErrorCode.Failure, IsChinese() ? "运行于WSL中的自动附加程序已退出。" : "The automatic attachment program running in WSL has exited.");
@@ -409,34 +356,33 @@ public static partial class USBIPDWin
         DetachDevice(string? hardwareid)
     {
         ProcessRunner runner = new();
-        var ret = await runner.RunUSBIPD(false, string.IsNullOrEmpty(hardwareid) ? ["detach", "--all"] : ["detach", "--hardware-id", hardwareid]);
+        var (ExitCode, _, StandardError) = await runner.RunUSBIPD(false, string.IsNullOrEmpty(hardwareid) ? ["detach", "--all"] : ["detach", "--hardware-id", hardwareid]);
 
-        if (ret.ExitCode != 0)
+        if (ExitCode != 0)
         {
-            log.Warn($"Failed to detach device '{hardwareid}': {ret.StandardError}");
+            log.Warn($"Failed to detach device '{hardwareid}': {StandardError}");
         }
         runner.Destroy();
 
-        return new(ret.ExitCode == 0 ? ErrorCode.Success : ErrorCode.DeviceDetachFailed, ret.StandardError);
+        return new(ExitCode == 0 ? ErrorCode.Success : ErrorCode.DeviceDetachFailed, StandardError);
     }
 
-    public static async Task<(ErrorCode ErrCode, string ErrMsg)> 
+    public static async Task<(ErrorCode ErrCode, string ErrMsg)>
         DetachAllDevice() => await DetachDevice(null);
 
 
-    public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)> 
+    public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)>
         ListUSBDevices(string? hardwareID, bool connectedOnly)
     {
-        List<USBDevice>? devList = [];
         ProcessRunner runner = new();
-        var check = await CheckUSBIPDWin();
-        if (check.ErrCode != ErrorCode.Success)
+        var (ErrCode, ErrMsg) = await CheckUSBIPDWin();
+        if (ErrCode != ErrorCode.Success)
         {
-            log.Error($"Failed to fetch USB device list: {check.ErrMsg}");
+            log.Error($"Failed to fetch USB device list: {ErrMsg}");
             runner.Destroy();
-            return (check.ErrCode, check.ErrMsg, null);
+            return (ErrCode, ErrMsg, null);
         }
-        string cmd = CmdGetAllDevices;
+        string cmd = $"Import-Module '{UsbipdPowershellModulePath}';Get-UsbipdDevice";
         if (connectedOnly)
         {
             cmd += " | Where-Object {$_.IsConnected}";
@@ -446,22 +392,22 @@ public static partial class USBIPDWin
         {
             cmd += $" | Where-Object {{$_.HardwareId -eq '{hardwareID}'}}";
         }
-        
-        var ret = await runner.RunPowerShellScripts(cmd);
 
-        if (ret.ExitCode != 0)
+        var (ExitCode, StandardOutput, StandardError) = await runner.RunPowerShellScripts(cmd);
+
+        if (ExitCode != 0)
         {
-            log.Warn($"Failed to fetch USB device list: {ret.StandardError}");
+            log.Warn($"Failed to fetch USB device list: {StandardError}");
             runner.Destroy();
-            return (ErrorCode.Failure, ret.StandardError,null);
+            return (ErrorCode.Failure, StandardError,null);
         }
         runner.Destroy();
-        if (string.IsNullOrEmpty(ret.StandardOutput))
+        if (string.IsNullOrEmpty(StandardOutput))
         {
             log.Warn("No info is found.");
-            return (ErrorCode.Failure, ret.StandardError,null);
+            return (ErrorCode.Failure, StandardError,null);
         }
-        return (ErrorCode.Success, "", ParseStringDevInfoToUSBDeviceList(ret.StandardOutput));
+        return (ErrorCode.Success, "", ParseStringDevInfoToUSBDeviceList(StandardOutput));
     }
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)>
@@ -469,47 +415,47 @@ public static partial class USBIPDWin
     public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)>
         ListUSBDevices(string hardwareID) => await ListUSBDevices(hardwareID, false);
 
-    public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)> 
+    public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)>
         ListConnectedDevices(string ? hardwareID) => await ListUSBDevices(hardwareID, true);
     public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)>
         ListConnectedDevices() => await ListUSBDevices(null, true);
 
-    public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)> 
+    public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)>
         ListPersistedDevices()
     {
         ProcessRunner runner = new();
 
-        var check = await CheckUSBIPDWin();
-        if (check.ErrCode != ErrorCode.Success)
+        var (ErrCode, ErrMsg) = await CheckUSBIPDWin();
+        if (ErrCode != ErrorCode.Success)
         {
-            log.Error($"Failed to fetch USB device list: {check.ErrMsg}");
+            log.Error($"Failed to fetch USB device list: {ErrMsg}");
             runner.Destroy();
-            return (check.ErrCode, check.ErrMsg, null);
+            return (ErrCode, ErrMsg, null);
         }
-        string cmd = $"{CmdGetAllDevices} | Where-Object {{-not $_.IsConnected -and $_.IsBound}}";
-        var ret = await runner.RunPowerShellScripts(cmd);
+        string cmd = $"Import-Module '{UsbipdPowershellModulePath}';Get-UsbipdDevice | Where-Object {{-not $_.IsConnected -and $_.IsBound}}";
+        var (ExitCode, StandardOutput, StandardError) = await runner.RunPowerShellScripts(cmd);
 
-        if (ret.ExitCode != 0)
+        if (ExitCode != 0)
         {
-            log.Warn($"Failed to fetch persisted devices: {ret.StandardError}");
+            log.Warn($"Failed to fetch persisted devices: {StandardError}");
             runner.Destroy();
-            return (ErrorCode.Failure, ret.StandardError, []);
+            return (ErrorCode.Failure, StandardError, []);
         }
         runner.Destroy();
 
-        return (ErrorCode.Success, "", ParseStringDevInfoToUSBDeviceList(ret.StandardOutput));
+        return (ErrorCode.Success, "", ParseStringDevInfoToUSBDeviceList(StandardOutput));
     }
 
     public static async Task<bool> IsDeviceConnected(string hardwareId)
     {
-        var ret = await ListConnectedDevices(hardwareId);
+        var (_, _, DevicesList) = await ListConnectedDevices(hardwareId);
 
-        if (ret.DevicesList == null)
+        if (DevicesList == null)
         {
             return false;
         }
 
-        foreach (var dev in ret.DevicesList)
+        foreach (var dev in DevicesList)
         {
             if (dev.HardwareId == hardwareId)
             {
@@ -522,14 +468,14 @@ public static partial class USBIPDWin
 
     public static async Task<bool> IsDeviceBound(string hardwareId)
     {
-        var ret = await ListConnectedDevices(hardwareId);
+        var (_, _, DevicesList) = await ListConnectedDevices(hardwareId);
 
-        if (ret.DevicesList == null)
+        if (DevicesList == null)
         {
             return false;
         }
 
-        foreach (var dev in ret.DevicesList)
+        foreach (var dev in DevicesList)
         {
             if (dev.HardwareId == hardwareId && dev.IsBound)
             {
@@ -542,14 +488,14 @@ public static partial class USBIPDWin
 
     public static async Task<bool> IsDeviceAttached(string hardwareId)
     {
-        var ret = await ListConnectedDevices(hardwareId);
+        var (_, _, DevicesList) = await ListConnectedDevices(hardwareId);
 
-        if (ret.DevicesList == null)
+        if (DevicesList == null)
         {
             return false;
         }
 
-        foreach (var dev in ret.DevicesList)
+        foreach (var dev in DevicesList)
         {
             if (dev.HardwareId == hardwareId && dev.IsAttached)
             {

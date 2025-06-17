@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using Microsoft.Win32;
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -15,7 +16,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using Microsoft.Win32;
+using static wsl_usb_manager.USBIPD.USBIPDWin;
 
 namespace wsl_usb_manager.USBIPD;
 
@@ -137,16 +138,16 @@ public static partial class USBIPDWin
         // * Ubuntu             Running         1
         //   Debian             Stopped         2
         //   Custom-MyDistro    Running         2
-        var detailsResult = await runner.RunWslAsync("--list", "--all", "--verbose");
-        switch (detailsResult.ExitCode)
+        var (ExitCode, StandardOutput, _, _) = await runner.RunWslAsync("--list", "--all", "--verbose");
+        switch (ExitCode)
         {
             case 0:
-                var details = detailsResult.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                var details = StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
                 // Sanity check
                 if (!WslListHeaderRegex().IsMatch(details.FirstOrDefault() ?? string.Empty))
                 {
-                    log.Error($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
+                    log.Error($"WSL failed to parse distributions: {StandardOutput}");
                     runner.Destroy();
                     return null;
                 }
@@ -156,7 +157,7 @@ public static partial class USBIPDWin
                     var match = WslListDistributionRegex().Match(line);
                     if (!match.Success)
                     {
-                        log.Error($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
+                        log.Error($"WSL failed to parse distributions: {StandardOutput}");
                         return null;
                     }
                     var isDefault = match.Groups[1].Value == "*";
@@ -204,6 +205,7 @@ public static partial class USBIPDWin
     {
         foreach (var p in AttachProcessList)
         {
+            log.Debug($"Process: {p.Name}");
             if (!p.HasExited())
             {
                 log.Info($"Stopping autoattach for {p.Name}");
@@ -212,4 +214,277 @@ public static partial class USBIPDWin
         }
         AttachProcessList.Clear();
     }
+
+    public static async Task<(ErrorCode ErrCode, string Distribution, string ErrMsg)> GetRunningDistribution()
+    {
+        string distribution = string.Empty;
+        string errMsg = string.Empty;
+        // Figure out which distribution to use. WSL can be in many states:
+        // (a) not installed at all
+        // (b) if the user specified one:
+        //      (1) it must exist
+        //      (2) it must be version 2
+        //      (3) it must be running
+        // (c) if the user did not specify one:
+        //      (1) there must exist at least one distribution
+        //      (2) there must exist at least one version 2 distribution
+        //      (3) there must be at least one version 2 running
+        //      (4)
+        //          (i) use the default distribution, if and only if it is version 2 and running
+        //              (FYI: This is administered by WSL in HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Lxss.)
+        //          (ii) use the first one that is version 2 and running
+        //
+        // We provide enough instructions to the user how to fix whatever
+        // error/warning we give. Or else we get flooded with "it doesn't work" issues...
+
+        if (await GetWSLDistributions() is not IEnumerable<Distribution> distributions)
+        {
+            // check (a) failed
+            errMsg = IsChinese() ? ErrNoWslDistributionZH : ErrNoWslDistributionEN;
+            return new(ErrorCode.WslDistribNotFound, distribution, errMsg); ;
+        }
+
+        // check distribution version
+        if (!distributions.Any(d => d.Version == 2))
+        {
+            errMsg = IsChinese() ? ErrWslVersionZh : ErrWslVersionEn;
+            log.Error(errMsg);
+            return (ErrorCode.WslLowVersion, distribution, errMsg);
+        }
+
+        // check is any distribution running
+        if (!distributions.Any(d => d.Version == 2 && d.IsRunning))
+        {
+            errMsg = IsChinese() ? ErrNoWslDistributionRunningZh : ErrNoWslDistributionRunningEn;
+            log.Error(errMsg);
+            return (ErrorCode.WslNotRunning, distribution, errMsg);
+        }
+
+        if (distributions.FirstOrDefault(d => d.IsDefault && d.Version == 2 && d.IsRunning) is Distribution defaultDistribution)
+        {
+            distribution = defaultDistribution.Name;
+        }
+        else
+        {
+            distribution = distributions.First(d => d.Version == 2 && d.IsRunning).Name;
+        }
+        return (ErrorCode.Success, distribution, string.Empty);
+    }
+
+    public static async Task<(ErrorCode ErrCode, string ErrMsg)>
+        CheckWslCondition(string distribution, string? hostIP)
+    {
+        string errMsg = string.Empty;
+        IPAddress? hostAddress = null;
+        ProcessRunner runner = new();
+
+        if (!string.IsNullOrEmpty(hostIP))
+        {
+            if (!IPAddress.TryParse(hostIP, out hostAddress))
+            {
+                errMsg = $"{hostIP} is not a valid IP.";
+                log.Error(errMsg);
+                runner.Destroy();
+                return new(ErrorCode.Failure, errMsg);
+            }
+        }
+
+        // Check: WSL kernel must be USBIP capable.
+        {
+            var wslResult = await runner.RunWslAsync((distribution, "/"), null, true, "/bin/cat", "/proc/config.gz");
+            if (wslResult.ExitCode != 0)
+            {
+                errMsg = IsChinese() ? ErrWslGetKernelConfigurationZH : ErrWslGetKernelConfigurationEN;
+                log.Error(errMsg);
+                runner.Destroy();
+                return new(ErrorCode.Failure, errMsg);
+            }
+
+            using var gunzipStream = new GZipStream(wslResult.BinaryOutput, CompressionMode.Decompress);
+            using var reader = new StreamReader(gunzipStream, Encoding.UTF8);
+            var config = await reader.ReadToEndAsync();
+            if (config.Contains("CONFIG_USBIP_VHCI_HCD=y"))
+            {
+                // USBIP client built-in, we're done
+            }
+            else if (config.Contains("CONFIG_USBIP_VHCI_HCD=m"))
+            {
+                // USBIP client built as a module
+
+                // Expected output:
+                //
+                //    ...
+                //    vhci_hcd 61440 0 - Live 0x0000000000000000
+                //    ...
+                wslResult = await runner.RunWslAsync((distribution, "/"), null, false, "/bin/cat", "/proc/modules");
+                if (wslResult.ExitCode != 0)
+                {
+                    errMsg = $"Unable to get WSL kernel modules.";
+                    log.Error(errMsg);
+                    runner.Destroy();
+                    return new(ErrorCode.Failure, errMsg);
+                }
+
+                if (!wslResult.StandardOutput.Contains("vhci_hcd"))
+                {
+                    log.Info($"Loading vhci_hcd module.");
+                    wslResult = await runner.RunWslAsync((distribution, "/"), null, false, "/sbin/modprobe", "vhci_hcd");
+                    if (wslResult.ExitCode != 0)
+                    {
+                        errMsg = $"Loading vhci_hcd failed.";
+                        log.Error(errMsg);
+                        runner.Destroy();
+                        return (ErrorCode.Failure, errMsg);
+                    }
+                    // Expected output:
+                    //
+                    //    ...
+                    //    vhci_hcd 61440 0 - Live 0x0000000000000000
+                    //    ...
+                    wslResult = await runner.RunWslAsync((distribution, "/"), null, false, "/bin/cat", "/proc/modules");
+                    if (wslResult.ExitCode != 0)
+                    {
+                        errMsg = $"Unable to get WSL kernel modules.";
+                        log.Error(errMsg);
+                        runner.Destroy();
+                        return new(ErrorCode.Failure, errMsg);
+                    }
+                    if (!wslResult.StandardOutput.Contains("vhci_hcd"))
+                    {
+                        errMsg = $"Module vhci_hcd not loaded.";
+                        log.Error(errMsg);
+                        runner.Destroy();
+                        return new(ErrorCode.Failure, errMsg);
+                    }
+                }
+            }
+            else
+            {
+                errMsg = IsChinese() ? ErrWslDoNotSupportUSBIPZH : ErrWslDoNotSupportUSBIPEN;
+                log.Error(errMsg);
+                runner.Destroy();
+                return new(ErrorCode.Failure, errMsg);
+            }
+        }
+
+        // Now find out the IP address of the host (if not explicitly provided by the user).
+        if (hostAddress is null)
+        {
+            var (ExitCode, StandardOutput, StandardError, BinaryOutput) = await runner.RunWslAsync((distribution, "/"), null, false, "/bin/wslinfo", "--networking-mode");
+            string networkingMode;
+            if (ExitCode == 0)
+            {
+                networkingMode = StandardOutput.Trim();
+                log.Info($"Detected networking mode '{networkingMode}'.");
+            }
+            else
+            {
+                networkingMode = "nat";
+                log.Warn($"Unable to determine networking mode, assuming 'nat'.");
+            }
+            switch (networkingMode)
+            {
+                case "none":
+                case "virtioproxy":
+                default:
+                    errMsg = $"Networking mode '{networkingMode}' is not supported.";
+                    log.Error(errMsg);
+                    return new(ErrorCode.Failure, errMsg);
+                case "mirrored":
+                    hostAddress = IPAddress.Loopback;
+                    break;
+                case "nat":
+                    // See https://learn.microsoft.com/en-us/windows/wsl/networking
+                    // We need to get the default gateway address.
+                    // We use 'cat /proc/net/route', where we assume 'cat' is available on all distributions
+                    //      and /proc/net/route is supported by the WSL kernel.
+                    var ipResult = await runner.RunWslAsync((distribution, "/"), null, false, "/bin/cat", "/proc/net/route");
+                    if (ipResult.ExitCode == 0)
+                    {
+                        // Example output:
+                        //
+                        // Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT
+                        //
+                        // eth0    00000000        01E01AAC        0003    0       0       0       00000000        0       0       0
+                        //
+                        // eth0    00E01AAC        00000000        0001    0       0       0       00F0FFFF        0       0       0
+
+                        for (var match = RouteRegex().Match(ipResult.StandardOutput); match.Success; match = match.NextMatch())
+                        {
+                            if (uint.TryParse(match.Groups[2].Value, NumberStyles.HexNumber, null, out var destination) && destination == 0
+                                && uint.TryParse(match.Groups[3].Value, NumberStyles.HexNumber, null, out var gateway))
+                            {
+                                hostAddress = new IPAddress(gateway);
+                                break;
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+        if (hostAddress is null)
+        {
+            errMsg = "Unable to determine host address.";
+            log.Error(errMsg);
+            runner.Destroy();
+            return new(ErrorCode.Failure, errMsg);
+        }
+
+        log.Info($"Using IP address {hostAddress} to reach the host.");
+
+        // Heuristic firewall check
+        // The current timeout is two seconds.
+        // This used to be one second, but some users got false results due to WSL being slow to start the command.
+        FirewallCheckResult result;
+        try
+        {
+            // With minimal requirements (bash only) try to connect from WSL to our server.
+            var (ExitCode, StandardOutput, StandardError, BinaryOutput) = await runner.RunWslAsync(2000, (distribution, "/"), null, false, "/bin/bash", "-c",
+                $"echo < /dev/tcp/{hostAddress}/{USBIP_PORT}");
+            if (StandardError.Contains("refused"))
+            {
+                // If the output contains "refused", then the test was executed and failed, irrespective of the exit code.
+                result = FirewallCheckResult.Fail;
+            }
+            else if (ExitCode == 0)
+            {
+                // The test was executed, and returned within the timeout, and the connection was not actively refused (see above).
+                result = FirewallCheckResult.Pass;
+            }
+            else
+            {
+                // The test was not executed properly (bash unavailable, /dev/tcp not supported, etc.).
+                result = FirewallCheckResult.Unknown;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Timeout, probably a firewall dropping the connection request (i.e., not actively refused (DENY), but DROP).
+            result = FirewallCheckResult.Fail;
+        }
+        if (result == FirewallCheckResult.Pass)
+        {
+            return new(ErrorCode.Success, "");
+        }
+        // We know that the connection was refused, so we can check for possible blockers.
+        if (GetPossibleBlockReason() is string blockReason)
+        {
+            // We found a possible reason.
+            log.Warn(blockReason);
+            errMsg = blockReason;
+        }
+        if (FirewallCheckResult.Fail == result)
+        {
+            // In any case, it isn't working...
+            log.Warn($"A firewall appears to be blocking the connection; ensure TCP port {USBIP_PORT} is allowed.");
+        }
+        else
+        {
+            // We don't know what happened, so we can't check for possible blockers.
+            log.Warn($"Firewall check failed, but we don't know why (bash unavailable, or wrong version of bash).");
+        }
+
+        return new(ErrorCode.Failure, errMsg);
+    }
+
 }
