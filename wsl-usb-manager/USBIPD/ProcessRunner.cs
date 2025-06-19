@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Principal;
 using System.Text;
+using wsl_usb_manager.Domain;
 
 namespace wsl_usb_manager.USBIPD;
 
@@ -135,7 +136,7 @@ public class ProcessRunner
         var stderr = string.Empty;
         CancellationToken cancellationToken = cancellationTokenSource.Token;
         cancellationTokenSource.TryReset();
-
+        var exePath = Path.Combine(USBIPDWin.GetUSBIPDInstallPath(), "usbipd.exe");
         if (privilege && !IsRunningAsAdministrator())
         {
             //Run as administrator example:
@@ -143,7 +144,7 @@ public class ProcessRunner
             startInfo = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = $"Start-Process usbipd.exe -ArgumentList '{arguments.Aggregate((s1, s2) => s1 + " " + s2)}' -WindowStyle Hidden -Verb RunAs",
+                Arguments = $"Start-Process '{exePath}' -ArgumentList '{arguments.Aggregate((s1, s2) => s1 + " " + s2)}' -WindowStyle Hidden -Verb RunAs",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -154,7 +155,7 @@ public class ProcessRunner
         {
             startInfo = new ProcessStartInfo
             {
-                FileName = "usbipd.exe",
+                FileName = $"{exePath}",
                 Arguments = $"{arguments.Aggregate((s1, s2) => s1 + " " + s2)}",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -319,7 +320,6 @@ public class ProcessRunner
         {
             try
             {
-                cancellationTokenSource.Cancel();
                 if (process.StartInfo.RedirectStandardInput)
                 {
                     using var remoteTimeoutTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
@@ -330,7 +330,8 @@ public class ProcessRunner
                 }
                 else
                 {
-                    cancellationTokenSource.Cancel();
+                    log.Debug("Send CTRL+C with CtrlCUtil");
+                    CtrlCUtil.SendCtrlC(process);
                 }
                 process.WaitForExit(200);
             }

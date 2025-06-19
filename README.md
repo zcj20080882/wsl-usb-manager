@@ -1,85 +1,89 @@
 # wsl-usb-manager
 
-#### 介绍
+#### Introduction
 
-一款配合usbipd-win使用的用于附加USB设备到WSL中的工具，提供友好用户界面。
+A tool that works with usbipd-win to attach USB devices to WSL, providing a friendly user interface.
 
-**功能**
+**Features**
 
-1. 显示所有USB设备列表，可通过复选框或者右键菜单进行绑定设备附加设备等操作
-2. 显示已选设备的详细信息
-3. 支持自动检测USB设备插拔事件，自动刷新设备列表
-4. 支持通过指定网卡附加USB设备到WSL
-5. 显示持久化的设备，可删除持久化设备
-6. 支持自动附件功能：设备添加到自动附加列表后，当设备插入时自动附加到WSL
-7. 支持中英文
+1. Display a list of all USB devices, bind/unbind devices, attach/detach devices through checkboxes or right-click menu.
 
-**运行需求：**
+    >Devices must be bound before they can be attached.
 
-1. Win10以上版本
-2. .Net Framework 4.8环境
-2. WSL2环境，需要安装usbipd-win（须为4.4.0或者以上版本）
-3. 绑定设备时需要管理员权限
+    ![bind](./screen/bind-en.png)
+    ![attach](./screen/attach-en.png)
+    ![detach](./screen/detach-en.png)
+    ![unbind](./screen/unbind-en.png)]
 
-#### 使用方法
+2. Hide/Show filtered devices
 
-**绑定设备**
+    ![filter](./screen/hide-show-fiter-en.png)
 
-![bind](./screen/bind-1-zh.png)
-![bind](./screen/bind-2-zh.png)
+3. Display detailed information of selected devices
 
-**附加设备**
+    ![detail](./screen/device-info-en.png)
 
->附加设备之前，必须先绑定设备。
+4. Support attaching USB devices to WSL through specified network adapter
 
-![attach](./screen/attach-zh.png)
+   For some Windows machines controlled by organizational domains, there might be special firewall configurations that don't allow WSL to access host services through non-private networks. This prevents devices from being attached to WSL, and the program will report errors similar to the one shown below:
 
-**解绑设备**
+   ![fw](./screen/blocked-by-fw-en.png)
 
-![unbind](./screen/unbind-zh.png)
+   In this case, you can set a network as private and configure to attach devices through that network adapter. **Note: Do not set unsecure networks (like public WiFi) as private networks.**
 
-**分离设备**
+   ![workaround](./screen/workaround-fw-en.png)
 
-![detach](./screen/detach-zh.png)
+5. Display persisted devices, with ability to remove them
 
-**自动附加设备**
+    Persisted devices are those that are bound but not connected (not plugged into the host).
+    usbipd-win records bound devices after each binding and automatically binds them on next startup.
+    This can result in many persisted devices, which can be managed by this program.
 
-设备添加到自动附加设备列表后，当设备插入时，自动附加到WSL。
+    ![persistent](./screen/persisted-device-en.png)
 
-![auto-attach](./screen/auto-attach-zh.png)
+6. Support automatic detection of USB device plug/unplug events, automatically refreshing the device list
 
-对于某些被组织域管控的windows，可能有特殊的防火墙配置，不允许WSL通过非私有网络访问host机上服务，这样导致设备无法被附加到WSL中。此时可以将设备上某个网络设置为私有网路，并且设置通过该网卡附加设备。注意：请不要将非安全网络（例如公共场所的WiFi网络）设置为私有网络。
+7. Support auto-attach feature: devices added to the auto-attach list will be automatically attached to WSL when plugged in
 
-![private-network](./screen/workaround-fw-1-zh.png)
-![private-network](./screen/workaround-fw-2-zh.png)
+    ![auto-attach](./screen/auto-attach-en.png)
 
+8. Support Chinese and English languages
 
-#### 构建
+    ![change](./screen/change-language-en.png)
 
-1.  安装Visual Studio 2022，同时安装如下扩展：
+**Requirements**
+
+1. Windows 10 or above
+2. .Net Framework 4.8 environment
+3. usbipd-win v4.4.0 or above
+4. WSL2 environment with usbipd-win installed
+5. Administrator privileges required for binding devices
+
+#### Building
+
+1.  Install Visual Studio 2022 with the following extensions:
 
     - License Header Manager
     - Microsoft Visual Studio Installer Projects 2022
-
-2.  安装Git Version
+2.  Install Git
+3.  Install Inno Setup 6 (for building installer)
+4.  Install Git Version
 
     ```powershell
     dotnet tool install --global GitVersion.Tool
     ```
 
-3.  构建
+5.  Build
 
     ```powershell
-    .\buid_installer.ps1
+    .\Build.ps1
     ```
 
-    构建完成后，会在`Installer\Release\`生成一个名为`WSL-USB-Manager-vx.x.x.msi`的安装包，其中vx.x.x为当前版本号。
+    After building, an installer named `WSL USB Manager Vx.x.x.exe` will be generated in `BuildOutput\Installer`, where `x.x.x` is the current version number.
 
 
-#### 报告bug
+#### Bug Reports
 
-如果您在使用中遇到问题，请按照如下步骤打开日志路径，拷贝出最新日志，并在`issue`中提交bug同时附加日志。
+If you encounter any issues while using the program, please follow these steps to access the log path, copy the latest log, and submit a bug report in the `issue` section with the log attached.
 
-![step1](./screen/get-log-step1-zh.png)
-![step2](./screen/get-log-step2-zh.png)
-![step3](./screen/get-log-step3-zh.png)]
+![get log](./screen/get-log-en.png)

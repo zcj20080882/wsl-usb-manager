@@ -5,15 +5,10 @@ VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wsl-usb-manager", "wsl-usb-manager\wsl-usb-manager.csproj", "{B4AFF067-F61C-4FDD-9BFD-AA85FCF2BEC8}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Installer", "Installer\Installer.vdproj", "{8660B078-79B3-4249-8785-E264EB1B14A0}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Files", "Solution Files", "{CD5B5253-494A-4FF4-B5D3-5E5F96FD8768}"
 	ProjectSection(SolutionItems) = preProject
-		buid_installer.ps1 = buid_installer.ps1
 		GitVersion.yml = GitVersion.yml
 		LICENSE = LICENSE
-		README.en.md = README.en.md
-		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{75989FD5-3FBD-44BB-A822-FE7066A141C9}"
@@ -49,15 +44,6 @@ Global
 		{B4AFF067-F61C-4FDD-9BFD-AA85FCF2BEC8}.Release|x64.Build.0 = Release|x64
 		{B4AFF067-F61C-4FDD-9BFD-AA85FCF2BEC8}.Release|x86.ActiveCfg = Release|Any CPU
 		{B4AFF067-F61C-4FDD-9BFD-AA85FCF2BEC8}.Release|x86.Build.0 = Release|Any CPU
-		{8660B078-79B3-4249-8785-E264EB1B14A0}.Debug|Any CPU.ActiveCfg = Debug
-		{8660B078-79B3-4249-8785-E264EB1B14A0}.Debug|ARM64.ActiveCfg = Debug
-		{8660B078-79B3-4249-8785-E264EB1B14A0}.Debug|x64.ActiveCfg = Debug
-		{8660B078-79B3-4249-8785-E264EB1B14A0}.Debug|x86.ActiveCfg = Debug
-		{8660B078-79B3-4249-8785-E264EB1B14A0}.Release|Any CPU.ActiveCfg = Release
-		{8660B078-79B3-4249-8785-E264EB1B14A0}.Release|ARM64.ActiveCfg = Release
-		{8660B078-79B3-4249-8785-E264EB1B14A0}.Release|x64.ActiveCfg = Release
-		{8660B078-79B3-4249-8785-E264EB1B14A0}.Release|x64.Build.0 = Release
-		{8660B078-79B3-4249-8785-E264EB1B14A0}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
