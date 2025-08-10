@@ -90,7 +90,7 @@ public static partial class USBIPDWin
             stderr = StandardError;
             if (ExitCode == 0)
             {
-                
+
                 log.Error(StandardError);
                 if (IsChinese())
                     stderr = $"无法检查\"usbipd\"版本： {stderr}。";
@@ -119,7 +119,7 @@ public static partial class USBIPDWin
             int patch = int.Parse(match.Groups[3].Value);
             appInfo.DisplayVersion = $"{major}.{minor}.{patch}";
             Match requestVersion = VersionRegex().Match(UsbipdMinVersion);
-            if (requestVersion.Success) 
+            if (requestVersion.Success)
             {
                 int minimajor = int.Parse(requestVersion.Groups[1].Value);
                 int miniminer = int.Parse(requestVersion.Groups[2].Value);
@@ -127,17 +127,17 @@ public static partial class USBIPDWin
                 if (major < minimajor || (major == minimajor && minor < miniminer))
                 {
                     stderr = $"{(IsChinese() ? ErrUsbipLowVersionZH : ErrUsbipLowVersionEN)}";
-                    
+
                     log.Error(stderr);
                     return (ErrorCode.USBIPDLowVersion, stderr);
                 }
                 else if (major == minimajor)
                 {
-                    UsbipdPowershellModulePath=Path.Combine(appInfo.InstallLocation, "PowerShell", "Usbipd.Powershell.dll");
+                    UsbipdPowershellModulePath = Path.Combine(appInfo.InstallLocation, "PowerShell", "Usbipd.Powershell.dll");
                 }
                 else
                 {
-                    UsbipdPowershellModulePath=Path.Combine(appInfo.InstallLocation, "Usbipd.Powershell.dll");
+                    UsbipdPowershellModulePath = Path.Combine(appInfo.InstallLocation, "Usbipd.Powershell.dll");
                 }
             }
             else
@@ -160,7 +160,7 @@ public static partial class USBIPDWin
             return (ErrorCode.ParseError, stderr);
         }
 
-        
+
         if ((Path.GetPathRoot(appInfo.InstallLocation) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
         {
             stderr = (IsChinese() ? ErrUsbipLocationZH : ErrUsbipLocationEN);
@@ -231,14 +231,14 @@ public static partial class USBIPDWin
      * Bind a device with a hardware ID.
      */
     public static async Task<(ErrorCode ErrCode, string ErrMsg)>
-        BindDevice(string hardwareid, bool force)
+        BindDevice(string id, bool useBusID, bool force)
     {
         string stderr = "";
         ProcessRunner runner = new();
-        var (ExitCode, _, StandardError) = await runner.RunUSBIPD(true, ["bind", "--hardware-id", hardwareid, (force ? "--force" : "")]);
+        var (ExitCode, _, StandardError) = await runner.RunUSBIPD(true, ["bind", (useBusID ? "--busid" : "--hardware-id"), id, (force ? "--force" : "")]);
         if (ExitCode != 0)
         {
-            log.Error($"Failed to bind device '{hardwareid}': {StandardError}");
+            log.Error($"Failed to bind device '{id}': {StandardError}");
             stderr = StandardError;
         }
         runner.Destroy();
@@ -247,17 +247,22 @@ public static partial class USBIPDWin
 
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg)>
-        BindDevice(string hardwareid) => await BindDevice(hardwareid, false);
+        BindDevice(string id, bool useBusID) => await BindDevice(id, useBusID, false);
 
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg)>
-        UnbindDevice(string? hardwareid)
+        UnbindDevice(string? id, bool? useBusID)
     {
         ProcessRunner runner = new();
-        var (ExitCode, _, StandardError) = await runner.RunUSBIPD(true, string.IsNullOrEmpty(hardwareid) ? ["unbind", "--all"] : ["unbind", "--hardware-id", hardwareid]);
+        var (ExitCode, _, StandardError) = await runner.RunUSBIPD(
+            true,
+            string.IsNullOrEmpty(id)
+                ? ["unbind", "--all"]
+                : ["unbind", (useBusID.HasValue && useBusID.Value ? "--busid" : "--hardware-id"), id]
+        );
         if (ExitCode != 0)
         {
-            log.Warn($"Failed to unbind device '{hardwareid}': {StandardError}");
+            log.Warn($"Failed to unbind device '{id}': {StandardError}");
         }
         runner.Destroy();
 
@@ -265,15 +270,15 @@ public static partial class USBIPDWin
     }
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg)>
-        UnbindAllDevice() => await UnbindDevice(null);
+        UnbindAllDevice() => await UnbindDevice(null, false);
 
     /// <summary>
-    /// BusId has already been checked, and the server is running.
+    /// ID(Bus ID or hardware ID) has already been checked, and the server is running.
     /// </summary>
     public static async Task<(ErrorCode ErrCode, string ErrMsg)>
-        Attach(string busID, bool autoAttach, string? hostIP)
+        Attach(string id, bool useBusID, bool autoAttach, string? hostIP)
     {
-        ProcessRunner runner = new(busID);
+        ProcessRunner runner = new(id);
         string distribution = string.Empty;
         string errMsg = string.Empty;
         ErrorCode errorCode = ErrorCode.Failure;
@@ -283,19 +288,19 @@ public static partial class USBIPDWin
         {
             foreach (var p in AttachProcessList)
             {
-                if (p.Name.Equals(busID, StringComparison.CurrentCultureIgnoreCase))
+                if (p.Name.Equals(id, StringComparison.CurrentCultureIgnoreCase))
                 {
                     if (!p.HasExited())
                     {
 
-                        errMsg = $"Device {busID} has been auto-attached.";
+                        errMsg = $"Device {id} has been auto-attached.";
                         log.Info(errMsg);
                         runner.Destroy();
                         return new(ErrorCode.Success, errMsg);
                     }
                     else
                     {
-                        log.Warn($"Device {busID} has been auto-attached, but the process has exited.");
+                        log.Warn($"Device {id} has been auto-attached, but the process has exited.");
                         AttachProcessList.Remove(p);
                     }
                     break;
@@ -311,10 +316,11 @@ public static partial class USBIPDWin
             runner.Destroy();
             return (errorCode, errMsg);
         }
-        
+
         log.Info($"Using WSL distribution '{distribution}' to attach; the device will be available in all WSL 2 distributions.");
-        (errorCode, errMsg) = await CheckWslCondition(distribution,hostIP);
-        if (errorCode != ErrorCode.Success) {
+        (errorCode, errMsg) = await CheckWslCondition(distribution, hostIP);
+        if (errorCode != ErrorCode.Success)
+        {
             log.Error($"Failed to check WSL distribution: {errMsg}");
             runner.Destroy();
             return (errorCode, errMsg);
@@ -322,7 +328,7 @@ public static partial class USBIPDWin
         var args = new List<string>
         {
             "attach",
-            "--busid", busID,
+            (useBusID ? "--busid" : "--hardware-id"), id,
             "--wsl", distribution
         };
 
@@ -334,7 +340,7 @@ public static partial class USBIPDWin
 
         if (autoAttach)
         {
-            log.Info($"Auto-attach process started for device {busID}.");
+            log.Info($"Auto-attach process started for device {id}.");
             args.Add("--auto-attach");
             lock (AttachProcessListLock)
             {
@@ -342,7 +348,7 @@ public static partial class USBIPDWin
             }
         }
         var (ExitCode, _, StandardError) = await runner.RunUSBIPD(false, [.. args]);
-        
+
         if (!autoAttach)
         {
             runner.Destroy();
@@ -353,14 +359,14 @@ public static partial class USBIPDWin
     }
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg)>
-        DetachDevice(string? hardwareid)
+        DetachDevice(string? id, bool? useBusID)
     {
         ProcessRunner runner = new();
-        var (ExitCode, _, StandardError) = await runner.RunUSBIPD(false, string.IsNullOrEmpty(hardwareid) ? ["detach", "--all"] : ["detach", "--hardware-id", hardwareid]);
+        var (ExitCode, _, StandardError) = await runner.RunUSBIPD(false, string.IsNullOrEmpty(id) ? ["detach", "--all"] : ["detach", (useBusID.HasValue && useBusID.Value ? "--busid" : "--hardware-id"), id]);
 
         if (ExitCode != 0)
         {
-            log.Warn($"Failed to detach device '{hardwareid}': {StandardError}");
+            log.Warn($"Failed to detach device '{id}': {StandardError}");
         }
         runner.Destroy();
 
@@ -368,7 +374,7 @@ public static partial class USBIPDWin
     }
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg)>
-        DetachAllDevice() => await DetachDevice(null);
+        DetachAllDevice() => await DetachDevice(null,false);
 
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)>
@@ -399,13 +405,13 @@ public static partial class USBIPDWin
         {
             log.Warn($"Failed to fetch USB device list: {StandardError}");
             runner.Destroy();
-            return (ErrorCode.Failure, StandardError,null);
+            return (ErrorCode.Failure, StandardError, null);
         }
         runner.Destroy();
         if (string.IsNullOrEmpty(StandardOutput))
         {
             log.Warn("No info is found.");
-            return (ErrorCode.Failure, StandardError,null);
+            return (ErrorCode.Failure, StandardError, null);
         }
         return (ErrorCode.Success, "", ParseStringDevInfoToUSBDeviceList(StandardOutput));
     }
@@ -416,7 +422,7 @@ public static partial class USBIPDWin
         ListUSBDevices(string hardwareID) => await ListUSBDevices(hardwareID, false);
 
     public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)>
-        ListConnectedDevices(string ? hardwareID) => await ListUSBDevices(hardwareID, true);
+        ListConnectedDevices(string? hardwareID) => await ListUSBDevices(hardwareID, true);
     public static async Task<(ErrorCode ErrCode, string ErrMsg, List<USBDevice>? DevicesList)>
         ListConnectedDevices() => await ListUSBDevices(null, true);
 

@@ -4,7 +4,6 @@
     <!--Main window text-->
     <sys:String x:Key="WindowTitle">USL USB Manager</sys:String>
     <sys:String x:Key="Settings">Settings</sys:String>
-    <sys:String x:Key="ClosToTray">Close to tray(Run in background)</sys:String>
     <sys:String x:Key="Device">Device</sys:String>
     <sys:String x:Key="Persisted">Persisted</sys:String>
     <sys:String x:Key="AutoAttach">Auto Attach</sys:String>
@@ -15,9 +14,12 @@
     <sys:String x:Key="Exit">Exit</sys:String>
     
     <!--Setting Dialog text-->
-    <sys:String x:Key="SpecifyNetworkCard">Specify Network Card</sys:String>
+    <sys:String x:Key="SpecifyNetworkCard">Specify the Network Card</sys:String>
+    <sys:String x:Key="ClosToTray">Close to tray(Run in background)</sys:String>
+    <sys:String x:Key="UseBusID">Bind/Attch devices using BusID</sys:String>
     <sys:String x:Key="ToolTipSpecifyNetworkCard">Specify the network card that WSL can access Windows.</sys:String>
     <sys:String x:Key="ToolTipForwardNetCard">Select the network card for forwarding USB IP data</sys:String>
+    <sys:String x:Key="ToolTipUseBusID">Bind/attach devices using BusID (HardwareID is used by default)</sys:String>
     <sys:String x:Key="SelectDistrib">Select a WSL distribution</sys:String>
     <sys:String x:Key="SelectDistribTooltip">Attach a USB device to a selected WSL distribution</sys:String>
     <sys:String x:Key="ForwardFromnetCard">Forward USB data from</sys:String>

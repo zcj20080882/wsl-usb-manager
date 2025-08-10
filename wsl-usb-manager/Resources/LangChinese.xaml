@@ -4,7 +4,6 @@
     <!--Main window text-->
     <sys:String x:Key="WindowTitle">WSL USB 管理器</sys:String>
     <sys:String x:Key="Settings">设置</sys:String>
-    <sys:String x:Key="ClosToTray">关闭到托盘(后台运行)</sys:String>
     <sys:String x:Key="Device">已连接设备</sys:String>
     <sys:String x:Key="Persisted">持久化设备</sys:String>
     <sys:String x:Key="AutoAttach">自动附加</sys:String>
@@ -14,9 +13,12 @@
     <sys:String x:Key="Chinese">中文</sys:String>
     <sys:String x:Key="Exit">退出</sys:String>
     <!--Setting Dialog text-->
-    <sys:String x:Key="SpecifyNetworkCard">指定网卡</sys:String>
+    <sys:String x:Key="SpecifyNetworkCard">指定绑定附加/设备的网卡</sys:String>
+    <sys:String x:Key="ClosToTray">关闭到托盘(后台运行)</sys:String>
+    <sys:String x:Key="UseBusID">使用BusID绑定/附加设备</sys:String>
     <sys:String x:Key="ToolTipSpecifyNetworkCard">指定WSL可以访问Windows的网卡。</sys:String>
     <sys:String x:Key="ToolTipForwardNetCard">选择转发USB IP数据的网卡</sys:String>
+    <sys:String x:Key="ToolTipUseBusID">使用BusID来绑定/附加设备(默认使用HardwareID)</sys:String>
     <sys:String x:Key="SelectDistrib">选择WSL分发版</sys:String>
     <sys:String x:Key="SelectDistribTooltip">附加USB设备到选择的WSL分发版</sys:String>
     <sys:String x:Key="SelectNetCart">选择网卡</sys:String>
