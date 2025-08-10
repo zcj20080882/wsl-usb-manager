@@ -90,9 +90,10 @@ public class USBDeviceInfoModel : ViewModelBase
     public bool IsAttached
     {
         get => _isAttached;
-        set { 
+        set
+        {
             SetProperty(ref _isAttached, value);
-            
+
         }
     }
 
@@ -131,9 +132,9 @@ public class USBDeviceInfoModel : ViewModelBase
     public bool IsAutoAttach
     {
         get => _isAutoAttach;
-        set 
-        { 
-            SetProperty(ref _isAutoAttach, value); 
+        set
+        {
+            SetProperty(ref _isAutoAttach, value);
             CBBindEnabled = ((!IsInFilterDeviceList()) && (!value || !IsBound));
             CBAttachEnabled = ((!IsInFilterDeviceList()) && (IsBound && ((value && !IsAttached) || !value)));
             CBForcedEnable = ((!IsInFilterDeviceList()) && (!IsBound && !value));
@@ -145,7 +146,7 @@ public class USBDeviceInfoModel : ViewModelBase
     public async Task<bool> Bind()
     {
         Device.IsForced = IsForced;
-        var (Success, ErrMsg) = await Device.Bind();
+        var (Success, ErrMsg) = await Device.Bind(App.GetAppConfig().UseBusID);
         if (!Success)
         {
             NotifyService.ShowUSBIPDError(ErrorCode.DeviceBindFailed, ErrMsg, Device);
@@ -157,8 +158,9 @@ public class USBDeviceInfoModel : ViewModelBase
     public async Task<bool> Unbind()
     {
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
-        var (Success, ErrMsg) = await Device.Unbind();
-        if (!Success) {
+        var (Success, ErrMsg) = await Device.Unbind(App.GetAppConfig().UseBusID);
+        if (!Success)
+        {
             NotifyService.ShowErrorMessage($"Failed to unbind '{name}': {ErrMsg}");
         }
         UpdateDeviceInfo();
@@ -189,10 +191,10 @@ public class USBDeviceInfoModel : ViewModelBase
             await Task.Delay(1000);
         }
 
-        var (Success, ErrMsg) = await Device.Attach(NetworkCardInfo.GetIPAddress(App.GetAppConfig().ForwardNetCard), IsAutoAttach);
+        var (Success, ErrMsg) = await Device.Attach(App.GetAppConfig().UseBusID, NetworkCardInfo.GetIPAddress(App.GetAppConfig().ForwardNetCard), IsAutoAttach);
         if (!Success)
         {
-            if(IsAutoAttach)
+            if (IsAutoAttach)
                 NotifyService.ShowNotification(ErrMsg);
             else
                 NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, ErrMsg, Device);
@@ -204,7 +206,7 @@ public class USBDeviceInfoModel : ViewModelBase
     public async Task<bool> Detach()
     {
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
-        var (Success, ErrMsg) = await Device.Detach();
+        var (Success, ErrMsg) = await Device.Detach(App.GetAppConfig().UseBusID);
         if (!Success)
         {
             NotifyService.ShowErrorMessage($"Failed to detach '{name}': {ErrMsg}");
@@ -222,7 +224,7 @@ public class USBDeviceInfoModel : ViewModelBase
         {
             return;
         }
-        
+
         App.GetSysConfig().AddToAutoAttachDeviceList(Device);
         App.SaveConfig();
         NotifyService.ShowNotification($"'{name}' is added to auto attach list.");

@@ -86,7 +86,7 @@ public sealed class USBDevice
     {
         if (obj is USBDevice other)
         {
-            return 
+            return
                     InstanceId == other.InstanceId &&
                     HardwareId == other.HardwareId &&
                     Description == other.Description &&
@@ -120,22 +120,25 @@ public sealed class USBDevice
         return hash.ToHashCode();
     }
 
-    public async Task<(bool Success, string ErrMsg)> Bind()
+    public async Task<(bool Success, string ErrMsg)> Bind(bool useBusID)
     {
-        if (string.IsNullOrEmpty(HardwareId))
-            return (false, $"HardwareId is empty.");
+        string id = useBusID ? BusId : HardwareId;
+
+        if (string.IsNullOrEmpty(id))
+            return (false, $"{(useBusID ? "BusID" : "HardwareID")} is empty.");
 
         if (!IsConnected)
         {
-            return (false, $"Device is not connected.");
+            return (false, $"Device({id}) is not connected.");
         }
 
-        if(IsBound)
+        if (IsBound)
         {
-            return (true, $"Device is already bound.");
+            return (true, $"Device({id}) is already bound.");
         }
-        
-        var ret = await USBIPDWin.BindDevice(HardwareId, IsForced);
+
+        var ret = await USBIPDWin.BindDevice(id, useBusID, IsForced);
+
         for (int i = 0; i < 3; i++)
         {
             if (ret.ErrCode == ErrorCode.Success)
@@ -149,104 +152,109 @@ public sealed class USBDevice
             {
                 break;
             }
-            ret = await USBIPDWin.BindDevice(HardwareId, IsForced);
+            ret = await USBIPDWin.BindDevice(id, useBusID, IsForced);
         }
-        
+
         if (IsBound)
         {
-            log.Info($"Success to bind {Description}({HardwareId}){(IsForced ? " forcibly" : "")}.");
+            log.Info($"Success to bind {Description}({id}){(IsForced ? " forcibly" : "")}.");
         }
         else
         {
-            log.Error($"Failed to bind {Description}({HardwareId}){(IsForced ? " forcibly" : "")}: {ret.ErrMsg}");
+            log.Error($"Failed to bind {Description}({id}){(IsForced ? " forcibly" : "")}: {ret.ErrMsg}");
         }
         return (IsBound, ret.ErrMsg);
     }
 
-    public async Task<(bool Success, string ErrMsg)> Unbind()
+    public async Task<(bool Success, string ErrMsg)> Unbind(bool useBusID)
     {
-        if (string.IsNullOrEmpty(HardwareId))
-            return (false, "HardwareId is empty.");
+        string id = useBusID ? BusId : HardwareId;
+
+        if (string.IsNullOrEmpty(id))
+            return (false, $"{(useBusID ? "BusID" : "HardwareID")} is empty.");
 
         if (!IsBound)
         {
-            return (true, $"Device is already unbound.");
+            return (true, $"Device({id}) is already unbound.");
         }
-        
-        var (ErrCode, ErrMsg) = await USBIPDWin.UnbindDevice(HardwareId);
+
+        var (ErrCode, ErrMsg) = await USBIPDWin.UnbindDevice(id, useBusID);
 
         if (ErrCode == ErrorCode.Success)
         {
             IsBound = false;
-            log.Info($"Success to unbind {Description}({HardwareId}).");
+            log.Info($"Success to unbind {Description}({id}).");
         }
         else
         {
-            log.Error($"Failed to unbind {Description}({HardwareId}): {ErrMsg}");
+            log.Error($"Failed to unbind {Description}({id}): {ErrMsg}");
         }
         return (!IsBound, ErrMsg);
     }
 
-    public async Task<(bool Success, string ErrMsg)> Attach(string? hostIP, bool isAuto)
+    public async Task<(bool Success, string ErrMsg)> Attach(bool useBusID, string? hostIP, bool isAuto)
     {
-        if (string.IsNullOrEmpty(BusId))
+        string id = useBusID ? BusId : HardwareId;
+
+        if (string.IsNullOrEmpty(id))
         {
-            return (false, $"BusID is empty.");
+            return (false, $"{(useBusID ? "BusID" : "HardwareID")} is empty.");
         }
 
         if (!IsConnected)
         {
-            return (false, $"Device is not connected.");
+            return (false, $"Device({id}) is not connected.");
         }
 
         if (!IsBound)
         {
-            return (false, $"Device is not bound.");
+            return (false, $"Device({id}) is not bound.");
         }
 
         if (IsAttached)
         {
-            return (true, $"Device is already attached.");
+            return (true, $"Device({id}) is already attached.");
         }
-        
-        var (ErrCode, ErrMsg) = await USBIPDWin.Attach(BusId,isAuto, hostIP);
+
+        var (ErrCode, ErrMsg) = await USBIPDWin.Attach(id, useBusID, isAuto, hostIP);
 
         if (ErrCode == ErrorCode.Success)
         {
             IsAttached = true;
-            log.Info($"Success to attach {Description}({HardwareId}) to WSL {(string.IsNullOrWhiteSpace(hostIP) ? "" : "with " + hostIP)}.");
+            log.Info($"Success to attach {Description}({id}) to WSL {(string.IsNullOrWhiteSpace(hostIP) ? "" : "with " + hostIP)}.");
         }
         else
         {
-            log.Error($"Failed to attach {Description}({HardwareId}) to WSL {(string.IsNullOrWhiteSpace(hostIP) ? "" : "with " + hostIP)}: {ErrMsg}");
+            log.Error($"Failed to attach {Description}({id}) to WSL {(string.IsNullOrWhiteSpace(hostIP) ? "" : "with " + hostIP)}: {ErrMsg}");
         }
         return (IsAttached, ErrMsg);
     }
 
-    public async Task<(bool Success, string ErrMsg)> Detach()
+    public async Task<(bool Success, string ErrMsg)> Detach(bool useBusID)
     {
-        if (string.IsNullOrEmpty(HardwareId))
-            return (false, "HardwareId is empty.");
+        string id = useBusID ? BusId : HardwareId;
+        if (string.IsNullOrEmpty(id))
+            return (false, $"{(useBusID ? "BusID" : "HardwareID")} is empty.");
 
         if (!IsConnected)
         {
-            return (false, $"Device is not connected.");
+            return (false, $"Device({id}) is not connected.");
         }
 
         if (!IsAttached)
         {
-            return (true, $"Device is already unbound.");
+            return (true, $"Device({id}) is already unbound.");
         }
-        var (ErrCode, ErrMsg) = await USBIPDWin.DetachDevice(HardwareId);
+        var (ErrCode, ErrMsg) = await USBIPDWin.DetachDevice(id, useBusID);
 
         if (ErrCode == ErrorCode.Success)
         {
             IsAttached = false;
-            log.Info($"Success to detach {Description}({HardwareId}) from WSL.");
+            log.Info($"Success to detach {Description}({id}) from WSL.");
         }
         else
         {
-            log.Error($"Failed to detach {Description}({HardwareId}) from WSL: {ErrMsg}");
+            log.Error($"Failed to detach {Description}({id}) from WSL: {ErrMsg}");
         }
         return (!IsAttached, ErrMsg);
     }

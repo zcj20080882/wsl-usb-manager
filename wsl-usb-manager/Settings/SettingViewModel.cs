@@ -27,6 +27,7 @@ public class SettingViewModel : ViewModelBase
     private string? _forwardNetCard;
     private bool _isSpecifyNetCard;
     private bool _closeToTray;
+    private bool _useBusID;
     private ObservableCollection<string>? _listNetworkCard;
     private ApplicationConfig AppConfig { get; set; }
     private static readonly ILog log = LogManager.GetLogger(typeof(SettingViewModel));
@@ -42,6 +43,7 @@ public class SettingViewModel : ViewModelBase
         SelectedForwardNetCard = appcfg.ForwardNetCard;
         IsSpecifyNetCard = appcfg.SpecifyNetCard;
         CloseToTray = appcfg.CloseToTray;
+        UseBusID = appcfg.UseBusID;
         ResetCfgCommand = new CommandImplementations(RestorDefaultConfiguration);
         ClearLogCommand = new CommandImplementations(ClearHistoryLog);
         OpenLogPathCommand = new CommandImplementations(OpenConfigurationPath);
@@ -70,10 +72,16 @@ public class SettingViewModel : ViewModelBase
         set => SetProperty(ref _closeToTray, value);
     }
 
+    public bool UseBusID
+    {
+        get => _useBusID;
+        set => SetProperty(ref _useBusID, value);
+    }
 
     public void SaveConfig()
     {
         AppConfig.CloseToTray = CloseToTray;
+        AppConfig.UseBusID = UseBusID;
         AppConfig.SpecifyNetCard = IsSpecifyNetCard;
         AppConfig.ForwardNetCard = SelectedForwardNetCard ?? "";
     }

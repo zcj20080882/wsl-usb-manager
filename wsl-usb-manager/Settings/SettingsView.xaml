@@ -7,12 +7,12 @@
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              xmlns:wpf="clr-namespace:MaterialDesignThemes.Wpf;assembly=MaterialDesignThemes.Wpf"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
-             Height="200"
-             Width="500"
+             Height="240"
+             Width="580"
              d:DataContext="{d:DesignInstance Type=local:SettingViewModel}"
              mc:Ignorable="d"
              d:DesignHeight="220"
-             d:DesignWidth="500">
+             d:DesignWidth="580">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -42,8 +42,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             
@@ -58,30 +57,32 @@
                        Margin="0,0,10,0"
                       IsChecked="{Binding IsSpecifyNetCard}"
                       Unchecked="CheckboxCheckboxSpecifyNetCard_Unchecked" />
-            <TextBlock Grid.Row="0"
-                       Grid.Column="1"
-                       Text=":"
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Center"
-                       
-                       Style="{StaticResource MaterialDesignLabelMediumTextBlock}"
-                       Margin="0,0,10,0" />
+
             <ComboBox Grid.Row="0"
-                      Grid.Column="2"
+                      Grid.Column="1"
                       IsEnabled="{Binding ElementName=CheckboxSpecifyNetCard, Path=IsChecked}"
                       ItemsSource="{Binding NetworkCards}"
                       md:HintAssist.Hint="{DynamicResource SelectNetCart}"
                       SelectedItem="{Binding SelectedForwardNetCard}"
-                      ToolTip="{DynamicResource ToolTipForwardNetCard}" />
+                      ToolTip="{DynamicResource ToolTipForwardNetCard}" 
+                      Margin="0,0,5,0"/>
             <CheckBox Grid.Row="1"
                       Grid.Column="0"
-                      Grid.ColumnSpan="3"
                       Content="{DynamicResource ClosToTray}"
                       VerticalAlignment="Center"
                       HorizontalAlignment="Left"
                       IsChecked="{Binding CloseToTray}"
                       md:CheckBoxAssist.CheckBoxSize="20"
-                      Margin="0,0,10,0" />
+                      Margin="0,0,5,0" />
+            <CheckBox Grid.Row="1"
+                      Grid.Column="1"
+                      Content="{DynamicResource UseBusID}"
+                      VerticalAlignment="Center"
+                      HorizontalAlignment="Left"
+                      ToolTip="{DynamicResource ToolTipUseBusID}"
+                      IsChecked="{Binding UseBusID}"
+                      md:CheckBoxAssist.CheckBoxSize="20"
+                      Margin="0,0,5,0" />
             <Grid Grid.Row="2"
                   Grid.Column="0"
                   Grid.ColumnSpan="3"

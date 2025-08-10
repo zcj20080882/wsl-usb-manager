@@ -21,6 +21,7 @@ public class ApplicationConfig
     public bool DarkMode = false;
     public string Lang = "";
     public bool CloseToTray = true;
+    public bool UseBusID = false; // 是否使用USB设备的总线ID作为唯一标识符
     public bool SpecifyNetCard = false;
     public string ForwardNetCard = "";
 
@@ -30,7 +31,7 @@ public class ApplicationConfig
         {
             return (this.DarkMode == other.DarkMode && this.Lang == other.Lang
                     && this.CloseToTray == other.CloseToTray && this.SpecifyNetCard == other.SpecifyNetCard
-                    && this.ForwardNetCard == other.ForwardNetCard);
+                    && this.ForwardNetCard == other.ForwardNetCard && this.UseBusID == other.UseBusID);
         }
         return false;
     }
@@ -45,6 +46,7 @@ public class ApplicationConfig
         DarkMode = DarkMode,
         Lang = Lang,
         CloseToTray = CloseToTray,
+        UseBusID = UseBusID,
         SpecifyNetCard = SpecifyNetCard,
         ForwardNetCard = new string(ForwardNetCard),
     };
@@ -54,6 +56,7 @@ public class ApplicationConfig
         DarkMode = other.DarkMode;
         Lang = other.Lang;
         CloseToTray = other.CloseToTray;
+        UseBusID = other.UseBusID;
         SpecifyNetCard = other.SpecifyNetCard;
         ForwardNetCard = other.ForwardNetCard;
     }
