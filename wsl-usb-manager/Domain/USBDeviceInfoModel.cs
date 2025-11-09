@@ -168,7 +168,8 @@ public class USBDeviceInfoModel : ViewModelBase
     }
 
     public async Task<bool> Attach()
-    {
+     {
+        string? ip = null, ErrMsg;
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
 
         if (!Device.IsConnected)
@@ -191,7 +192,20 @@ public class USBDeviceInfoModel : ViewModelBase
             await Task.Delay(1000);
         }
 
-        var (Success, ErrMsg) = await Device.Attach(App.GetAppConfig().UseBusID, NetworkCardInfo.GetIPAddress(App.GetAppConfig().ForwardNetCard), IsAutoAttach);
+        if (App.GetAppConfig().SpecifyNetCard)
+        {
+            (ip, ErrMsg) = NetworkCardInfo.GetIPAddress(App.GetAppConfig().ForwardNetCard);
+            if (string.IsNullOrEmpty(ip))
+            {
+                NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, $"Failed to get IP address from network card '{App.GetAppConfig().ForwardNetCard}': {ErrMsg}", Device);
+                Device.UpdateThis();
+                UpdateDeviceInfo();
+                return false;
+            }
+        }
+
+        bool Success;
+        (Success, ErrMsg) = await Device.Attach(App.GetAppConfig().UseBusID, ip, IsAutoAttach);
         if (!Success)
         {
             if (IsAutoAttach)

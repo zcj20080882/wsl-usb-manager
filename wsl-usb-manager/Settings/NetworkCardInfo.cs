@@ -21,7 +21,9 @@ internal class NetworkCardInfo
 
         foreach (NetworkInterface ni in networkInterfaces)
         {
-            if (ni.OperationalStatus == OperationalStatus.Up)
+            if (ni.OperationalStatus == OperationalStatus.Up && ni.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+                ni.NetworkInterfaceType != NetworkInterfaceType.Tunnel &&
+                ni.SupportsMulticast)
             {
                 IPInterfaceProperties ipProperties = ni.GetIPProperties();
                 foreach (UnicastIPAddressInformation ip in ipProperties.UnicastAddresses)
@@ -37,11 +39,11 @@ internal class NetworkCardInfo
         return netlist;
     }
 
-    public static string? GetIPAddress(string networkCardName)
+    public static (string? IP, string ErrMsg) GetIPAddress(string networkCardName)
     {
         if (string.IsNullOrEmpty(networkCardName))
         {
-            return null;
+            return (null, "Network work card name is empty.");
         }
         NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
 
@@ -49,17 +51,22 @@ internal class NetworkCardInfo
         {
             if (ni.Name == networkCardName)
             {
-                IPInterfaceProperties ipProperties = ni.GetIPProperties();
-                foreach (UnicastIPAddressInformation ip in ipProperties.UnicastAddresses)
+                if (ni.OperationalStatus == OperationalStatus.Up && ni.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+                ni.NetworkInterfaceType != NetworkInterfaceType.Tunnel &&
+                ni.SupportsMulticast)
                 {
-                    if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    IPInterfaceProperties ipProperties = ni.GetIPProperties();
+                    foreach (UnicastIPAddressInformation ip in ipProperties.UnicastAddresses)
                     {
-                        return ip.Address.ToString();
+                        if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                        {
+                            return (ip.Address.ToString(), "");
+                        }
                     }
                 }
             }
         }
 
-        return null;
+        return (null, "Network work card is not available.");
     }
 }

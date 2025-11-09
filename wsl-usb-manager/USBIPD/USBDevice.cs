@@ -45,12 +45,12 @@ public sealed class USBDevice
     [DataMember]
     public string Name { get; set; } = string.Empty;
 
-    private async void UpdateThis()
+    public async void UpdateThis()
     {
-        var ret = await USBIPDWin.ListConnectedDevices(HardwareId);
-        if (ret.DevicesList != null && ret.DevicesList.Count > 0)
+        var (_, _, DevicesList) = await USBIPDWin.ListConnectedDevices(HardwareId);
+        if (DevicesList != null && DevicesList.Count > 0)
         {
-            var dev = ret.DevicesList[0];
+            var dev = DevicesList[0];
             InstanceId = dev.InstanceId;
             HardwareId = dev.HardwareId;
             Description = dev.Description;
