@@ -292,17 +292,15 @@ public static partial class USBIPDWin
                 {
                     if (!p.HasExited())
                     {
-
-                        errMsg = $"Device {id} has been auto-attached.";
+                        errMsg = $"Device {id} auto-attached thread is running, stop it...";
                         log.Info(errMsg);
-                        runner.Destroy();
-                        return new(ErrorCode.Success, errMsg);
+                        p.Destroy();
                     }
                     else
                     {
                         log.Warn($"Device {id} has been auto-attached, but the process has exited.");
-                        AttachProcessList.Remove(p);
                     }
+                    AttachProcessList.Remove(p);
                     break;
                 }
             }
