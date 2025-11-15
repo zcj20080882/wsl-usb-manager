@@ -45,7 +45,7 @@ public sealed class USBDevice
     [DataMember]
     public string Name { get; set; } = string.Empty;
 
-    public async void UpdateThis()
+    private async Task Update()
     {
         var (_, _, DevicesList) = await USBIPDWin.ListConnectedDevices(HardwareId);
         if (DevicesList != null && DevicesList.Count > 0)
@@ -147,7 +147,7 @@ public sealed class USBDevice
                 break;
             }
             await Task.Delay(500);
-            UpdateThis();
+            await Update();
             if (IsBound)
             {
                 break;
@@ -192,7 +192,7 @@ public sealed class USBDevice
         return (!IsBound, ErrMsg);
     }
 
-    public async Task<(bool Success, string ErrMsg)> Attach(bool useBusID, string? hostIP, bool isAuto)
+    public async Task<(bool Success, string ErrMsg)> Attach(bool useBusID,bool force, string? hostIP, bool isAuto)
     {
         string id = useBusID ? BusId : HardwareId;
 
@@ -216,17 +216,17 @@ public sealed class USBDevice
             return (true, $"Device({id}) is already attached.");
         }
 
-        var (ErrCode, ErrMsg) = await USBIPDWin.Attach(id, useBusID, isAuto, hostIP);
-
-        if (ErrCode == ErrorCode.Success)
+        var (_, ErrMsg) = await USBIPDWin.Attach(id, useBusID,force, isAuto, hostIP);
+        await Update();
+        if (IsAttached)
         {
-            IsAttached = true;
             log.Info($"Success to attach {Description}({id}) to WSL {(string.IsNullOrWhiteSpace(hostIP) ? "" : "with " + hostIP)}.");
         }
         else
         {
             log.Error($"Failed to attach {Description}({id}) to WSL {(string.IsNullOrWhiteSpace(hostIP) ? "" : "with " + hostIP)}: {ErrMsg}");
         }
+        
         return (IsAttached, ErrMsg);
     }
 
@@ -246,7 +246,7 @@ public sealed class USBDevice
             return (true, $"Device({id}) is already unbound.");
         }
         var (ErrCode, ErrMsg) = await USBIPDWin.DetachDevice(id, useBusID);
-
+        await Update();
         if (ErrCode == ErrorCode.Success)
         {
             IsAttached = false;

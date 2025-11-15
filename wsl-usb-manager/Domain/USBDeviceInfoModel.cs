@@ -12,6 +12,7 @@
 // Ignore Spelling: usb
 
 using log4net;
+using wsl_usb_manager.Resources;
 using wsl_usb_manager.Settings;
 using wsl_usb_manager.USBIPD;
 
@@ -31,6 +32,8 @@ public class USBDeviceInfoModel : ViewModelBase
     private bool _isCBForceEnabled = true;
     private readonly USBDevice _device = new();
     private static readonly ILog log = LogManager.GetLogger(typeof(USBDeviceInfoModel));
+
+    private static bool IsChinese() => Lang.IsChinese();
 
     private void UpdateDeviceInfo()
     {
@@ -67,9 +70,9 @@ public class USBDeviceInfoModel : ViewModelBase
     public bool IsInFilterDeviceList() => App.GetSysConfig().IsInFilterDeviceList(_device);
     public bool IsInAutoAttachList() => App.GetSysConfig().IsInAutoAttachDeviceList(_device);
 
-    public USBDeviceInfoModel(USBDevice dev)
+    public USBDeviceInfoModel(USBDevice device)
     {
-        _device = dev;
+        _device = device;
         UpdateDeviceInfo();
     }
 
@@ -146,29 +149,31 @@ public class USBDeviceInfoModel : ViewModelBase
     public async Task<bool> Bind()
     {
         Device.IsForced = IsForced;
-        var (Success, ErrMsg) = await Device.Bind(App.GetAppConfig().UseBusID);
-        if (!Success)
+        var (_, ErrMsg) = await Device.Bind(App.GetAppConfig().UseBusID);
+        UpdateDeviceInfo();
+        if (!IsBound)
         {
             NotifyService.ShowUSBIPDError(ErrorCode.DeviceBindFailed, ErrMsg, Device);
         }
-        UpdateDeviceInfo();
+        
         return IsBound;
     }
 
     public async Task<bool> Unbind()
     {
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
-        var (Success, ErrMsg) = await Device.Unbind(App.GetAppConfig().UseBusID);
-        if (!Success)
+        var (_, ErrMsg) = await Device.Unbind(App.GetAppConfig().UseBusID);
+        UpdateDeviceInfo();
+        if (IsBound)
         {
             NotifyService.ShowErrorMessage($"Failed to unbind '{name}': {ErrMsg}");
         }
-        UpdateDeviceInfo();
+        
         return (!IsBound);
     }
 
-    public async Task<bool> Attach()
-     {
+    public async Task<bool> Attach(bool force)
+      {
         string? ip = null, ErrMsg;
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
 
@@ -197,35 +202,39 @@ public class USBDeviceInfoModel : ViewModelBase
             (ip, ErrMsg) = NetworkCardInfo.GetIPAddress(App.GetAppConfig().ForwardNetCard);
             if (string.IsNullOrEmpty(ip))
             {
-                NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, $"Failed to get IP address from network card '{App.GetAppConfig().ForwardNetCard}': {ErrMsg}", Device);
-                Device.UpdateThis();
+                ErrMsg = IsChinese() ? $"无法从网卡'{App.GetAppConfig().ForwardNetCard}'获取IP: {ErrMsg}" : 
+                    $"Failed to get IP address from network card '{App.GetAppConfig().ForwardNetCard}': {ErrMsg}";
+                NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, ErrMsg, Device);
                 UpdateDeviceInfo();
                 return false;
             }
         }
 
-        bool Success;
-        (Success, ErrMsg) = await Device.Attach(App.GetAppConfig().UseBusID, ip, IsAutoAttach);
-        if (!Success)
+        (_, ErrMsg) = await Device.Attach(App.GetAppConfig().UseBusID, force, ip, IsAutoAttach);
+        UpdateDeviceInfo();
+        if (!Device.IsAttached)
         {
             if (IsAutoAttach)
                 NotifyService.ShowNotification(ErrMsg);
             else
                 NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, ErrMsg, Device);
         }
-        UpdateDeviceInfo();
+        
         return IsAttached;
     }
+
+    public async Task<bool> Attach() => await Attach(false);
 
     public async Task<bool> Detach()
     {
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
         var (Success, ErrMsg) = await Device.Detach(App.GetAppConfig().UseBusID);
+        UpdateDeviceInfo();
         if (!Success)
         {
             NotifyService.ShowErrorMessage($"Failed to detach '{name}': {ErrMsg}");
         }
-        UpdateDeviceInfo();
+        
         return (!IsAttached);
     }
 

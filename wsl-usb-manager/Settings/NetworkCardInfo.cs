@@ -9,11 +9,13 @@
 * Create Date: 2025/3/2 18:08
 ******************************************************************************/
 using System.Net.NetworkInformation;
+using wsl_usb_manager.Resources;
 
 namespace wsl_usb_manager.Settings;
 
 internal class NetworkCardInfo
 {
+    private static bool IsChinese() => Lang.IsChinese();
     public static List<string> GetAllNetworkCardName()
     {
         List<string> netlist = [];
@@ -43,7 +45,8 @@ internal class NetworkCardInfo
     {
         if (string.IsNullOrEmpty(networkCardName))
         {
-            return (null, "Network work card name is empty.");
+            
+            return (null, IsChinese() ? "网卡名称为空。" : "Network work card name is empty.");
         }
         NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
 
@@ -67,6 +70,6 @@ internal class NetworkCardInfo
             }
         }
 
-        return (null, "Network work card is not available.");
+        return (null, IsChinese() ? "网卡不可用。" : "Network work card is not available.");
     }
 }

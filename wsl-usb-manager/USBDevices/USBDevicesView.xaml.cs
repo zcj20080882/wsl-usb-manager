@@ -83,7 +83,7 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
                 NotifyService.DisableWindow();
                 if (device.IsAttached)
                 {
-                    await device.Attach();
+                    await device.Attach(true);
                 }
                 else
                 {
@@ -146,7 +146,7 @@ public partial class USBDevicesView : System.Windows.Controls.UserControl
                         await device.Unbind();
                         break;
                     case "MenuItemAttach":
-                        await device.Attach();
+                        await device.Attach(true);
                         break;
                     case "MenuItemDetach":
                         await device.Detach();

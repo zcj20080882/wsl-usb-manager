@@ -55,9 +55,9 @@ public partial class MainWindow : Window, INotifyService
     }
 
     
-    private void MenuExitButton_OnClick(object sender, RoutedEventArgs e)
+    private async void MenuExitButton_OnClick(object sender, RoutedEventArgs e)
     {
-        USBIPDWin.StopAutoAttachProcesses();
+        await USBIPDWin.StopAllProcesses();
         usbMonitor?.Stop();
         Environment.Exit(0);
     }
