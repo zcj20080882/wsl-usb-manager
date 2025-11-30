@@ -245,11 +245,10 @@ public sealed class USBDevice
         {
             return (true, $"Device({id}) is already unbound.");
         }
-        var (ErrCode, ErrMsg) = await USBIPDWin.DetachDevice(id, useBusID);
+        var (_, ErrMsg) = await USBIPDWin.DetachDevice(id, useBusID);
         await Update();
-        if (ErrCode == ErrorCode.Success)
+        if (!IsAttached)
         {
-            IsAttached = false;
             log.Info($"Success to detach {Description}({id}) from WSL.");
         }
         else

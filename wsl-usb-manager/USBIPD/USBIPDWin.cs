@@ -23,6 +23,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Automation.Text;
 using System.Windows.Documents;
 using System.Windows.Forms;
 using System.Xml.Linq;
@@ -335,6 +336,45 @@ public static partial class USBIPDWin
             if (daemon)
             {
                 RemoveFromProcessList(process);
+            }
+            if (ErrCode != ErrorCode.Success)
+            {
+                log.Error($"Failed to run '{process.StartInfo.FileName} {process.StartInfo.Arguments}.\r\n Stdout: {StdOutput}\r\n; Stderr: {StdError}");
+            }
+            string[] newLineSeparators = ["\r\n", "\r", "\n"];
+            var Outlines = StdOutput.Split(newLineSeparators, StringSplitOptions.RemoveEmptyEntries);
+            var ErrLines = StdError.Split(newLineSeparators, StringSplitOptions.RemoveEmptyEntries);
+            StdOutput = "";
+            StdError = "";
+            var index = 0;
+            foreach (var l in Outlines)
+            {
+                if ((index = l.IndexOf("info:")) >= 0)
+                {
+                    index += 5;
+                    StdOutput += $"{l[index..].Trim()}\r\n";
+                }
+                else if ((index = l.IndexOf("error:")) >= 0)
+                {
+                    index += 6;
+                    StdError += $"{l[index..].Trim()}\r\n";
+                }
+                else
+                { StdOutput += l; }
+            }
+            foreach (var l in ErrLines)
+            {
+                if ((index = l.IndexOf("info:")) >= 0)
+                {
+                    index += 5;
+                    StdOutput += $"{l[index..].Trim()}\r\n";
+                }
+                else if ((index = l.IndexOf("error:")) >= 0)
+                {
+                    index += 6;
+                    StdError += $"{l[index..].Trim()}\r\n";
+                }
+                else { StdError += l; }
             }
         }
         return (ErrCode, StdOutput, StdError);
