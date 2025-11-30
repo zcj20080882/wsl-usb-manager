@@ -214,10 +214,7 @@ public class USBDeviceInfoModel : ViewModelBase
         UpdateDeviceInfo();
         if (!Device.IsAttached)
         {
-            if (IsAutoAttach)
-                NotifyService.ShowNotification(ErrMsg);
-            else
-                NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, ErrMsg, Device);
+            NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, ErrMsg, Device);
         }
         
         return IsAttached;

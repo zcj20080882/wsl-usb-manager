@@ -10,8 +10,8 @@ namespace wsl_usb_manager.USBIPD;
 
 public static partial class USBIPDWin
 {
-    private const string USBIPDIsBlockedEn = "A firewall appears to be blocking the connection from WSL.";
     private const string USBIPDIsBlockedZh = "防火墙阻止了来自WSL中的连接请求.";
+    private const string USBIPDNoWSLRunning = "未检测到正在运行的WSL2分发版，请保持WSL2分发版处于运行状态。";
     private static bool IsDeviceInAutoAttaching(string id)
     {
         foreach (Process p in ProcessList)
@@ -46,7 +46,7 @@ public static partial class USBIPDWin
                 {
                     log.Warn($"'usbipd.exe {p.StartInfo.Arguments}' has exited, removing it ...");
                 }
-                    ProcessList.Remove(p);
+                ProcessList.Remove(p);
                 break;
             }
         }
@@ -149,10 +149,9 @@ public static partial class USBIPDWin
     {
         if (IsDeviceInAutoAttaching(id))
         {
-            if (force)
+            if (!force)
             {
                 return (ErrorCode.Success, "");
-
             }
             log.Warn($"Device {id} is in auto-attach list, remove it due to force attaching.");
             StopAutoAttachDevice(id);
@@ -192,14 +191,17 @@ public static partial class USBIPDWin
         }
 
         var (errCode, Stdout, StdErr) = await RunUSBIPDWin(false, [.. args]);
-        log.Debug($"[{id}] Standard output: {Stdout}");
-        log.Debug($"[{id}] Standard error : {StdErr}");
+
         if (IsFailed(errCode)) 
         {
             log.Error($"Failed to attach {id}, stdout: {Stdout}; stderr: {StdErr}");
             if (StdErr.Contains("A firewall appears to be blocking the connection"))
             {
-                StdErr = IsChinese() ? USBIPDIsBlockedZh : USBIPDIsBlockedEn;
+                StdErr = IsChinese() ? USBIPDIsBlockedZh : StdErr;
+            }
+            else if (StdErr.Contains("There is no WSL 2 distribution running"))
+            {
+                StdErr = IsChinese() ? USBIPDNoWSLRunning : StdErr;
             }
             return new(ErrorCode.DeviceDetachFailed, StdErr);
         }
