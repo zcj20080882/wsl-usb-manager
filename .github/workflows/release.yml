@@ -1,0 +1,52 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore the application
+      run: msbuild wsl-usb-manager.sln /t:Restore /p:Configuration=Release
+
+    - name: Build application
+      run: .\Build.ps1
+
+    - name: List build output
+      run: |
+        echo "Listing BuildOutput/Installer directory:"
+        Get-ChildItem -Path BuildOutput/Installer -Recurse
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: BuildOutput/Installer/WSL USB Manager*.exe
+        name: Release ${{ github.ref_name }}
+        tag_name: ${{ github.ref_name }}
+        body: |
+          ## WSL USB Manager ${{ github.ref_name }}
+
+          Automatically built release version.
+
+          ## What's New
+
+          Please refer to the commit history for detailed changes.
