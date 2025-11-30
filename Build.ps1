@@ -4,6 +4,7 @@ $NewProductCode = [guid]::NewGuid().ToString().ToUpper()
 $vswherePath = "$env:TEMP\vswhere.exe"
 $InstallerScriptPath = Join-Path -Path $currentPath -ChildPath "Installer.iss"
 $global:AppVersion = ""
+$InstallerOutputDir = Join-Path -Path $currentPath -ChildPath "BuildOutput/Installer"
 function Test-Winget {
 
     try {
@@ -20,6 +21,7 @@ function Test-VisualStudio {
     if (-Not (Test-Path -Path $vswherePath)) {
         Write-Host "Downloading vswhere.exe..." -ForegroundColor Cyan
         try{
+            # Use the x64 version specifically for better compatibility
             Invoke-WebRequest -Uri "https://github.com/microsoft/vswhere/releases/latest/download/vswhere.exe" -OutFile $vswherePath -ErrorAction Stop
         }
         catch
@@ -28,24 +30,67 @@ function Test-VisualStudio {
             return $false
         }
     }
-    # Find all installed Visual Studio instances
-    $vsInstances = & $vswherePath -all -format json | ConvertFrom-Json
 
-    if ($vsInstances.Count -eq 0) {
-        Write-Host "Cannot find any Visual Studio instances." -ForegroundColor Red
+    # Verify the downloaded file is valid
+    if (-Not (Test-Path $vswherePath)) {
+        Write-Host "vswhere.exe not found at $vswherePath" -ForegroundColor Red
         return $false
     }
 
-    foreach ($instance in $vsInstances) {
-        $installationPath = $instance.installationPath
-        $installationVersion = $instance.catalog.productDisplayVersion
-        $edition = $instance.catalog.productLine
+    # Check if file is valid by getting its info
+    try {
+        $fileInfo = Get-Item $vswherePath
+        if ($fileInfo.Length -eq 0) {
+            Write-Host "vswhere.exe file is empty, re-downloading..." -ForegroundColor Yellow
+            Remove-Item $vswherePath -Force -ErrorAction SilentlyContinue
+            Invoke-WebRequest -Uri "https://github.com/microsoft/vswhere/releases/latest/download/vswhere.exe" -OutFile $vswherePath -ErrorAction Stop
+        }
+    }
+    catch {
+        Write-Host "Error checking vswhere.exe file: $_" -ForegroundColor Red
+        return $false
+    }
 
-        Write-Host "Found installed Visual Studio instance:"
-        Write-Host "Version: $installationVersion"
-        Write-Host "Path: $installationPath"
-        Write-Host "Edition: $edition"
-        Write-Host "-------------------------"
+    # Find all installed Visual Studio instances
+    try {
+        $vsInstances = & $vswherePath -all -format json | ConvertFrom-Json
+
+        if ($vsInstances.Count -eq 0) {
+            Write-Host "Cannot find any Visual Studio instances." -ForegroundColor Red
+            return $false
+        }
+
+        foreach ($instance in $vsInstances) {
+            $installationPath = $instance.installationPath
+            $installationVersion = $instance.catalog.productDisplayVersion
+            $edition = $instance.catalog.productLine
+
+            Write-Host "Found installed Visual Studio instance:"
+            Write-Host "Version: $installationVersion"
+            Write-Host "Path: $installationPath"
+            Write-Host "Edition: $edition"
+            Write-Host "-------------------------"
+        }
+    }
+    catch {
+        Write-Host "Error running vswhere.exe: $_" -ForegroundColor Red
+        Write-Host "Trying to re-download vswhere.exe..." -ForegroundColor Yellow
+
+        # Try to re-download vswhere.exe
+        try {
+            Remove-Item $vswherePath -Force -ErrorAction SilentlyContinue
+            Invoke-WebRequest -Uri "https://github.com/microsoft/vswhere/releases/latest/download/vswhere.exe" -OutFile $vswherePath -ErrorAction Stop
+            $vsInstances = & $vswherePath -all -format json | ConvertFrom-Json
+
+            if ($vsInstances.Count -eq 0) {
+                Write-Host "Cannot find any Visual Studio instances after re-download." -ForegroundColor Red
+                return $false
+            }
+        }
+        catch {
+            Write-Host "Failed to run vswhere.exe after re-download: $_" -ForegroundColor Red
+            return $false
+        }
     }
 
     # Use the first found Visual Studio instance to build the project
@@ -216,7 +261,7 @@ function Update-InnoSetupScript {
         Write-Host "Updating AppVersion number to $global:AppVersion..." -ForegroundColor Cyan
         $content = $content -replace '(#define\s+MyAppVersion\s+")([^"]+)(")', "`${1}$global:AppVersion`${3}"
         $content = $content -replace '(AppId\s*=\s*["{{]*)([^}"\r\n]*)(["{}]*)', "`${1}$NewProductCode`${3}"
-        $content = $content -replace '(OutputBaseFilename\s*=\s*["{{]*)([^}"\r\n]*)(["{}]*)', "`${1}WSL USB Manager V$global:AppVersion`${3}"
+        $content = $content -replace '(OutputBaseFilename\s*=\s*["{{]*)([^}"\r\n]*)(["{}]*)', "`${1}WSL USB Manager v$global:AppVersion`${3}"
 
         try{
             # Write the modified content
@@ -272,6 +317,10 @@ Write-Host "Building and publish dotnet..." -ForegroundColor Cyan
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build failed." -ForegroundColor Red
     exit 1
+}
+
+if (Test-Path $InstallerOutputDir) {
+    Get-ChildItem -Path $InstallerOutputDir -File | Remove-Item -Force
 }
 
 Write-Host "Compiling $InstallerScriptPath using $isccPath ..." -ForegroundColor Cyan

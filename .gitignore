@@ -382,3 +382,4 @@ ReleasePublish/wsl-usb-manager.runtimeconfig.json
 ReleasePublish/Properties/Resources.resx
 ReleasePublish/Resources/LangChinese.xaml
 ReleasePublish/Resources/LangEnglish.xaml
+BuildOutput/

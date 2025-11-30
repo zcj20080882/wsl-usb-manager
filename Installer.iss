@@ -13,7 +13,7 @@
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{1AD49FC9-4646-4C9E-A1DD-7D83F718102B}
+AppId={{347B032E-7B0C-46CD-91EF-0D0E0A5B4F16}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
@@ -38,7 +38,7 @@ LicenseFile=Disclaimer_en.rtf
 PrivilegesRequired=lowest
 ;PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=BuildOutput\Installer
-OutputBaseFilename=WSL USB Manager
+OutputBaseFilename=WSL USB Manager v2.0.7
 ;SetupIconFile=wsl-usb-manager\images\appicon.ico
 SolidCompression=yes
 WizardStyle=modern
