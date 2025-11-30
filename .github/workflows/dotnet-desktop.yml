@@ -83,7 +83,7 @@ jobs:
       env:
         Configuration: ${{ matrix.configuration }}
     - name: Build the Windows Application Packaging project
-      run: Build.ps1
+      run: .\Build.ps1
     # Decode the base 64 encoded pfx and save the Signing_Certificate
     # - name: Decode the pfx
     #   run: |
