@@ -159,7 +159,7 @@ public sealed class USBDevice
         {
             log.Info($"Success to bind {Description}({id}){(IsForced ? " forcibly" : "")}.");
         }
-        else
+        else if (ret.ErrCode != ErrorCode.Success)
         {
             log.Error($"Failed to bind {Description}({id}){(IsForced ? " forcibly" : "")}: {ret.ErrMsg}");
         }
@@ -179,20 +179,21 @@ public sealed class USBDevice
         }
 
         var (ErrCode, ErrMsg) = await USBIPDWin.UnbindDevice(id, useBusID);
-
-        if (ErrCode == ErrorCode.Success)
+        await Task.Delay(500);
+        await Update();
+        if (!IsBound)
         {
             IsBound = false;
             log.Info($"Success to unbind {Description}({id}).");
         }
-        else
+        else if (ErrCode != ErrorCode.Success)
         {
             log.Error($"Failed to unbind {Description}({id}): {ErrMsg}");
         }
         return (!IsBound, ErrMsg);
     }
 
-    public async Task<(bool Success, string ErrMsg)> Attach(bool useBusID,bool force, string? hostIP, bool isAuto)
+    public async Task<(bool Success, string ErrMsg)> Attach(bool useBusID, string? hostIP, bool isAuto)
     {
         string id = useBusID ? BusId : HardwareId;
 
@@ -216,13 +217,14 @@ public sealed class USBDevice
             return (true, $"Device({id}) is already attached.");
         }
 
-        var (_, ErrMsg) = await USBIPDWin.Attach(id, useBusID,force, isAuto, hostIP);
+        var (ErrCode, ErrMsg) = await USBIPDWin.Attach(id, useBusID, isAuto, hostIP);
+        await Task.Delay(500);
         await Update();
         if (IsAttached)
         {
             log.Info($"Success to attach {Description}({id}) to WSL {(string.IsNullOrWhiteSpace(hostIP) ? "" : "with " + hostIP)}.");
         }
-        else
+        else if (ErrCode != ErrorCode.Success)
         {
             log.Error($"Failed to attach {Description}({id}) to WSL {(string.IsNullOrWhiteSpace(hostIP) ? "" : "with " + hostIP)}: {ErrMsg}");
         }
@@ -245,13 +247,14 @@ public sealed class USBDevice
         {
             return (true, $"Device({id}) is already unbound.");
         }
-        var (_, ErrMsg) = await USBIPDWin.DetachDevice(id, useBusID);
+        var (ErrCode, ErrMsg) = await USBIPDWin.DetachDevice(id, useBusID);
+        await Task.Delay(500);
         await Update();
         if (!IsAttached)
         {
             log.Info($"Success to detach {Description}({id}) from WSL.");
         }
-        else
+        else if (ErrCode != ErrorCode.Success)
         {
             log.Error($"Failed to detach {Description}({id}) from WSL: {ErrMsg}");
         }

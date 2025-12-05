@@ -12,6 +12,7 @@ public static partial class USBIPDWin
 {
     private const string USBIPDIsBlockedZh = "防火墙阻止了来自WSL中的连接请求.";
     private const string USBIPDNoWSLRunning = "未检测到正在运行的WSL2分发版，请保持WSL2分发版处于运行状态。";
+    private const string USBDeviceInUsingZh = "该设备貌似正在被Windows使用中，请停止使用该设备的服务，或者强制绑定该设备后再附加。";
     private static bool IsDeviceInAutoAttaching(string id)
     {
         foreach (Process p in ProcessList)
@@ -145,16 +146,11 @@ public static partial class USBIPDWin
     /// ID(Bus ID or hardware ID) has already been checked, and the server is running.
     /// </summary>
     public static async Task<(ErrorCode ErrCode, string ErrMsg)>
-        Attach(string id, bool useBusID, bool force, bool autoAttach, string? hostIP)
+        Attach(string id, bool useBusID, bool autoAttach, string? hostIP)
     {
         if (IsDeviceInAutoAttaching(id))
         {
-            if (!force)
-            {
-                return (ErrorCode.Success, "");
-            }
-            log.Warn($"Device {id} is in auto-attach list, remove it due to force attaching.");
-            StopAutoAttachDevice(id);
+            return new(ErrorCode.DeviceInAttaching, IsChinese() ? "设备正在自动附加中。" : "The device is in auto-attaching.");
         }
 
         //string distribution;
@@ -192,7 +188,7 @@ public static partial class USBIPDWin
 
         var (errCode, Stdout, StdErr) = await RunUSBIPDWin(false, [.. args]);
 
-        if (IsFailed(errCode)) 
+        if (IsFailed(errCode))
         {
             log.Error($"Failed to attach {id}, stdout: {Stdout}; stderr: {StdErr}");
             if (StdErr.Contains("A firewall appears to be blocking the connection"))
@@ -202,6 +198,10 @@ public static partial class USBIPDWin
             else if (StdErr.Contains("There is no WSL 2 distribution running"))
             {
                 StdErr = IsChinese() ? USBIPDNoWSLRunning : StdErr;
+            }
+            else if (StdErr.Contains("The device appears to be used by Windows"))
+            {
+                StdErr = IsChinese() ? USBDeviceInUsingZh : StdErr;
             }
             return new(ErrorCode.DeviceDetachFailed, StdErr);
         }
@@ -213,7 +213,6 @@ public static partial class USBIPDWin
             await RunUSBIPDWinDaemon(false, [.. args]);
             return new(ErrorCode.Failure, IsChinese() ? "运行于WSL中的自动附加程序已退出。" : "The automatic attachment program running in WSL has exited.");
         }
-
         return new(errCode, StdErr);
     }
 
@@ -264,7 +263,7 @@ public static partial class USBIPDWin
 
         if (string.IsNullOrEmpty(StandardOutput))
         {
-            log.Warn("No info is found.");
+            log.Warn("No USB device is found.");
             return (ErrorCode.Failure, StandardError, null);
         }
         return (ErrorCode.Success, "", ParseStringDevInfoToUSBDeviceList(StandardOutput));

@@ -52,6 +52,7 @@ public enum ErrorCode
     ParseError = 2,
     AccessDenied = 3,
     Timeout = 4,
+    DeviceInAttaching = 5,
     UnknownError = 255,
 };
 
@@ -329,7 +330,7 @@ public static partial class USBIPDWin
 
         try
         {
-            (ErrCode, StdOutput, StdError) = await RunProcessWithTimeout(process, daemon ? -1 : 5000);
+            (ErrCode, StdOutput, StdError) = await RunProcessWithTimeout(process, daemon ? -1 : 10000);
         }
         finally
         {
@@ -359,6 +360,11 @@ public static partial class USBIPDWin
                     index += 6;
                     StdError += $"{l[index..].Trim()}\r\n";
                 }
+                else if ((index = l.IndexOf("warning:")) >= 0)
+                {
+                    index += 8;
+                    StdError += $"{l[index..].Trim()}\r\n";
+                }
                 else
                 { StdOutput += l; }
             }
@@ -372,6 +378,11 @@ public static partial class USBIPDWin
                 else if ((index = l.IndexOf("error:")) >= 0)
                 {
                     index += 6;
+                    StdError += $"{l[index..].Trim()}\r\n";
+                }
+                else if ((index = l.IndexOf("warning:")) >= 0)
+                {
+                    index += 8;
                     StdError += $"{l[index..].Trim()}\r\n";
                 }
                 else { StdError += l; }
