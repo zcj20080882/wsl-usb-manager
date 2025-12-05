@@ -155,7 +155,7 @@ public class USBDeviceInfoModel : ViewModelBase
         {
             NotifyService.ShowUSBIPDError(ErrorCode.DeviceBindFailed, ErrMsg, Device);
         }
-        
+
         return IsBound;
     }
 
@@ -168,11 +168,11 @@ public class USBDeviceInfoModel : ViewModelBase
         {
             NotifyService.ShowErrorMessage($"Failed to unbind '{name}': {ErrMsg}");
         }
-        
+
         return (!IsBound);
     }
 
-    public async Task<bool> Attach(bool force)
+    public async Task<bool> Attach()
       {
         string? ip = null, ErrMsg;
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
@@ -202,7 +202,7 @@ public class USBDeviceInfoModel : ViewModelBase
             (ip, ErrMsg) = NetworkCardInfo.GetIPAddress(App.GetAppConfig().ForwardNetCard);
             if (string.IsNullOrEmpty(ip))
             {
-                ErrMsg = IsChinese() ? $"无法从网卡'{App.GetAppConfig().ForwardNetCard}'获取IP: {ErrMsg}" : 
+                ErrMsg = IsChinese() ? $"无法从网卡'{App.GetAppConfig().ForwardNetCard}'获取IP: {ErrMsg}" :
                     $"Failed to get IP address from network card '{App.GetAppConfig().ForwardNetCard}': {ErrMsg}";
                 NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, ErrMsg, Device);
                 UpdateDeviceInfo();
@@ -210,17 +210,15 @@ public class USBDeviceInfoModel : ViewModelBase
             }
         }
 
-        (_, ErrMsg) = await Device.Attach(App.GetAppConfig().UseBusID, force, ip, IsAutoAttach);
+        (_, ErrMsg) = await Device.Attach(App.GetAppConfig().UseBusID, ip, IsAutoAttach);
         UpdateDeviceInfo();
         if (!Device.IsAttached)
         {
             NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, ErrMsg, Device);
         }
-        
+
         return IsAttached;
     }
-
-    public async Task<bool> Attach() => await Attach(false);
 
     public async Task<bool> Detach()
     {
@@ -231,7 +229,7 @@ public class USBDeviceInfoModel : ViewModelBase
         {
             NotifyService.ShowErrorMessage($"Failed to detach '{name}': {ErrMsg}");
         }
-        
+
         return (!IsAttached);
     }
 

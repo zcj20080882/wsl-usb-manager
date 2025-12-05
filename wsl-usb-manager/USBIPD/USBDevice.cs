@@ -192,7 +192,7 @@ public sealed class USBDevice
         return (!IsBound, ErrMsg);
     }
 
-    public async Task<(bool Success, string ErrMsg)> Attach(bool useBusID,bool force, string? hostIP, bool isAuto)
+    public async Task<(bool Success, string ErrMsg)> Attach(bool useBusID, string? hostIP, bool isAuto)
     {
         string id = useBusID ? BusId : HardwareId;
 
@@ -216,7 +216,7 @@ public sealed class USBDevice
             return (true, $"Device({id}) is already attached.");
         }
 
-        var (_, ErrMsg) = await USBIPDWin.Attach(id, useBusID,force, isAuto, hostIP);
+        var (_, ErrMsg) = await USBIPDWin.Attach(id, useBusID, isAuto, hostIP);
         await Update();
         if (IsAttached)
         {
@@ -226,7 +226,7 @@ public sealed class USBDevice
         {
             log.Error($"Failed to attach {Description}({id}) to WSL {(string.IsNullOrWhiteSpace(hostIP) ? "" : "with " + hostIP)}: {ErrMsg}");
         }
-        
+
         return (IsAttached, ErrMsg);
     }
 

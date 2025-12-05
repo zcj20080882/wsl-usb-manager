@@ -145,16 +145,11 @@ public static partial class USBIPDWin
     /// ID(Bus ID or hardware ID) has already been checked, and the server is running.
     /// </summary>
     public static async Task<(ErrorCode ErrCode, string ErrMsg)>
-        Attach(string id, bool useBusID, bool force, bool autoAttach, string? hostIP)
+        Attach(string id, bool useBusID, bool autoAttach, string? hostIP)
     {
         if (IsDeviceInAutoAttaching(id))
         {
-            if (!force)
-            {
-                return (ErrorCode.Success, "");
-            }
-            log.Warn($"Device {id} is in auto-attach list, remove it due to force attaching.");
-            StopAutoAttachDevice(id);
+            return new(ErrorCode.Success, IsChinese() ? "该设备正在自动附加中。" : "The device is already in auto-attaching.");
         }
 
         //string distribution;
@@ -192,7 +187,7 @@ public static partial class USBIPDWin
 
         var (errCode, Stdout, StdErr) = await RunUSBIPDWin(false, [.. args]);
 
-        if (IsFailed(errCode)) 
+        if (IsFailed(errCode))
         {
             log.Error($"Failed to attach {id}, stdout: {Stdout}; stderr: {StdErr}");
             if (StdErr.Contains("A firewall appears to be blocking the connection"))
