@@ -172,7 +172,7 @@ public class USBDeviceInfoModel : ViewModelBase
         return (!IsBound);
     }
 
-    public async Task<bool> Attach(bool force)
+    public async Task<bool> Attach()
       {
         string? ip = null, ErrMsg;
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
@@ -210,9 +210,9 @@ public class USBDeviceInfoModel : ViewModelBase
             }
         }
 
-        (_, ErrMsg) = await Device.Attach(App.GetAppConfig().UseBusID, force, ip, IsAutoAttach);
+        (_, ErrMsg) = await Device.Attach(App.GetAppConfig().UseBusID, ip, IsAutoAttach);
         UpdateDeviceInfo();
-        if (!Device.IsAttached)
+        if (!Device.IsAttached && !string.IsNullOrEmpty(ErrMsg))
         {
             NotifyService.ShowUSBIPDError(ErrorCode.DeviceAttachFailed, ErrMsg, Device);
         }
@@ -220,14 +220,12 @@ public class USBDeviceInfoModel : ViewModelBase
         return IsAttached;
     }
 
-    public async Task<bool> Attach() => await Attach(false);
-
     public async Task<bool> Detach()
     {
         string name = string.IsNullOrWhiteSpace(Device.Description) ? Device.HardwareId : Device.Description.Split(",", StringSplitOptions.RemoveEmptyEntries)[0];
         var (Success, ErrMsg) = await Device.Detach(App.GetAppConfig().UseBusID);
         UpdateDeviceInfo();
-        if (!Success)
+        if (!Success && !string.IsNullOrEmpty(ErrMsg))
         {
             NotifyService.ShowErrorMessage($"Failed to detach '{name}': {ErrMsg}");
         }
