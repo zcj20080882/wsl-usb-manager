@@ -292,7 +292,13 @@ public static partial class USBIPDWin
         }
         finally
         {
-            process.Dispose();
+            /**
+             *  Dispose process only if it's not a daemon process 
+             **/   
+            if (timeoutMilliseconds > 0)
+            {
+                process.Dispose();
+            }
         }
     }
 
@@ -548,12 +554,6 @@ public static partial class USBIPDWin
             }
         }
         ProcessList.Clear();
-        var (_, distribution, _) = await GetRunningDistribution();
-        if (!string.IsNullOrWhiteSpace(distribution))
-        {
-            await RunWslLinuxCmdAsync(distribution, "pkill", "-f", "auto-attach.sh");
-            await RunWslLinuxCmdAsync(distribution, "pkill", "-f", "usbip-auto-attach");
-        }
     }
 
 }

@@ -16,95 +16,49 @@ function Test-Winget {
     }
 }
 
-function Test-VisualStudio {
-    # Check if vswhere.exe is available
-    if (-Not (Test-Path -Path $vswherePath)) {
-        Write-Host "Downloading vswhere.exe..." -ForegroundColor Cyan
-        try{
-            # Use the x64 version specifically for better compatibility
-            Invoke-WebRequest -Uri "https://github.com/microsoft/vswhere/releases/latest/download/vswhere.exe" -OutFile $vswherePath -ErrorAction Stop
-        }
-        catch
-        {
-            Write-Host "Failed to download vswhere.exe" -ForegroundColor Red
-            return $false
-        }
-    }
-
-    # Verify the downloaded file is valid
-    if (-Not (Test-Path $vswherePath)) {
-        Write-Host "vswhere.exe not found at $vswherePath" -ForegroundColor Red
-        return $false
-    }
-
-    # Check if file is valid by getting its info
+function Test-Dotnet {
+    # Check if Dotnet is available
     try {
-        $fileInfo = Get-Item $vswherePath
-        if ($fileInfo.Length -eq 0) {
-            Write-Host "vswhere.exe file is empty, re-downloading..." -ForegroundColor Yellow
-            Remove-Item $vswherePath -Force -ErrorAction SilentlyContinue
-            Invoke-WebRequest -Uri "https://github.com/microsoft/vswhere/releases/latest/download/vswhere.exe" -OutFile $vswherePath -ErrorAction Stop
-        }
-    }
-    catch {
-        Write-Host "Error checking vswhere.exe file: $_" -ForegroundColor Red
-        return $false
-    }
-
-    # Find all installed Visual Studio instances
-    try {
-        $vsInstances = & $vswherePath -all -format json | ConvertFrom-Json
-
-        if ($vsInstances.Count -eq 0) {
-            Write-Host "Cannot find any Visual Studio instances." -ForegroundColor Red
-            return $false
-        }
-
-        foreach ($instance in $vsInstances) {
-            $installationPath = $instance.installationPath
-            $installationVersion = $instance.catalog.productDisplayVersion
-            $edition = $instance.catalog.productLine
-
-            Write-Host "Found installed Visual Studio instance:"
-            Write-Host "Version: $installationVersion"
-            Write-Host "Path: $installationPath"
-            Write-Host "Edition: $edition"
-            Write-Host "-------------------------"
-        }
-    }
-    catch {
-        Write-Host "Error running vswhere.exe: $_" -ForegroundColor Red
-        Write-Host "Trying to re-download vswhere.exe..." -ForegroundColor Yellow
-
-        # Try to re-download vswhere.exe
-        try {
-            Remove-Item $vswherePath -Force -ErrorAction SilentlyContinue
-            Invoke-WebRequest -Uri "https://github.com/microsoft/vswhere/releases/latest/download/vswhere.exe" -OutFile $vswherePath -ErrorAction Stop
-            $vsInstances = & $vswherePath -all -format json | ConvertFrom-Json
-
-            if ($vsInstances.Count -eq 0) {
-                Write-Host "Cannot find any Visual Studio instances after re-download." -ForegroundColor Red
-                return $false
-            }
-        }
-        catch {
-            Write-Host "Failed to run vswhere.exe after re-download: $_" -ForegroundColor Red
-            return $false
-        }
-    }
-
-    # Use the first found Visual Studio instance to build the project
-    if ($vsInstances.Count -gt 0) {
-        $firstInstance = $vsInstances[0]
-        $devenvPath = Join-Path -Path $firstInstance.installationPath -ChildPath "Common7\IDE\devenv.com"
-        Write-Host "devenv path: $devenvPath" -ForegroundColor Cyan
+        dotnet --version | Out-Null -ErrorAction Stop
         return $true
     }
+    catch {
+        return $false
+    }
 
-    Write-Host "Cannot find any Visual Studio instances." -ForegroundColor Red
+    Write-Host "Cannot find Dotnet." -ForegroundColor Red
     return $false
 }
 
+function Install-Dotnet {
+    Write-Host "Dotnet not detected, installing via winget..." -ForegroundColor Cyan
+    
+    if (-not (Test-Winget)) {
+        Write-Host "Error: winget tool not found, cannot install Dotnet" -ForegroundColor Red
+        return $false
+    }
+
+    Write-Host "Installing Dotnet using winget..." -ForegroundColor Yellow
+
+    try {
+        # Install Dotnet using winget
+        $process = Start-Process -FilePath "winget" -ArgumentList "install Microsoft.DotNet.SDK.8 -e -s winget --accept-source-agreements --accept-package-agreements" -Wait -PassThru -NoNewWindow
+
+        if ($process.ExitCode -ne 0) {
+            Write-Host "Failed to install Dotnet via winget, exit code: $($process.ExitCode)" -ForegroundColor Red
+            return $false
+        }
+
+        Write-Host "Dotnet installation completed" -ForegroundColor Cyan
+        # Wait a bit after installation to ensure it's complete
+        Start-Sleep -Seconds 3
+    }
+    catch {
+        Write-Host "Failed to install Dotnet: $_" -ForegroundColor Red
+        return $false
+    }
+    return $true
+}
 
 function Get-GitVersion-Update-AssemblyInfo {
     if (Get-Command git -ErrorAction SilentlyContinue) {
@@ -121,13 +75,14 @@ function Get-GitVersion-Update-AssemblyInfo {
     if (-not $gitversionInstalled) {
         Write-Host "dotnet-gitversion is not installed, and is being installed..." -ForegroundColor Cyan
         dotnet tool install --global GitVersion.Tool
-    } else {
+    }
+    else {
         Write-Host "dotnet-gitversion is installed." -ForegroundColor Green
     }
 
     Write-Host "Updating assembly info..." -ForegroundColor Cyan
-    try{
-        & git tag -l | ForEach-Object{ git tag -d $_ }
+    try {
+        & git tag -l | ForEach-Object { git tag -d $_ }
         & git fetch origin --tags
         if ($LastExitCode -ne 0) { return $false }
         & git checkout $AssemblyInfoPath
@@ -176,7 +131,7 @@ function Get-InnoSetupCompilerPath {
 
     foreach ($keyPath in $innoUninstallKeys) {
         $key = Get-ItemProperty -Path $keyPath -ErrorAction SilentlyContinue |
-               Where-Object { $_.DisplayName -like "*Inno Setup*" }
+        Where-Object { $_.DisplayName -like "*Inno Setup*" }
 
         if ($key -and $key.InstallLocation) {
             $isccPath = Join-Path $key.InstallLocation "ISCC.exe"
@@ -263,7 +218,7 @@ function Update-InnoSetupScript {
         $content = $content -replace '(AppId\s*=\s*["{{]*)([^}"\r\n]*)(["{}]*)', "`${1}$NewProductCode`${3}"
         $content = $content -replace '(OutputBaseFilename\s*=\s*["{{]*)([^}"\r\n]*)(["{}]*)', "`${1}WSL USB Manager v$global:AppVersion`${3}"
 
-        try{
+        try {
             # Write the modified content
             Set-Content -Path $InstallerScriptPath -Value $content -NoNewline -ErrorAction Stop
         }
@@ -282,9 +237,13 @@ function Update-InnoSetupScript {
     return $true
 }
 
-if (-Not (Test-VisualStudio)) {
-    Write-Host "Visual Studio is not installed or not found. Please install Visual Studio to build the project." -ForegroundColor Red
-    exit 1
+if (-Not (Test-Dotnet)) {
+    Write-Host "Dotnet is not installed or not found. Please install Dotnet to build the project." -ForegroundColor Red
+    if (-not (Install-Dotnet)) {
+        Write-Host "Failed to install Dotnet." -ForegroundColor Red
+        Write-Host "Please install Dotnet manually from https://dotnet.microsoft.com/download" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 if (-not (Get-InnoSetupCompilerPath) -and -Not (Install-InnoSetup)) {
