@@ -179,11 +179,23 @@ public sealed class USBDevice
         }
 
         var (ErrCode, ErrMsg) = await USBIPDWin.UnbindDevice(id, useBusID);
-        await Task.Delay(500);
-        await Update();
+        if (!IsConnected)
+        {
+            /** 
+             * For disconnected devices, can not update the status correctly after unbinding.
+             * **/
+            IsBound = false;
+            IsAttached = false;
+        }
+        else
+        {
+            if (ErrCode != ErrorCode.Success)
+                await Task.Delay(500);
+            await Update();
+        }
+        
         if (!IsBound)
         {
-            IsBound = false;
             log.Info($"Success to unbind {Description}({id}).");
         }
         else if (ErrCode != ErrorCode.Success)

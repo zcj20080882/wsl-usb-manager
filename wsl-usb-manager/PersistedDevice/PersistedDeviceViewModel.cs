@@ -34,17 +34,17 @@ public class PersistedDeviceViewModel : ViewModelBase
         {
             log.Error($"Failed to list persisted devices: {ErrMsg}");
             NotifyService.ShowUSBIPDError(ErrCode, ErrMsg, null);
-            return;
         }
-        if (DevicesList == null || DevicesList.Count < 1)
-            return;
-
-        foreach (var device in DevicesList)
+        if (DevicesList != null && DevicesList.Count > 0)
         {
-            USBDeviceInfoModel item = new(device);
-            if (!item.IsConnected)
-                deviceInfoModules.Add(item);
+            foreach (var device in DevicesList)
+            {
+                USBDeviceInfoModel item = new(device);
+                if (!item.IsConnected)
+                    deviceInfoModules.Add(item);
+            }
         }
+        
         DeviceInfoModules = deviceInfoModules;
         if (_lastSelectedDevice != null)
         {
