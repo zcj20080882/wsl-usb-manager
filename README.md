@@ -1,89 +1,89 @@
-# wsl-usb-manager
+# WSL USB Manager
+
+[中文](./README-zh)
 
 #### Introduction
 
-A tool that works with usbipd-win to attach USB devices to WSL, providing a friendly user interface.
+A GUI tool that works with usbipd-win to attach USB devices to WSL, providing a user-friendly interface.
 
 **Features**
 
-1. Display a list of all USB devices, bind/unbind devices, attach/detach devices through checkboxes or right-click menu.
+1. Displays all USB devices and lets you bind/unbind or attach/detach devices using checkboxes or the right-click menu.
 
-    >Devices must be bound before they can be attached.
+    > Devices must be bound before they can be attached.
 
     ![bind](./screen/bind-en.png)
     ![attach](./screen/attach-en.png)
     ![detach](./screen/detach-en.png)
-    ![unbind](./screen/unbind-en.png)]
+    ![unbind](./screen/unbind-en.png)
 
-2. Hide/Show filtered devices
+2. Hide or show filtered devices
 
     ![filter](./screen/hide-show-fiter-en.png)
 
-3. Display detailed information of selected devices
+3. Shows detailed information for the selected device
 
     ![detail](./screen/device-info-en.png)
 
-4. Support attaching USB devices to WSL through specified network adapter
+4. Supports attaching USB devices to WSL via a specific network adapter
 
-   For some Windows machines controlled by organizational domains, there might be special firewall configurations that don't allow WSL to access host services through non-private networks. This prevents devices from being attached to WSL, and the program will report errors similar to the one shown below:
+   On some domain-controlled Windows machines, firewall rules may prevent WSL from accessing host services over non-private networks, which can block device attachment and produce errors like the one below:
 
    ![fw](./screen/blocked-by-fw-en.png)
 
-   In this case, you can set a network as private and configure to attach devices through that network adapter. **Note: Do not set unsecure networks (like public WiFi) as private networks.**
+   In such cases, you can mark a network as **Private** and configure the adapter to attach devices via that network. **Note: Do not mark untrusted networks (e.g., public Wi‑Fi) as Private.**
 
    ![workaround](./screen/workaround-fw-en.png)
 
-5. Display persisted devices, with ability to remove them
+5. Displays persisted devices and allows removing them
 
-    Persisted devices are those that are bound but not connected (not plugged into the host).
-    usbipd-win records bound devices after each binding and automatically binds them on next startup.
-    This can result in many persisted devices, which can be managed by this program.
+    Persisted devices are bound devices that are currently disconnected (not plugged into the host). usbipd-win records bound devices and rebinds them at startup, which can accumulate many persisted entries over time—this app helps you manage them.
 
     ![persistent](./screen/persisted-device-en.png)
 
-6. Support automatic detection of USB device plug/unplug events, automatically refreshing the device list
+6. Automatically detects USB plug/unplug events and refreshes the device list
 
-7. Support auto-attach feature: devices added to the auto-attach list will be automatically attached to WSL when plugged in
+7. Auto-attach feature: devices added to the auto-attach list are attached to WSL automatically when plugged in
 
     ![auto-attach](./screen/auto-attach-en.png)
 
-8. Support Chinese and English languages
+8. Supports Chinese and English languages
 
     ![change](./screen/change-language-en.png)
 
 **Requirements**
 
-1. Windows 10 or above
-2. .Net Framework 4.8 environment
-3. usbipd-win v4.4.0 or above
-4. WSL2 environment with usbipd-win installed
-5. Administrator privileges required for binding devices
+- Windows 10 or later  
+- .NET Framework 4.8  
+- usbipd-win v4.4.0 or later  
+- The WSL2 distribution must be Debian-based (e.g., Debian or Ubuntu).
+- Administrator privileges required to bind devices
 
 #### Building
 
-1.  Install Visual Studio 2022 with the following extensions:
+1. Install Visual Studio 2022 with:
 
-    - License Header Manager
-    - Microsoft Visual Studio Installer Projects 2022
-2.  Install Git
-3.  Install Inno Setup 6 (for building installer)
-4.  Install Git Version
+   - License Header Manager  
+   - Microsoft Visual Studio Installer Projects 2022
 
-    ```powershell
-    dotnet tool install --global GitVersion.Tool
-    ```
+2. Install Git  
+3. Install Inno Setup 6 (for building the installer)  
+4. Install GitVersion Tool
 
-5.  Build
+```powershell
+dotnet tool install --global GitVersion.Tool
+```
 
-    ```powershell
-    .\Build.ps1
-    ```
+5. Build
 
-    After building, an installer named `WSL USB Manager Vx.x.x.exe` will be generated in `BuildOutput\Installer`, where `x.x.x` is the current version number.
+```powershell
+.\Build.ps1
+```
 
+After building, an installer named `WSL USB Manager Vx.x.x.exe` will be generated in `BuildOutput\Installer` (where `x.x.x` is the current version number).
 
 #### Bug Reports
 
-If you encounter any issues while using the program, please follow these steps to access the log path, copy the latest log, and submit a bug report in the `issue` section with the log attached.
+If you encounter issues, open the log folder, copy the latest log file, and submit an issue with the log attached in the repository's Issues page.
 
 ![get log](./screen/get-log-en.png)
