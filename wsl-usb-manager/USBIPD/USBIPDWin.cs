@@ -12,21 +12,11 @@
 // Ignore Spelling: USBIPD hardwareid hardwareid busid
 
 using log4net;
-using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.Xml;
-using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Automation.Text;
-using System.Windows.Documents;
-using System.Windows.Forms;
-using System.Xml.Linq;
 using wsl_usb_manager.Domain;
 using wsl_usb_manager.Resources;
 
@@ -293,8 +283,8 @@ public static partial class USBIPDWin
         finally
         {
             /**
-             *  Dispose process only if it's not a daemon process 
-             **/   
+             *  Dispose process only if it's not a daemon process
+             **/
             if (timeoutMilliseconds > 0)
             {
                 process.Dispose();
@@ -302,7 +292,7 @@ public static partial class USBIPDWin
         }
     }
 
-    private static async Task<(ErrorCode ErrCode, string StandardOutput, string StandardError)> 
+    private static async Task<(ErrorCode ErrCode, string StandardOutput, string StandardError)>
         RunUSBIPDWin(bool privilege, bool daemon, params string[] arguments)
       {
         var ErrCode = ErrorCode.Failure;
@@ -397,7 +387,7 @@ public static partial class USBIPDWin
         return (ErrCode, StdOutput, StdError);
     }
 
-    private static async Task<(ErrorCode ErrCode, string StandardOutput, string StandardError)> 
+    private static async Task<(ErrorCode ErrCode, string StandardOutput, string StandardError)>
         RunUSBIPDWin(bool privilege, params string[] arguments) =>  await RunUSBIPDWin(privilege, false, arguments);
 
     private static async Task<(ErrorCode ErrCode, string StandardOutput, string StandardError)>
@@ -542,7 +532,7 @@ public static partial class USBIPDWin
 
     public static string GetUSBIPDVersion() => USBIPDAppInfo?.DisplayVersion ?? string.Empty;
 
-    public static async Task StopAllProcesses()
+    public static Task StopAllProcesses()
     {
         foreach (var p in ProcessList)
         {
@@ -550,10 +540,12 @@ public static partial class USBIPDWin
             if (!p.HasExited)
             {
                 log.Info($"Stopping '{p.StartInfo.FileName} {p.StartInfo.Arguments}' ...");
-                 ForceStopProcess(p);
+                ForceStopProcess(p);
             }
         }
         ProcessList.Clear();
+
+        return Task.CompletedTask;
     }
 
 }
