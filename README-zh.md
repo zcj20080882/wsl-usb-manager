@@ -1,4 +1,6 @@
-# wsl-usb-manager
+# WSL USB 管理器
+
+[English](./README)
 
 #### 介绍
 
@@ -56,7 +58,7 @@
 1. Win10以上版本
 2. .Net Framework 4.8环境
 3. usbipd-win v4.4.0及其以上版本
-4. WSL2环境，需要安装usbipd-win（须为）
+4. WSL2 分发版须为Debian系（如Debian/Ubuntu）
 5. 绑定设备时需要管理员权限
 
 #### 构建
